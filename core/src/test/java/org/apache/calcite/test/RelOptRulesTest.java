@@ -1597,18 +1597,6 @@ public class RelOptRulesTest extends RelOptTestBase {
             + "  else 3 end = 1");
   }
 
-  @Test
-  public void testBreakupIn() throws Exception {
-    HepProgram program = new HepProgramBuilder()
-        //        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
-        //        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
-        //        .addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE)
-        .build();
-
-    checkPlanning(program, "with t as (select empno,sal from emp where empno in (1,2) group by empno,sal)"
-        + "select 1 from t t0, t t1" + " where t0.sal=t1.sal+1" + " and   t0.empno = 1 and t1.empno = 2");
-  }
-
   @Test public void testReduceConstantsCaseEquals2() throws Exception {
     HepProgram program = new HepProgramBuilder()
         .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
