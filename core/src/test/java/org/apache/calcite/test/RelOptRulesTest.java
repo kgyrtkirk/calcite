@@ -171,6 +171,7 @@ import static org.junit.Assert.assertTrue;
 public class RelOptRulesTest extends RelOptTestBase {
   //~ Methods ----------------------------------------------------------------
 
+  @Override
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(RelOptRulesTest.class);
   }
@@ -443,6 +444,7 @@ public class RelOptRulesTest extends RelOptTestBase {
             .build();
     final FilterJoinRule.Predicate predicate =
         new FilterJoinRule.Predicate() {
+          @Override
           public boolean apply(Join join, JoinRelType joinType, RexNode exp) {
             return joinType != JoinRelType.INNER;
           }
@@ -1597,6 +1599,22 @@ public class RelOptRulesTest extends RelOptTestBase {
             + "  else 3 end = 1");
   }
 
+  @Test public void testBreakupIn() throws Exception {
+    HepProgram program = new HepProgramBuilder()
+        //        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
+        //        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        //        .addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE)
+        .build();
+
+
+    checkPlanning(program,
+        "with t as (select empno,sal from emp where empno in (1,2) group by empno,sal)"
+            + "select 1 from t t0, t t1"
+            + " where t0.sal=t1.sal+1"
+            + " and   t0.empno = 1 and t1.empno = 2"
+    );
+  }
+
   @Test public void testReduceConstantsCaseEquals2() throws Exception {
     HepProgram program = new HepProgramBuilder()
         .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
@@ -1792,6 +1810,7 @@ public class RelOptRulesTest extends RelOptTestBase {
   private void checkPlanning(String query) throws Exception {
     final Tester tester1 = tester.withCatalogReaderFactory(
         new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
+          @Override
           public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
             return new MockCatalogReader(typeFactory, true) {
               @Override public MockCatalogReader init() {
@@ -2594,6 +2613,7 @@ public class RelOptRulesTest extends RelOptTestBase {
                     new PredicateImpl<Project>() {
                       int matchCount = 0;
 
+                      @Override
                       public boolean test(@Nullable Project project) {
                         return matchCount++ == 0;
                       }

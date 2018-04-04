@@ -130,18 +130,22 @@ public class RexProgramTest {
               Variable.CURRENT_TIMESTAMP.camelName, 1311120000000L);
     }
 
+    @Override
     public SchemaPlus getRootSchema() {
       return null;
     }
 
+    @Override
     public JavaTypeFactory getTypeFactory() {
       return null;
     }
 
+    @Override
     public QueryProvider getQueryProvider() {
       return null;
     }
 
+    @Override
     public Object get(String name) {
       return map.get(name);
     }
@@ -283,6 +287,10 @@ public class RexProgramTest {
 
   private RexNode gt(RexNode n1, RexNode n2) {
     return rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN, n1, n2);
+  }
+
+  private RexNode in(RexNode... nodes) {
+    return rexBuilder.makeCall(SqlStdOperatorTable.IN, nodes);
   }
 
   /**
@@ -1264,6 +1272,8 @@ public class RexProgramTest {
     checkSimplify(gt(hRef, hRef), "false");
     checkSimplify2(gt(iRef, iRef), ">(?0.i, ?0.i)", "false");
     checkSimplify(gt(iRef, hRef), ">(?0.i, ?0.h)");
+
+    checkSimplify(in(literal1, literal1), "false");
   }
 
   @Test public void testSimplifyFilter() {
