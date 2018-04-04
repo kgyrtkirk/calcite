@@ -1458,7 +1458,6 @@ public class RexProgramTest {
             ImmutableList.of(le(aRef, literal5), le(bRef, literal5))),
         "false");
 
-    //    checkSimplifyFilter(in(aRef, literal1, literal10), "IN(?0.a, 1, 10)");
     checkSimplifyFilter(in(aRef, literal1, literal10), "OR(=(?0.a, 1), =(?0.a, 10))");
   }
 
