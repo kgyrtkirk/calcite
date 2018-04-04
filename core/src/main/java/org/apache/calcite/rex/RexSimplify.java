@@ -162,8 +162,8 @@ public class RexSimplify {
     case LESS_THAN_OR_EQUAL:
     case NOT_EQUALS:
       return simplifyComparison((RexCall) e);
-    //    //    case IN:
-    //      return simplifyIn((RexCall) e);
+    case IN:
+      return simplifyIn((RexCall) e);
     default:
       return e;
     }

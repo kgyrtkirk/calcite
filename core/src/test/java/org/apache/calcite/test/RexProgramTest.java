@@ -1273,7 +1273,6 @@ public class RexProgramTest {
     checkSimplify2(gt(iRef, iRef), ">(?0.i, ?0.i)", "false");
     checkSimplify(gt(iRef, hRef), ">(?0.i, ?0.h)");
 
-    checkSimplify(in(literal1, literal1), "false");
   }
 
   @Test public void testSimplifyFilter() {
@@ -1463,6 +1462,9 @@ public class RexProgramTest {
         RelOptPredicateList.of(rexBuilder,
             ImmutableList.of(le(aRef, literal5), le(bRef, literal5))),
         "false");
+
+    //    checkSimplifyFilter(in(aRef, literal1, literal10), "IN(?0.a, 1, 10)");
+    checkSimplifyFilter(in(aRef, literal1, literal10), "OR(=(?0.a, 1), =(?0.a, 10))");
   }
 
   /** Unit test for
