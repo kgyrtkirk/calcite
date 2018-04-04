@@ -162,9 +162,29 @@ public class RexSimplify {
     case LESS_THAN_OR_EQUAL:
     case NOT_EQUALS:
       return simplifyComparison((RexCall) e);
+    //    case IN:
+    //      return simplifyIn((RexCall) e);
     default:
       return e;
     }
+  }
+
+  private RexNode simplifyIn(RexCall call) {
+    List<RexNode> ops = call.getOperands();
+    switch(ops.size()) {
+    case 1:
+      return rexBuilder.makeLiteral(true);
+    case 2:
+      return rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, ops);
+    }
+    RexNode leftOp = ops.get(0);
+    List<RexNode> newOperands = new ArrayList<>();
+
+    for (int i = 1; i < ops.size(); i++) {
+      RexNode rexNode = ops.get(i);
+      newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, leftOp, rexNode));
+    }
+    return rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
   }
 
   // e must be a comparison (=, >, >=, <, <=, !=)

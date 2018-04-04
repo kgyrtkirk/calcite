@@ -380,6 +380,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       final List<RexNode> expandedExprList = Lists.newArrayList();
       final RexShuttle shuttle =
           new RexShuttle() {
+            @Override
             public RexNode visitLocalRef(RexLocalRef localRef) {
               return expandedExprList.get(localRef.getIndex());
             }
@@ -560,6 +561,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       RelOptPredicateList predicates) {
     // Replace predicates on CASE to CASE on predicates.
     new CaseShuttle().mutate(expList);
+    new SubstituteInShuttle(simplify.rexBuilder).mutate(expList);
 
     // Find reducible expressions.
     final List<RexNode> constExps = Lists.newArrayList();
@@ -1065,6 +1067,46 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       }
     }
   }
+
+  protected static class SubstituteInShuttle extends RexShuttle {
+
+    private RexBuilder rexBuilder;
+
+    public SubstituteInShuttle(RexBuilder rexBuilder) {
+      super();
+      this.rexBuilder = rexBuilder;
+    }
+
+    @Override
+    public RexNode visitCall(RexCall call) {
+      for (;;) {
+        call = (RexCall) super.visitCall(call);
+        final RexCall old = call;
+        call = decomposeIn(call);
+        if (call == old) {
+          return call;
+        }
+      }
+    }
+
+    private RexCall decomposeIn(RexCall call) {
+      if (call.getKind() != SqlKind.IN) {
+        return call;
+      }
+      List<RexNode> ops = call.getOperands();
+      List<RexNode> newOperands = new ArrayList<>();
+
+      RexNode leftOp = ops.get(0);
+      for (int i = 1; i < ops.size(); i++) {
+        RexNode rexNode = ops.get(i);
+        newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, leftOp, rexNode));
+      }
+      //      return rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands);
+      return null;
+
+    }
+  }
+
 }
 
 // End ReduceExpressionsRule.java
