@@ -60,7 +60,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     super();
   }
 
-  @Override
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(SqlToRelConverterTest.class);
   }
@@ -2559,7 +2558,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   private Tester getExtendedTester() {
     return tester.withCatalogReaderFactory(
       new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
-        @Override
         public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
           return new MockCatalogReader(typeFactory, true)
               .init().init2();
@@ -2570,7 +2568,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   private Tester getTesterWithDynamicTable() {
     return tester.withCatalogReaderFactory(
         new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
-          @Override
           public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
             return new MockCatalogReader(typeFactory, true) {
               @Override public MockCatalogReader init() {
@@ -2611,7 +2608,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   @Test public void testLarge() {
     SqlValidatorTest.checkLarge(400,
         new Function<String, Void>() {
-          @Override
           public Void apply(String input) {
             final RelRoot root = tester.convertSqlToRel(input);
             final String s = RelOptUtil.toString(root.project());
@@ -2789,7 +2785,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     int invalidCount;
     final Deque<RelNode> stack = new ArrayDeque<>();
 
-    @Override
     public Set<CorrelationId> correlationIds() {
       final ImmutableSet.Builder<CorrelationId> builder =
           ImmutableSet.builder();
@@ -2799,7 +2794,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
       return builder.build();
     }
 
-    @Override
     public void visit(RelNode node, int ordinal, RelNode parent) {
       try {
         stack.push(node);

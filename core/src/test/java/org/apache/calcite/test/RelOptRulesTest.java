@@ -171,7 +171,6 @@ import static org.junit.Assert.assertTrue;
 public class RelOptRulesTest extends RelOptTestBase {
   //~ Methods ----------------------------------------------------------------
 
-  @Override
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(RelOptRulesTest.class);
   }
@@ -444,7 +443,6 @@ public class RelOptRulesTest extends RelOptTestBase {
             .build();
     final FilterJoinRule.Predicate predicate =
         new FilterJoinRule.Predicate() {
-          @Override
           public boolean apply(Join join, JoinRelType joinType, RexNode exp) {
             return joinType != JoinRelType.INNER;
           }
@@ -1806,7 +1804,6 @@ public class RelOptRulesTest extends RelOptTestBase {
   private void checkPlanning(String query) throws Exception {
     final Tester tester1 = tester.withCatalogReaderFactory(
         new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
-          @Override
           public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
             return new MockCatalogReader(typeFactory, true) {
               @Override public MockCatalogReader init() {
@@ -2609,7 +2606,6 @@ public class RelOptRulesTest extends RelOptTestBase {
                     new PredicateImpl<Project>() {
                       int matchCount = 0;
 
-                      @Override
                       public boolean test(@Nullable Project project) {
                         return matchCount++ == 0;
                       }

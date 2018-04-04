@@ -130,22 +130,18 @@ public class RexProgramTest {
               Variable.CURRENT_TIMESTAMP.camelName, 1311120000000L);
     }
 
-    @Override
     public SchemaPlus getRootSchema() {
       return null;
     }
 
-    @Override
     public JavaTypeFactory getTypeFactory() {
       return null;
     }
 
-    @Override
     public QueryProvider getQueryProvider() {
       return null;
     }
 
-    @Override
     public Object get(String name) {
       return map.get(name);
     }
@@ -1272,7 +1268,6 @@ public class RexProgramTest {
     checkSimplify(gt(hRef, hRef), "false");
     checkSimplify2(gt(iRef, iRef), ">(?0.i, ?0.i)", "false");
     checkSimplify(gt(iRef, hRef), ">(?0.i, ?0.h)");
-
   }
 
   @Test public void testSimplifyFilter() {

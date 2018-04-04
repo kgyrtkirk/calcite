@@ -75,7 +75,6 @@ public class RexUtil {
 
   private static final Function<? super RexNode, ? extends RexNode> ADD_NOT =
       new Function<RexNode, RexNode>() {
-        @Override
         public RexNode apply(RexNode input) {
           return new RexCall(input.getType(), SqlStdOperatorTable.NOT,
               ImmutableList.of(input));
@@ -84,7 +83,6 @@ public class RexUtil {
 
   private static final Predicate1<RexNode> IS_FLAT_PREDICATE =
       new Predicate1<RexNode>() {
-        @Override
         public boolean apply(RexNode v1) {
           return isFlat(v1);
         }
@@ -92,7 +90,6 @@ public class RexUtil {
 
   private static final Function<Object, String> TO_STRING =
       new Function<Object, String>() {
-        @Override
         public String apply(Object input) {
           return input.toString();
         }
@@ -100,7 +97,6 @@ public class RexUtil {
 
   private static final Function<RexNode, RelDataType> TYPE_FN =
       new Function<RexNode, RelDataType>() {
-        @Override
         public RelDataType apply(RexNode input) {
           return input.getType();
         }
@@ -108,7 +104,6 @@ public class RexUtil {
 
   private static final Function<RelDataType, RelDataTypeFamily> FAMILY_FN =
       new Function<RelDataType, RelDataTypeFamily>() {
-        @Override
         public RelDataTypeFamily apply(RelDataType input) {
           return input.getFamily();
         }
@@ -490,27 +485,22 @@ public class RexUtil {
   static class ConstantFinder implements RexVisitor<Boolean> {
     static final ConstantFinder INSTANCE = new ConstantFinder();
 
-    @Override
     public Boolean visitLiteral(RexLiteral literal) {
       return true;
     }
 
-    @Override
     public Boolean visitInputRef(RexInputRef inputRef) {
       return false;
     }
 
-    @Override
     public Boolean visitLocalRef(RexLocalRef localRef) {
       return false;
     }
 
-    @Override
     public Boolean visitOver(RexOver over) {
       return false;
     }
 
-    @Override
     public Boolean visitSubQuery(RexSubQuery subQuery) {
       return false;
     }
@@ -523,21 +513,18 @@ public class RexUtil {
       return false;
     }
 
-    @Override
     public Boolean visitCorrelVariable(RexCorrelVariable correlVariable) {
       // Correlating variables change when there is an internal restart.
       // Not good enough for our purposes.
       return false;
     }
 
-    @Override
     public Boolean visitDynamicParam(RexDynamicParam dynamicParam) {
       // Dynamic parameters are constant WITHIN AN EXECUTION, so that's
       // good enough.
       return true;
     }
 
-    @Override
     public Boolean visitCall(RexCall call) {
       // Constant if operator is deterministic and all operands are
       // constant.
@@ -545,12 +532,10 @@ public class RexUtil {
           && RexVisitorImpl.visitArrayAnd(this, call.getOperands());
     }
 
-    @Override
     public Boolean visitRangeRef(RexRangeRef rangeRef) {
       return false;
     }
 
-    @Override
     public Boolean visitFieldAccess(RexFieldAccess fieldAccess) {
       // "<expr>.FIELD" is constant iff "<expr>" is constant.
       return fieldAccess.getReferenceExpr().accept(this);
@@ -614,7 +599,6 @@ public class RexUtil {
     try {
       RexVisitor<Void> visitor =
           new RexVisitorImpl<Void>(true) {
-            @Override
             public Void visitCall(RexCall call) {
               if (call.getOperator().equals(operator)) {
                 throw new Util.FoundOne(call);
@@ -640,7 +624,6 @@ public class RexUtil {
     try {
       RexVisitor<Void> visitor =
           new RexVisitorImpl<Void>(true) {
-            @Override
             public Void visitInputRef(RexInputRef inputRef) {
               throw new Util.FoundOne(inputRef);
             }
@@ -663,7 +646,6 @@ public class RexUtil {
     try {
       RexVisitor<Void> visitor =
           new RexVisitorImpl<Void>(true) {
-            @Override
             public Void visitFieldAccess(RexFieldAccess fieldAccess) {
               throw new Util.FoundOne(fieldAccess);
             }
@@ -894,7 +876,6 @@ public class RexUtil {
     try {
       RexVisitor<Void> visitor =
           new RexVisitorImpl<Void>(true) {
-            @Override
             public Void visitTableInputRef(RexTableInputRef inputRef) {
               throw new Util.FoundOne(inputRef);
             }
@@ -1285,7 +1266,6 @@ public class RexUtil {
     final RexPermuteInputsShuttle shuttle = RexPermuteInputsShuttle.of(mapping);
     return Iterables.transform(
         nodes, new Function<RexNode, RexNode>() {
-          @Override
           public RexNode apply(RexNode input) {
             return input.accept(shuttle);
           }
@@ -1393,7 +1373,6 @@ public class RexUtil {
     return !isAssociative(op)
         || !exists(exprs,
             new Predicate1<RexNode>() {
-              @Override
               public boolean apply(RexNode expr) {
                 return isCallTo(expr, op);
               }
@@ -1910,7 +1889,6 @@ public class RexUtil {
       if (call.getOperands().get(1) instanceof RexLiteral) {
         notTerms = Iterables.filter(notTerms,
             new PredicateImpl<RexNode>() {
-              @Override
               public boolean test(RexNode input) {
                 switch (input.getKind()) {
                 case EQUALS:
@@ -1949,7 +1927,6 @@ public class RexUtil {
   /** Returns a function that applies NOT to its argument. */
   public static Function<RexNode, RexNode> notFn(final RexBuilder rexBuilder) {
     return new Function<RexNode, RexNode>() {
-      @Override
       public RexNode apply(RexNode input) {
         return input.isAlwaysTrue()
             ? rexBuilder.makeLiteral(false)
@@ -2099,22 +2076,18 @@ public class RexUtil {
       return mapDigestToExpr.get(expr.toString());
     }
 
-    @Override
     public RexNode visitInputRef(RexInputRef inputRef) {
       return register(inputRef);
     }
 
-    @Override
     public RexNode visitLiteral(RexLiteral literal) {
       return register(literal);
     }
 
-    @Override
     public RexNode visitCorrelVariable(RexCorrelVariable correlVariable) {
       return register(correlVariable);
     }
 
-    @Override
     public RexNode visitCall(RexCall call) {
       List<RexNode> normalizedOperands = new ArrayList<>();
       int diffCount = 0;
@@ -2135,17 +2108,14 @@ public class RexUtil {
       return register(call);
     }
 
-    @Override
     public RexNode visitDynamicParam(RexDynamicParam dynamicParam) {
       return register(dynamicParam);
     }
 
-    @Override
     public RexNode visitRangeRef(RexRangeRef rangeRef) {
       return register(rangeRef);
     }
 
-    @Override
     public RexNode visitFieldAccess(RexFieldAccess fieldAccess) {
       final RexNode expr = fieldAccess.getReferenceExpr();
       expr.accept(this);
@@ -2184,7 +2154,6 @@ public class RexUtil {
       this.inputRowType = inputRowType;
     }
 
-    @Override
     public Void visitInputRef(RexInputRef inputRef) {
       super.visitInputRef(inputRef);
       if (inputRef.getIndex() >= inputRowType.getFieldCount()) {
@@ -2193,7 +2162,6 @@ public class RexUtil {
       return null;
     }
 
-    @Override
     public Void visitLocalRef(RexLocalRef inputRef) {
       super.visitLocalRef(inputRef);
       if (inputRef.getIndex() >= limit) {
@@ -2223,13 +2191,11 @@ public class RexUtil {
       fieldAccessList = new ArrayList<>();
     }
 
-    @Override
     public Void visitFieldAccess(RexFieldAccess fieldAccess) {
       fieldAccessList.add(fieldAccess);
       return null;
     }
 
-    @Override
     public Void visitCall(RexCall call) {
       for (RexNode operand : call.operands) {
         operand.accept(this);
@@ -2548,7 +2514,6 @@ public class RexUtil {
     /** Returns whether a {@link Project} contains a sub-query. */
     public static final Predicate<Project> PROJECT_PREDICATE =
         new PredicateImpl<Project>() {
-          @Override
           public boolean test(Project project) {
             for (RexNode node : project.getProjects()) {
               try {
@@ -2564,7 +2529,6 @@ public class RexUtil {
     /** Returns whether a {@link Filter} contains a sub-query. */
     public static final Predicate<Filter> FILTER_PREDICATE =
         new PredicateImpl<Filter>() {
-          @Override
           public boolean test(Filter filter) {
             try {
               filter.getCondition().accept(INSTANCE);
@@ -2578,7 +2542,6 @@ public class RexUtil {
     /** Returns whether a {@link Join} contains a sub-query. */
     public static final Predicate<Join> JOIN_PREDICATE =
         new PredicateImpl<Join>() {
-          @Override
           public boolean test(Join join) {
             try {
               join.getCondition().accept(INSTANCE);
