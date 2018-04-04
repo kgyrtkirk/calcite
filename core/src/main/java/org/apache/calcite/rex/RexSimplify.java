@@ -174,7 +174,7 @@ public class RexSimplify {
       return call;
     }
     List<RexNode> ops = call.getOperands();
-    switch(ops.size()) {
+    switch (ops.size()) {
     case 1:
       return rexBuilder.makeLiteral(true);
     case 2:
