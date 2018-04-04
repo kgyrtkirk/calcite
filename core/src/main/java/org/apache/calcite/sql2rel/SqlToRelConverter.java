@@ -1048,17 +1048,6 @@ public class SqlToRelConverter {
 
       if (query instanceof SqlNodeList) {
         SqlNodeList valueList = (SqlNodeList) query;
-
-        if (leftKeys.size() == 1) {
-          List<RexNode> ops = Lists.newArrayList();
-          ops.add(leftKeys.get(0));
-          for (SqlNode a : valueList) {
-            ops.add(bb.convertExpression(a));
-          }
-          subQuery.expr = rexBuilder.makeCall(SqlStdOperatorTable.IN, ops);
-          return;
-        }
-
         if (!containsNullLiteral(valueList)
             && valueList.size() < config.getInSubQueryThreshold()) {
           // We're under the threshold, so convert to OR.
@@ -1068,7 +1057,6 @@ public class SqlToRelConverter {
                   leftKeys,
                   valueList,
                   (SqlInOperator) call.getOperator());
-
           return;
         }
 
