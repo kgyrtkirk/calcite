@@ -170,7 +170,9 @@ public class RexSimplify {
   }
 
   private RexNode simplifyIn(RexCall call) {
-    //    if(call.isA(kinds))
+    if (call.getClass() != RexCall.class) {
+      return call;
+    }
     List<RexNode> ops = call.getOperands();
     switch(ops.size()) {
     case 1:
