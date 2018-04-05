@@ -380,7 +380,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       final List<RexNode> expandedExprList = Lists.newArrayList();
       final RexShuttle shuttle =
           new RexShuttle() {
-            @Override
             public RexNode visitLocalRef(RexLocalRef localRef) {
               return expandedExprList.get(localRef.getIndex());
             }
@@ -597,8 +596,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     if (!predicates.constantMap.isEmpty()) {
       //noinspection unchecked
       final List<Map.Entry<RexNode, RexNode>> pairs =
-          (List<Map.Entry<RexNode, RexNode>>) (List)
-              Lists.newArrayList(predicates.constantMap.entrySet());
+          Lists.newArrayList(predicates.constantMap.entrySet());
       RexReplacer replacer =
           new RexReplacer(simplify, Pair.left(pairs), Pair.right(pairs),
               Collections.nCopies(pairs.size(), false));
@@ -1068,6 +1066,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     }
   }
 
+  /** Substitutes an IN into ORs */
   protected static class SubstituteInShuttle extends RexShuttle {
 
     private RexBuilder rexBuilder;
@@ -1077,8 +1076,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       this.rexBuilder = rexBuilder;
     }
 
-    @Override
-    public RexNode visitCall(RexCall call) {
+    @Override public RexNode visitCall(RexCall call) {
       for (;;) {
         call = (RexCall) super.visitCall(call);
         final RexCall old = call;
@@ -1112,7 +1110,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       }
       List<RexNode> ops = call.getOperands();
       RexNode newRex = getReplacement(ops);
-      
+
       return null;
     }
 
