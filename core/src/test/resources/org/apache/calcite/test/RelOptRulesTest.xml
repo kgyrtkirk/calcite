@@ -456,7 +456,7 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testCaseIsWorking">
+    <TestCase name="testCasePushIsAlwaysWorking">
         <Resource name="sql">
             <![CDATA[select empno from emp where case when sal > 1000 then empno else sal end = 1]]>
         </Resource>
