@@ -558,8 +558,8 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   protected static boolean reduceExpressionsInternal(RelNode rel,
       RexSimplify simplify, List<RexNode> expList,
       RelOptPredicateList predicates) {
+    boolean changed = false;
     // Replace predicates on CASE to CASE on predicates.
-    boolean changed=false;
     changed |= new CaseShuttle().mutate(expList);
 
     // Find reducible expressions.
