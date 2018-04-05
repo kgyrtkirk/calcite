@@ -560,8 +560,9 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       RexSimplify simplify, List<RexNode> expList,
       RelOptPredicateList predicates) {
     // Replace predicates on CASE to CASE on predicates.
-    new CaseShuttle().mutate(expList);
-    new SubstituteInShuttle(simplify.rexBuilder).mutate(expList);
+    boolean changed=false;
+    changed |= new CaseShuttle().mutate(expList);
+    changed |= new SubstituteInShuttle(simplify.rexBuilder).mutate(expList);
 
     // Find reducible expressions.
     final List<RexNode> constExps = Lists.newArrayList();
@@ -570,7 +571,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     findReducibleExps(rel.getCluster().getTypeFactory(), expList,
         predicates.constantMap, constExps, addCasts, removableCasts);
     if (constExps.isEmpty() && removableCasts.isEmpty()) {
-      return false;
+      return changed;
     }
 
     // Remove redundant casts before reducing constant expressions.
@@ -614,7 +615,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       // final RexExecutorImpl executor =
       //   new RexExecutorImpl(Schemas.createDataContext(null));
       // rootRel.getCluster().getPlanner().setExecutor(executor);
-      return false;
+      return changed;
     }
 
     final List<RexNode> reducedValues = Lists.newArrayList();
@@ -623,7 +624,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     // Use RexNode.digest to judge whether each newly generated RexNode
     // is equivalent to the original one.
     if (RexUtil.strings(constExps).equals(RexUtil.strings(reducedValues))) {
-      return false;
+      return changed;
     }
 
     // For Project, we have to be sure to preserve the result
@@ -1100,8 +1101,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         RexNode rexNode = ops.get(i);
         newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, leftOp, rexNode));
       }
-      //      return rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands);
-      return null;
+      return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
     }
 
     private RexNode simplifyIn(RexCall call) {
