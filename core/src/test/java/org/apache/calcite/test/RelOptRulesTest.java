@@ -3430,7 +3430,7 @@ public class RelOptRulesTest extends RelOptTestBase {
 
   @Test public void testInDecomposition() {
     HepProgram program = new HepProgramBuilder()
-        //        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
         .build();
 
     final RelOptCluster cluster =
