@@ -2002,7 +2002,8 @@ public class RelOptRulesTest extends RelOptTestBase {
         .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
         .build();
 
-    final String sql = "select empno from emp where case when sal > 1000 then empno else sal end = 1";
+    final String sql = "select empno from emp"
+        + " where case when sal > 1000 then empno else sal end = 1";
     checkPlanning(program, sql);
   }
 
