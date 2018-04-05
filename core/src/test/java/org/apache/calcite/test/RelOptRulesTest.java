@@ -19,6 +19,7 @@ package org.apache.calcite.test;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.plan.Context;
 import org.apache.calcite.plan.Contexts;
+import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptUtil;
@@ -101,10 +102,14 @@ import org.apache.calcite.rel.rules.UnionToDistinctRule;
 import org.apache.calcite.rel.rules.ValuesReduceRule;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.runtime.PredicateImpl;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -3423,21 +3428,23 @@ public class RelOptRulesTest extends RelOptTestBase {
         "select * from (values (false),(true)) as q (col1) where not(col1)");
   }
 
-  @Test public void testInDecompose() {
+  @Test public void testInDecomposition() {
     HepProgram program = new HepProgramBuilder()
-        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        //        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
         .build();
 
-//    clust
-//    RelNode root =
-//        builder.scan("EMP")
-//            .filter(builder.literal(true))
-//            .build();
-//    protected void checkPlanning(Tester tester, HepProgram preProgram, RelOptPlanner planner, boolean unchanged,
-//        final RelNode relInitial) throws AssertionError {
-    //    tester
+    final RelOptCluster cluster =
+        RelOptCluster.create(tester.getPlanner(), new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT)));
 
-    RelNode root = null;
+    MockCatalogReader a = new MockCatalogReader(cluster.getTypeFactory(), false).init();
+    RelBuilder builder = RelFactories.LOGICAL_BUILDER.create(cluster, a);
+    RelNode root =
+        builder.scan("emp")
+            .filter(
+                builder.call(SqlStdOperatorTable.IN,
+                    builder.field("EMPNO"), builder.literal(1), builder.literal(10)))
+            .build();
+
     checkPlanning(tester, program, new HepPlanner(program), true, root);
   }
 

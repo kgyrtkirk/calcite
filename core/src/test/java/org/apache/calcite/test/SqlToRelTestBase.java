@@ -147,6 +147,8 @@ public abstract class SqlToRelTestBase {
      */
     RelRoot convertSqlToRel(String sql);
 
+    RelOptPlanner getPlanner();
+
     SqlNode parseQuery(String sql) throws Exception;
 
     /**
@@ -628,7 +630,7 @@ public abstract class SqlToRelTestBase {
       return new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
     }
 
-    protected final RelOptPlanner getPlanner() {
+    @Override public final RelOptPlanner getPlanner() {
       if (planner == null) {
         planner = createPlanner();
       }
