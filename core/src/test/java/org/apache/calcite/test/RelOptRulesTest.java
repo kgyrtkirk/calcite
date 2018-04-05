@@ -3423,6 +3423,24 @@ public class RelOptRulesTest extends RelOptTestBase {
         "select * from (values (false),(true)) as q (col1) where not(col1)");
   }
 
+  @Test public void testInDecompose() {
+    HepProgram program = new HepProgramBuilder()
+        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        .build();
+
+//    clust
+//    RelNode root =
+//        builder.scan("EMP")
+//            .filter(builder.literal(true))
+//            .build();
+//    protected void checkPlanning(Tester tester, HepProgram preProgram, RelOptPlanner planner, boolean unchanged,
+//        final RelNode relInitial) throws AssertionError {
+    //    tester
+
+    RelNode root = null;
+    checkPlanning(tester, program, new HepPlanner(program), true, root);
+  }
+
   private Sql checkSubQuery(String sql) {
     final HepProgram program = new HepProgramBuilder()
         .addRuleInstance(SubQueryRemoveRule.PROJECT)
