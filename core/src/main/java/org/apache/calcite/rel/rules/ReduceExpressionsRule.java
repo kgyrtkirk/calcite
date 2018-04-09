@@ -1094,38 +1094,34 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       }
     }
 
+    /** Helper class to represent compareOps / disjunctive forms which are connected to
+     * the same variable */
     class CandidateGroup {
 
-
       List<RexNode> compareOp = new ArrayList<>();
-      List<RexNode> dnf = new ArrayList<>();
+      List<RexNode> dfs = new ArrayList<>();
       private RexNode result = null;
+
       public void addMember(RexNode rexNode) {
         if (rexNode.getKind() == SqlKind.OR) {
-            dnf.add(rexNode);
-          } else {
-            compareOp.add(rexNode);
-          }
+          dfs.add(rexNode);
+        } else {
+          compareOp.add(rexNode);
+        }
       }
 
       public boolean pushIn() {
-        if (dnf.size() != 1 || compareOp.size() != 1) {
+        if (dfs.size() != 1 || compareOp.size() != 1) {
           return false;
         }
-
-        List<RexNode> orOps = ((RexCall) dnf.get(0)).getOperands();
-        RexCall cmpOp = ((RexCall) compareOp.get(0));
-
+        List<RexNode> orOps = ((RexCall) dfs.get(0)).getOperands();
+        RexCall cmpOp = (RexCall) compareOp.get(0);
         List<RexNode> newOps = new ArrayList<>();
-
         for (RexNode rexNode : orOps) {
           newOps.add(rexBuilder.makeCall(SqlStdOperatorTable.AND, rexNode, cmpOp));
         }
-
         result = rexBuilder.makeCall(SqlStdOperatorTable.OR, newOps);
-
         return true;
-
       }
 
       public List<RexNode> getResults() {
@@ -1134,7 +1130,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         }
         List<RexNode> ret = new ArrayList<>();
         ret.addAll(compareOp);
-        ret.addAll(dnf);
+        ret.addAll(dfs);
         return ret;
       }
 
