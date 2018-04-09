@@ -1133,34 +1133,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
   }
 
-  //  /**
-  //   * Singleton rule that reduces constants inside a
-  //   * {@link org.apache.calcite.rel.logical.LogicalFilter}.
-  //   */
-  //  public static final ReduceExpressionsRule FILTER_INSTANCE2 =
-  //      new ReplaceInRule(LogicalFilter.class, true,
-  //          RelFactories.LOGICAL_BUILDER);
-  //  /**
-  //   * Rule that FIXME
-  //   */
-  //  public static class ReplaceInRule extends ReduceExpressionsRule {
-  //
-  //    protected ReplaceInRule(Class<? extends RelNode> clazz, boolean matchNullability,
-  //        RelBuilderFactory relBuilderFactory) {
-  //      super(clazz, matchNullability, relBuilderFactory, "ReplaceInRule;" + clazz.getName());
-  //    }
-  //
-  //    @Override public void onMatch(RelOptRuleCall call) {
-  //
-  //
-  //      call.transformTo(
-  //          newRel
-  //      );
-  //
-  //    }
-  //
-  //  }
-
 }
 
 // End ReduceExpressionsRule.java
