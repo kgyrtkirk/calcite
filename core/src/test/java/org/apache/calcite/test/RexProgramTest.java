@@ -1472,6 +1472,15 @@ public class RexProgramTest {
     final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
     final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
     final RexLiteral literal10 = rexBuilder.makeExactLiteral(BigDecimal.TEN);
+
+    checkSimplifyFilter(
+        or(
+            or(
+                eq(aRef, literal1),
+                eq(aRef, literal1)),
+            eq(aRef, literal1)),
+        "=(?0.a, 1)");
+
     checkSimplifyFilter(
         or(
             and(

@@ -73,6 +73,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -1070,6 +1071,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   }
 
   /** Substitutes an IN into ORs */
+  @Deprecated
   protected static class SubstituteInShuttle extends RexShuttle {
 
     private RexBuilder rexBuilder;
@@ -1090,9 +1092,105 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       }
     }
 
+    class CandidateGroup {
+
+
+      List<RexNode> compareOp = new ArrayList<>();
+      List<RexNode> dnf = new ArrayList<>();
+      private RexNode result = null;
+      public void addMember(RexNode rexNode) {
+        if (rexNode.getKind() == SqlKind.OR) {
+            dnf.add(rexNode);
+          } else {
+            compareOp.add(rexNode);
+          }
+      }
+
+      public boolean pushIn() {
+        if (dnf.size() != 1 || compareOp.size() != 1) {
+          return false;
+        }
+
+        List<RexNode> orOps = ((RexCall) dnf.get(0)).getOperands();
+        RexCall cmpOp = ((RexCall) compareOp.get(0));
+
+        List<RexNode> newOps = new ArrayList<>();
+
+        for (RexNode rexNode : orOps) {
+          newOps.add(rexBuilder.makeCall(SqlStdOperatorTable.AND, rexNode, cmpOp));
+        }
+
+        result = rexBuilder.makeCall(SqlStdOperatorTable.OR, newOps);
+
+        return true;
+
+      }
+
+      public List<RexNode> getResults() {
+        if (result != null) {
+          return Lists.newArrayList(result);
+        }
+        List<RexNode> ret = new ArrayList<>();
+        ret.addAll(compareOp);
+        ret.addAll(dnf);
+        return ret;
+      }
+
+    }
+
+    @Deprecated
     private RexCall decomposeIn(RexCall call) {
-      if (true) {
+
+      //      ImmutableBitSet left = RelOptUtil.InputFinder.bits(equalsOperands.get(0));
+
+      List<RexNode> others = new ArrayList<>();
+
+      if (call.getKind() != SqlKind.AND) {
         return call;
+      }
+
+      List<RexNode> ops = call.getOperands();
+      Map<ImmutableBitSet,      CandidateGroup> candidateMap=new HashMap<>();
+
+      for (RexNode rexNode : ops) {
+        ImmutableBitSet k = RelOptUtil.InputFinder.bits(rexNode);
+        if (k.cardinality() == 1) {
+          CandidateGroup c;
+          switch (rexNode.getKind()) {
+          case OR:
+          case EQUALS:
+            c=candidateMap.getOrDefault(k, new CandidateGroup());
+            c.addMember(rexNode);
+            candidateMap.put(k, c);
+            continue;
+          default:
+            // FIXME omit k calc if possible?
+            break;
+          }
+        }
+        others.add(rexNode);
+      }
+
+      boolean changed = false;
+      for (CandidateGroup group : candidateMap.values()) {
+        changed |= group.pushIn();
+      }
+
+      if (!changed) {
+        return call;
+      }
+
+      for (CandidateGroup group : candidateMap.values()) {
+        others.addAll(group.getResults());
+      }
+
+      if (others.size() > 1) {
+        return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, others);
+      } else {
+        return (RexCall)others.get(0);
+      /*      if (false) {
+      for (RexNode rexNode : others) {
+
       }
 
       if (call.getClass() != RexCall.class) {
@@ -1101,7 +1199,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       if (call.getKind() != SqlKind.IN) {
         return call;
       }
-      List<RexNode> ops = call.getOperands();
+        //      List<RexNode> ops = call.getOperands();
       List<RexNode> newOperands = new ArrayList<>();
 
       RexNode leftOp = ops.get(0);
@@ -1110,7 +1208,9 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, leftOp, rexNode));
       }
       return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
-    }
+      }
+        */
+      } }
 
     private RexNode getReplacement(List<RexNode> ops) {
       switch (ops.size()) {
