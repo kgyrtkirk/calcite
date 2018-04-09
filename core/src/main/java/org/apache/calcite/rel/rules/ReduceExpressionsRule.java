@@ -558,9 +558,10 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   protected static boolean reduceExpressionsInternal(RelNode rel,
       RexSimplify simplify, List<RexNode> expList,
       RelOptPredicateList predicates) {
+    boolean changed = false;
     // Replace predicates on CASE to CASE on predicates.
-    new CaseShuttle().mutate(expList);
-    new SubstituteInShuttle(simplify.rexBuilder).mutate(expList);
+    changed |= new CaseShuttle().mutate(expList);
+    changed |= new SubstituteInShuttle(simplify.rexBuilder).mutate(expList);
 
     // Find reducible expressions.
     final List<RexNode> constExps = Lists.newArrayList();
@@ -569,7 +570,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     findReducibleExps(rel.getCluster().getTypeFactory(), expList,
         predicates.constantMap, constExps, addCasts, removableCasts);
     if (constExps.isEmpty() && removableCasts.isEmpty()) {
-      return false;
+      return changed;
     }
 
     // Remove redundant casts before reducing constant expressions.
@@ -613,7 +614,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       // final RexExecutorImpl executor =
       //   new RexExecutorImpl(Schemas.createDataContext(null));
       // rootRel.getCluster().getPlanner().setExecutor(executor);
-      return false;
+      return changed;
     }
 
     final List<RexNode> reducedValues = Lists.newArrayList();
@@ -622,7 +623,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     // Use RexNode.digest to judge whether each newly generated RexNode
     // is equivalent to the original one.
     if (RexUtil.strings(constExps).equals(RexUtil.strings(reducedValues))) {
-      return false;
+      return changed;
     }
 
     // For Project, we have to be sure to preserve the result

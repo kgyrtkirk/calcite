@@ -456,6 +456,25 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testCasePushIsAlwaysWorking">
+        <Resource name="sql">
+            <![CDATA[select empno from emp where case when sal > 1000 then empno else sal end = 1]]>
+        </Resource>
+        <Resource name="planBefore">
+            <![CDATA[
+LogicalProject(EMPNO=[$0])
+  LogicalFilter(condition=[=(CASE(>($5, 1000), $0, $5), 1)])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+        <Resource name="planAfter">
+            <![CDATA[
+LogicalProject(EMPNO=[$0])
+  LogicalFilter(condition=[CASE(>($5, 1000), =($0, 1), =($5, 1))])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testCorrelationScalarAggAndFilter">
         <Resource name="sql">
             <![CDATA[SELECT e1.empno
@@ -8262,6 +8281,20 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
             LogicalFilter(condition=[>($2, 2)])
               LogicalProject(ENAME=[$1], EMPNO=[$0], R=[$5])
                 LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+    </TestCase>
+    <TestCase name="testFilterRemoveIsNotDistinctFromRule">
+        <Resource name="planBefore">
+          <![CDATA[
+LogicalFilter(condition=[IS NOT DISTINCT FROM($7, 20)])
+  LogicalTableScan(table=[[scott, EMP]])
+]]>
+        </Resource>
+        <Resource name="planAfter">
+          <![CDATA[
+LogicalFilter(condition=[CASE(IS NULL($7), IS NULL(20), =(CAST($7):TINYINT NOT NULL, 20))])
+  LogicalTableScan(table=[[scott, EMP]])
 ]]>
         </Resource>
     </TestCase>
