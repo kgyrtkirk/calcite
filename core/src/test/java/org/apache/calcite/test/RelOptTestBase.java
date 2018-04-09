@@ -139,16 +139,7 @@ abstract class RelOptTestBase extends SqlToRelTestBase {
     final DiffRepository diffRepos = getDiffRepos();
     String sql2 = diffRepos.expand("sql", sql);
     final RelRoot root = tester.convertSqlToRel(sql2);
-    checkPlanning(tester, preProgram, planner, unchanged, root.rel);
-  }
-
-  /**
-   * Checks the plan for the give relInitial before/after executing a given rule,
-   * with a pre-program to prepare the tree.
-   */
-  protected void checkPlanning(Tester tester, HepProgram preProgram, RelOptPlanner planner,
-      boolean unchanged, final RelNode relInitial) throws AssertionError {
-    final DiffRepository diffRepos = getDiffRepos();
+    final RelNode relInitial = root.rel;
 
     assertTrue(relInitial != null);
 
