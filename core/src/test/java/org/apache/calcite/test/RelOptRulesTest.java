@@ -177,6 +177,7 @@ import static org.junit.Assert.assertTrue;
 public class RelOptRulesTest extends RelOptTestBase {
   //~ Methods ----------------------------------------------------------------
 
+  @Override
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(RelOptRulesTest.class);
   }
@@ -408,6 +409,7 @@ public class RelOptRulesTest extends RelOptTestBase {
             + "where dept1.c1 > 'c' and (dept1.c2 > 30 or dept1.c1 < 'z')");
   }
 
+
   /** Test case for
    * <a href="https://issues.apache.org/jira/browse/CALCITE-799">[CALCITE-799]
    * Incorrect result for {@code HAVING count(*) > 1}</a>. */
@@ -417,8 +419,8 @@ public class RelOptRulesTest extends RelOptTestBase {
             .addRuleInstance(FilterAggregateTransposeRule.INSTANCE)
             .build();
     final String sql = "select deptno from emp\n"
-        + "group by deptno having count(*) > 1";
-    checkPlanUnchanged(new HepPlanner(program), sql);
+        + " where deptno = 2 and (deptno = 2 or deptno = 3)";
+    checkPlanning(new HepPlanner(program), sql);
   }
 
   /** Test case for
@@ -449,6 +451,7 @@ public class RelOptRulesTest extends RelOptTestBase {
             .build();
     final FilterJoinRule.Predicate predicate =
         new FilterJoinRule.Predicate() {
+          @Override
           public boolean apply(Join join, JoinRelType joinType, RexNode exp) {
             return joinType != JoinRelType.INNER;
           }
@@ -1536,6 +1539,32 @@ public class RelOptRulesTest extends RelOptTestBase {
     checkPlanning(program, sql);
   }
 
+  @Test public void testReduceConstantsDup3() throws Exception {
+    HepProgram program = new HepProgramBuilder()
+        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE)
+        //        .addRuleInstance(FilterProjectTransposeRule.INSTANCE)
+        //        .addRuleInstance(FilterSetOpTransposeRule.INSTANCE)
+        //        .addRuleInstance(FilterToCalcRule.INSTANCE)
+        //        .addRuleInstance(ProjectToCalcRule.INSTANCE)
+        //        .addRuleInstance(CalcMergeRule.INSTANCE)
+        //        .addRuleInstance(ReduceExpressionsRule.CALC_INSTANCE)
+
+        // the hard part is done... a few more rule calls to clean up
+        //        .addRuleInstance(PruneEmptyRules.UNION_INSTANCE)
+        //        .addRuleInstance(ProjectToCalcRule.INSTANCE)
+        //        .addRuleInstance(CalcMergeRule.INSTANCE)
+        //                .addRuleInstance(ReduceExpressionsRule.CALC_INSTANCE)
+        .addRuleInstance(ValuesReduceRule.FILTER_INSTANCE)
+        .build();
+
+    final String sql = "select d.deptno"
+        + " from dept d"
+        + " where d.deptno=7 and (d.deptno = 1 or d.deptno = 7)";
+    checkPlanning(new HepPlanner(program), sql);
+  }
+
   @Test public void testPullNull() throws Exception {
     HepProgram program = new HepProgramBuilder()
         .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
@@ -1798,6 +1827,7 @@ public class RelOptRulesTest extends RelOptTestBase {
   private void checkPlanning(String query) throws Exception {
     final Tester tester1 = tester.withCatalogReaderFactory(
         new Function<RelDataTypeFactory, Prepare.CatalogReader>() {
+          @Override
           public Prepare.CatalogReader apply(RelDataTypeFactory typeFactory) {
             return new MockCatalogReader(typeFactory, true) {
               @Override public MockCatalogReader init() {
@@ -2612,6 +2642,7 @@ public class RelOptRulesTest extends RelOptTestBase {
                     new PredicateImpl<Project>() {
                       int matchCount = 0;
 
+                      @Override
                       public boolean test(@Nullable Project project) {
                         return matchCount++ == 0;
                       }

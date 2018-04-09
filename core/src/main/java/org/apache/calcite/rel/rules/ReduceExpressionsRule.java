@@ -153,6 +153,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
     @Override public void onMatch(RelOptRuleCall call) {
       final Filter filter = call.rel(0);
+      RelNode origFilter = filter.copy(filter.getTraitSet(), filter.getInputs());
       final List<RexNode> expList =
           Lists.newArrayList(filter.getCondition());
       RexNode newConditionExp;
@@ -199,6 +200,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         return;
       }
 
+      call.getPlanner().ensureRegistered(origFilter, filter);
       // New plan is absolutely better than old plan.
       call.getPlanner().setImportance(filter, 0.0);
     }
@@ -380,7 +382,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       final List<RexNode> expandedExprList = Lists.newArrayList();
       final RexShuttle shuttle =
           new RexShuttle() {
-            public RexNode visitLocalRef(RexLocalRef localRef) {
+            @Override public RexNode visitLocalRef(RexLocalRef localRef) {
               return expandedExprList.get(localRef.getIndex());
             }
           };
@@ -1089,6 +1091,10 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     }
 
     private RexCall decomposeIn(RexCall call) {
+      if (true) {
+        return call;
+      }
+
       if (call.getClass() != RexCall.class) {
         return call;
       }
