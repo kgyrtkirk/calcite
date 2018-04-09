@@ -1129,9 +1129,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       }
       return rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
     }
-
   }
-
 }
 
 // End ReduceExpressionsRule.java

@@ -285,10 +285,6 @@ public class RexProgramTest {
     return rexBuilder.makeCall(SqlStdOperatorTable.GREATER_THAN, n1, n2);
   }
 
-  private RexNode in(RexNode... nodes) {
-    return rexBuilder.makeCall(SqlStdOperatorTable.IN, nodes);
-  }
-
   /**
    * Tests construction of a RexProgram.
    */
@@ -1457,8 +1453,6 @@ public class RexProgramTest {
         RelOptPredicateList.of(rexBuilder,
             ImmutableList.of(le(aRef, literal5), le(bRef, literal5))),
         "false");
-
-    checkSimplifyFilter(in(aRef, literal1, literal10), "OR(=(?0.a, 1), =(?0.a, 10))");
   }
 
   /** Unit test for
