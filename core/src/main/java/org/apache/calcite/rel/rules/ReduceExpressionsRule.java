@@ -107,6 +107,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       new FilterReduceExpressionsRule(LogicalFilter.class, true,
           RelFactories.LOGICAL_BUILDER);
 
+
   /**
    * Singleton rule that reduces constants inside a
    * {@link org.apache.calcite.rel.logical.LogicalProject}.
@@ -1100,9 +1101,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         RexNode rexNode = ops.get(i);
         newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, leftOp, rexNode));
       }
-      //      return rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands);
-      return null;
-
+      return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
     }
 
     private RexNode simplifyIn(RexCall call) {
@@ -1112,7 +1111,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       List<RexNode> ops = call.getOperands();
       RexNode newRex = getReplacement(ops);
 
-      return null;
+      return newRex;
     }
 
     private RexNode getReplacement(List<RexNode> ops) {
@@ -1133,6 +1132,34 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     }
 
   }
+
+  //  /**
+  //   * Singleton rule that reduces constants inside a
+  //   * {@link org.apache.calcite.rel.logical.LogicalFilter}.
+  //   */
+  //  public static final ReduceExpressionsRule FILTER_INSTANCE2 =
+  //      new ReplaceInRule(LogicalFilter.class, true,
+  //          RelFactories.LOGICAL_BUILDER);
+  //  /**
+  //   * Rule that FIXME
+  //   */
+  //  public static class ReplaceInRule extends ReduceExpressionsRule {
+  //
+  //    protected ReplaceInRule(Class<? extends RelNode> clazz, boolean matchNullability,
+  //        RelBuilderFactory relBuilderFactory) {
+  //      super(clazz, matchNullability, relBuilderFactory, "ReplaceInRule;" + clazz.getName());
+  //    }
+  //
+  //    @Override public void onMatch(RelOptRuleCall call) {
+  //
+  //
+  //      call.transformTo(
+  //          newRel
+  //      );
+  //
+  //    }
+  //
+  //  }
 
 }
 
