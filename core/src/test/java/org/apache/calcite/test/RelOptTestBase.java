@@ -146,8 +146,8 @@ abstract class RelOptTestBase extends SqlToRelTestBase {
    * Checks the plan for the give relInitial before/after executing a given rule,
    * with a pre-program to prepare the tree.
    */
-  protected void checkPlanning(Tester tester, HepProgram preProgram, RelOptPlanner planner, boolean unchanged,
-      final RelNode relInitial) throws AssertionError {
+  protected void checkPlanning(Tester tester, HepProgram preProgram, RelOptPlanner planner,
+      boolean unchanged, final RelNode relInitial) throws AssertionError {
     final DiffRepository diffRepos = getDiffRepos();
 
     assertTrue(relInitial != null);

@@ -3446,17 +3446,17 @@ public class RelOptRulesTest extends RelOptTestBase {
         .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
         .build();
 
-    final RelOptCluster cluster =
-        RelOptCluster.create(tester.getPlanner(), new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT)));
+    final RelOptCluster cluster = RelOptCluster.create(tester.getPlanner(),
+        new RexBuilder(new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT)));
 
     MockCatalogReader a = new MockCatalogReader(cluster.getTypeFactory(), false).init();
     RelBuilder builder = RelFactories.LOGICAL_BUILDER.create(cluster, a);
     RelNode root =
-        builder.scan("emp")
-            .filter(
-                builder.call(SqlStdOperatorTable.IN,
-                    builder.field("EMPNO"), builder.literal(1), builder.literal(10)))
-            .build();
+          builder.scan("emp")
+              .filter(
+                  builder.call(SqlStdOperatorTable.IN,
+                      builder.field("EMPNO"), builder.literal(1), builder.literal(10)))
+              .build();
 
     checkPlanning(tester, program, new HepPlanner(program), true, root);
   }
