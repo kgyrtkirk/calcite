@@ -107,7 +107,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       new FilterReduceExpressionsRule(LogicalFilter.class, true,
           RelFactories.LOGICAL_BUILDER);
 
-
   /**
    * Singleton rule that reduces constants inside a
    * {@link org.apache.calcite.rel.logical.LogicalProject}.
