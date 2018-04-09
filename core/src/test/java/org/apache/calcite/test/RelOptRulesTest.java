@@ -1583,19 +1583,6 @@ public class RelOptRulesTest extends RelOptTestBase {
     checkPlanning(new HepPlanner(program), sql);
   }
 
-  @Test public void testDistributeConditionIntoOr2() throws Exception {
-    HepProgram program = new HepProgramBuilder()
-        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
-        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
-        .addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE)
-        .build();
-
-    final String sql = "select mgr"
-        + " from emp"
-        + " where empno=10 and deptno=1 and (deptno = 1 or deptno = 2) and (empno=10 or empno=11)";
-    checkPlanning(new HepPlanner(program), sql);
-  }
-
   // see HIVE-9645
   @Test public void testReduceConstantsNullEqualsOne() throws Exception {
     HepProgram program = new HepProgramBuilder()

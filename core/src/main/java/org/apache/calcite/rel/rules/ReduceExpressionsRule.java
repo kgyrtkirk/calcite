@@ -564,7 +564,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     boolean changed = false;
     // Replace predicates on CASE to CASE on predicates.
     changed |= new CaseShuttle().mutate(expList);
-    changed |= new SubstituteInShuttle(simplify.rexBuilder).mutate(expList);
+    changed |= new SubstituteInShuttle(simplify).mutate(expList);
 
     // Find reducible expressions.
     final List<RexNode> constExps = Lists.newArrayList();
@@ -1075,10 +1075,12 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   protected static class SubstituteInShuttle extends RexShuttle {
 
     private RexBuilder rexBuilder;
+    private RexSimplify simplify;
 
-    public SubstituteInShuttle(RexBuilder rexBuilder) {
+    public SubstituteInShuttle(RexSimplify simplify) {
       super();
-      this.rexBuilder = rexBuilder;
+      this.rexBuilder = simplify.rexBuilder;
+      this.simplify = simplify;
     }
 
     @Override public RexNode visitCall(RexCall call) {
@@ -1184,10 +1186,13 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         others.addAll(group.getResults());
       }
 
+      RexCall ret = null;
       if (others.size() > 1) {
-        return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, others);
+        ret = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, others);
       } else {
-        return (RexCall)others.get(0);
+        ret = (RexCall) others.get(0);
+      }
+      return ret;
       /*      if (false) {
       for (RexNode rexNode : others) {
 
@@ -1210,7 +1215,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
       }
         */
-      } }
+    }
 
     private RexNode getReplacement(List<RexNode> ops) {
       switch (ops.size()) {
