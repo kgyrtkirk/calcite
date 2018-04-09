@@ -154,7 +154,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
     @Override public void onMatch(RelOptRuleCall call) {
       final Filter filter = call.rel(0);
-      RelNode origFilter = filter.copy(filter.getTraitSet(), filter.getInputs());
       final List<RexNode> expList =
           Lists.newArrayList(filter.getCondition());
       RexNode newConditionExp;
@@ -201,7 +200,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         return;
       }
 
-      call.getPlanner().ensureRegistered(origFilter, filter);
       // New plan is absolutely better than old plan.
       call.getPlanner().setImportance(filter, 0.0);
     }
@@ -564,7 +562,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     boolean changed = false;
     // Replace predicates on CASE to CASE on predicates.
     changed |= new CaseShuttle().mutate(expList);
-    changed |= new SubstituteInShuttle(simplify).mutate(expList);
+    changed |= new PushConditionIntoOrShuttle(simplify).mutate(expList);
 
     // Find reducible expressions.
     final List<RexNode> constExps = Lists.newArrayList();
@@ -1070,14 +1068,16 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     }
   }
 
-  /** Substitutes an IN into ORs */
-  @Deprecated
-  protected static class SubstituteInShuttle extends RexShuttle {
+  /** Pushes a condition into an OR if they reference only 1 variable
+   *
+   * Example: a=1 && (a=1 || a=2)
+   */
+  protected static class PushConditionIntoOrShuttle extends RexShuttle {
 
     private RexBuilder rexBuilder;
     private RexSimplify simplify;
 
-    public SubstituteInShuttle(RexSimplify simplify) {
+    public PushConditionIntoOrShuttle(RexSimplify simplify) {
       super();
       this.rexBuilder = simplify.rexBuilder;
       this.simplify = simplify;
@@ -1087,7 +1087,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       for (;;) {
         call = (RexCall) super.visitCall(call);
         final RexCall old = call;
-        call = decomposeIn(call);
+        call = processCall(call);
         if (call == old) {
           return call;
         }
@@ -1140,11 +1140,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
     }
 
-    @Deprecated
-    private RexCall decomposeIn(RexCall call) {
-
-      //      ImmutableBitSet left = RelOptUtil.InputFinder.bits(equalsOperands.get(0));
-
+    private RexCall processCall(RexCall call) {
       List<RexNode> others = new ArrayList<>();
 
       if (call.getKind() != SqlKind.AND) {
@@ -1152,7 +1148,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       }
 
       List<RexNode> ops = call.getOperands();
-      Map<ImmutableBitSet,      CandidateGroup> candidateMap=new HashMap<>();
+      Map<ImmutableBitSet, CandidateGroup> candidateMap = new HashMap<>();
 
       for (RexNode rexNode : ops) {
         ImmutableBitSet k = RelOptUtil.InputFinder.bits(rexNode);
@@ -1161,7 +1157,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
           switch (rexNode.getKind()) {
           case OR:
           case EQUALS:
-            c=candidateMap.getOrDefault(k, new CandidateGroup());
+            c = candidateMap.getOrDefault(k, new CandidateGroup());
             c.addMember(rexNode);
             candidateMap.put(k, c);
             continue;
