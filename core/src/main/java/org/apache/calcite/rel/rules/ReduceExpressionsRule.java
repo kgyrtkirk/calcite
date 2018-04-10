@@ -1199,28 +1199,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         ret = (RexCall) others.get(0);
       }
       return ret;
-      /*      if (false) {
-      for (RexNode rexNode : others) {
-
-      }
-
-      if (call.getClass() != RexCall.class) {
-        return call;
-      }
-      if (call.getKind() != SqlKind.IN) {
-        return call;
-      }
-        //      List<RexNode> ops = call.getOperands();
-      List<RexNode> newOperands = new ArrayList<>();
-
-      RexNode leftOp = ops.get(0);
-      for (int i = 1; i < ops.size(); i++) {
-        RexNode rexNode = ops.get(i);
-        newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, leftOp, rexNode));
-      }
-      return (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands);
-      }
-        */
     }
 
     private RexNode getReplacement(List<RexNode> ops) {
