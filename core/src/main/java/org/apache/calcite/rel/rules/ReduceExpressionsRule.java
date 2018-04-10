@@ -1114,14 +1114,26 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         if (dfs.size() != 1 || compareOp.size() != 1) {
           return false;
         }
+        // in case this pushIn is not successfull; someone might pull out the "AND-ed operands"
+        boolean reduced = false;
         List<RexNode> orOps = ((RexCall) dfs.get(0)).getOperands();
         RexCall cmpOp = (RexCall) compareOp.get(0);
         List<RexNode> newOps = new ArrayList<>();
         for (RexNode rexNode : orOps) {
-          newOps.add(rexBuilder.makeCall(SqlStdOperatorTable.AND, rexNode, cmpOp));
+          RexNode newCall = rexBuilder.makeCall(SqlStdOperatorTable.AND, rexNode, cmpOp);
+          newCall = simplify.simplify(newCall);
+          if (newCall.isAlwaysFalse() || newCall.isAlwaysTrue()) {
+            // we have successfully burried an operand
+            reduced = true;
+          }
+          newOps.add(newCall);
         }
         result = rexBuilder.makeCall(SqlStdOperatorTable.OR, newOps);
-        return true;
+        result = simplify.simplify(result);
+        if (result.getKind() != SqlKind.OR) {
+          reduced = true;
+        }
+        return reduced;
       }
 
       public List<RexNode> getResults() {
@@ -1153,12 +1165,14 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
           switch (rexNode.getKind()) {
           case OR:
           case EQUALS:
-            c = candidateMap.getOrDefault(k, new CandidateGroup());
+            c = candidateMap.get(k);
+            if (c == null) {
+              c=new CandidateGroup();
+            }
             c.addMember(rexNode);
             candidateMap.put(k, c);
             continue;
           default:
-            // FIXME omit k calc if possible?
             break;
           }
         }
