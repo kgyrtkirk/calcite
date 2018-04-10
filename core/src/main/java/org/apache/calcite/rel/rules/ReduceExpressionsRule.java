@@ -1167,7 +1167,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
           case EQUALS:
             c = candidateMap.get(k);
             if (c == null) {
-              c=new CandidateGroup();
+              c = new CandidateGroup();
             }
             c.addMember(rexNode);
             candidateMap.put(k, c);
