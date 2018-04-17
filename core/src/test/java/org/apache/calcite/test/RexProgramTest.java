@@ -1203,8 +1203,9 @@ public class RexProgramTest {
         "AND(<=(?0.a, 1), >(?0.a, 1))",
         "false");
 
-    checkSimplify(and(le(aRef, literal1), ge(aRef, literal1)),
-        "AND(<=(?0.a, 1), >=(?0.a, 1))");
+    checkSimplify2(and(le(aRef, literal1), ge(aRef, literal1)),
+        "AND(<=(?0.a, 1), >=(?0.a, 1))",
+        "=(?0.a, 1)");
 
     checkSimplify2(and(lt(aRef, literal1), eq(aRef, literal1), ge(aRef, literal1)),
         "AND(<(?0.a, 1), =(?0.a, 1), >=(?0.a, 1))",
@@ -1357,7 +1358,7 @@ public class RexProgramTest {
     checkSimplifyFilter(
         and(lt(literal1, aRef), lt(aRef, literal5)),
         RelOptPredicateList.EMPTY,
-        "AND(<(1, ?0.a), <(?0.a, 5))");
+        "AND(<(?0.a, 5), <(1, ?0.a))");
 
     // condition "1 > a && 5 > x" yields "1 > a"
     checkSimplifyFilter(
@@ -1376,7 +1377,7 @@ public class RexProgramTest {
     checkSimplifyFilter(
         and(gt(aRef, literal1), lt(aRef, literal10), lt(aRef, literal5)),
         RelOptPredicateList.EMPTY,
-        "AND(>(?0.a, 1), <(?0.a, 5))");
+        "AND(<(?0.a, 5), >(?0.a, 1))");
 
     // condition "a > 1 && a < 10 && a < 5"
     // with pre-condition "a > 5"
@@ -1404,7 +1405,7 @@ public class RexProgramTest {
         and(gt(aRef, literal1), lt(aRef, literal10), lt(aRef, literal5)),
         RelOptPredicateList.of(rexBuilder,
             ImmutableList.of(lt(bRef, literal10), ge(aRef, literal1))),
-        "AND(>(?0.a, 1), <(?0.a, 5))");
+        "AND(<(?0.a, 5), >(?0.a, 1))");
 
     // condition "a > 1"
     // with pre-condition "b < 10 && a > 5"

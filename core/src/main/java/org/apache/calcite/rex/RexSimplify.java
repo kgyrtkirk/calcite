@@ -628,7 +628,11 @@ public class RexSimplify {
       //      s = withPredicates(preds);
     }
 
-    s.simplifyListA1(terms);
+    if (unknownAsFalse) {
+      s.simplifyListA1(terms);
+    } else {
+      s.simplifyList(terms);
+    }
 
     s.simplifyList(notTerms);
 
