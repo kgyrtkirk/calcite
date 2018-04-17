@@ -35,6 +35,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 
@@ -43,9 +44,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -537,36 +541,109 @@ public class RexSimplify {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     RelOptUtil.decomposeConjunction(e, terms, notTerms);
-    simplifyList(terms);
-    simplifyList(notTerms);
 
     final List<RexNode> predTerms = new ArrayList<>();
     for (RexNode rexNode : terms) {
-      if(SqlKind.COMPARISON.contains(rexNode.getKind())){
-        if (rexNode instanceof RexCall) {
-          RexCall rexCall = (RexCall) rexNode;
-          List<RexNode> operands = rexCall.getOperands();
-
-          if ((RexUtil.isReferenceOrAccess(operands.get(0), true)
-              && operands.get(1).isA(SqlKind.LITERAL))
-              || (RexUtil.isReferenceOrAccess(operands.get(1), true)
-                  && operands.get(1).isA(SqlKind.LITERAL))) {
-            predTerms.add(rexCall);
-          }
-        }
+      if (isLiteralComparision(rexNode)) {
+        predTerms.add(rexNode);
       }
     }
 
     RexSimplify s = this;
+    List<RexNode> pred = new LinkedList<>();
     if (!predTerms.isEmpty()) {
-      RelOptPredicateList preds = RelOptPredicateList.of(rexBuilder, predTerms);
+
+      Queue<RexNode> q = new LinkedList<>();
+
+      q.addAll(predTerms);
+
+      while (!q.isEmpty()) {
+
+        RexNode c = q.poll();
+        if (pred.isEmpty()) {
+          pred.add(c);
+          continue;
+        }
+
+        RexSimplify s1 =
+            withPredicates(RelOptPredicateList.of(rexBuilder, Lists.newArrayList(pred)));
+
+        final RexNode term2 = s1.simplifyUsingPredicates(c, Comparable.class);
+        if (c != term2) {
+          if (term2.isAlwaysTrue()) {
+            // implied
+            continue;
+          }
+          if (term2.isAlwaysFalse()) {
+            return rexBuilder.makeLiteral(false);
+          }
+        }
+        // c is stronger or not related
+        RexSimplify s2 =
+            withPredicates(RelOptPredicateList.of(rexBuilder, Lists.newArrayList(term2)));
+        for (Iterator<RexNode> iterator = pred.iterator(); iterator.hasNext();) {
+          RexNode rexNode = iterator.next();
+          final RexNode term3 = s2.simplifyUsingPredicates(rexNode, Comparable.class);
+          if (term3 != rexNode) {
+            if (term3.isAlwaysTrue()) {
+              iterator.remove();
+            }
+            if (term2.isAlwaysFalse()) {
+              return rexBuilder.makeLiteral(false);
+            }
+          }
+        }
+        pred.add(term2);
+      }
+
+      RelOptPredicateList preds = RelOptPredicateList.of(rexBuilder, pred);
       s = withPredicates(preds);
     }
 
+    s.simplifyList(terms);
+    s.simplifyList(notTerms);
+
+    RexNode retNode;
     if (unknownAsFalse) {
-      return s.simplifyAnd2ForUnknownAsFalse(terms, notTerms);
+      retNode = s.simplifyAnd2ForUnknownAsFalse(terms, notTerms);
+    } else {
+      retNode = s.simplifyAnd2(terms, notTerms);
     }
-    return s.simplifyAnd2(terms, notTerms);
+
+    if (retNode.isAlwaysFalse()) {
+      return retNode;
+    }
+    if (retNode.isAlwaysTrue()) {
+      retNode = RexUtil.composeConjunction(rexBuilder, pred, false);
+    } else {
+      if (retNode.getKind() == SqlKind.AND) {
+        RexCall retCall = (RexCall) retNode;
+        pred.addAll(retCall.getOperands());
+      } else {
+        pred.add(retNode);
+      }
+      retNode = RexUtil.composeConjunction(rexBuilder, pred, false);
+    }
+
+    return retNode;
+  }
+
+  private boolean isLiteralComparision(RexNode rexNode) {
+    boolean x = false;
+    if (SqlKind.COMPARISON.contains(rexNode.getKind())) {
+      if (rexNode instanceof RexCall) {
+        RexCall rexCall = (RexCall) rexNode;
+        List<RexNode> operands = rexCall.getOperands();
+
+        if ((RexUtil.isReferenceOrAccess(operands.get(0), true)
+            && operands.get(1).isA(SqlKind.LITERAL))
+            || (RexUtil.isReferenceOrAccess(operands.get(1), true)
+                && operands.get(1).isA(SqlKind.LITERAL))) {
+          x = true;
+        }
+      }
+    }
+    return x;
   }
 
   RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
