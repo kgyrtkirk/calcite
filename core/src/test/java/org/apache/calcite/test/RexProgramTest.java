@@ -1324,7 +1324,7 @@ public class RexProgramTest {
 
     // equality on constants, can remove the equality on the variables
     checkSimplifyFilter(and(eq(aRef, literal1), eq(bRef, literal1), eq(aRef, bRef)),
-        "AND(=(?0.a, 1), =(?0.b, 1))");
+        "AND(=(?0.b, 1), =(?0.a, 1))");
 
     // condition not satisfiable
     checkSimplifyFilter(and(eq(aRef, literal1), eq(bRef, literal10), eq(aRef, bRef)),

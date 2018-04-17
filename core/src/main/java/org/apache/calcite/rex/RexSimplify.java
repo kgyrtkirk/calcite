@@ -42,6 +42,7 @@ import com.google.common.collect.Range;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -267,6 +268,34 @@ public class RexSimplify {
   private void simplifyList(List<RexNode> terms) {
     for (int i = 0; i < terms.size(); i++) {
       terms.set(i, withUnknownAsFalse(false).simplify(terms.get(i)));
+    }
+  }
+
+  Comparator<? super RexNode> COMPARISIONS_FIRST_COMPARATOR = new Comparator<RexNode>() {
+
+    @Override public int compare(RexNode o1, RexNode o2) {
+      SqlKind k1 = o1.getKind();
+      SqlKind k2 = o2.getKind();
+      if (SqlKind.COMPARISON.contains(k1)) {
+        return -1;
+      }
+      if (SqlKind.COMPARISON.contains(k2)) {
+        return 1;
+      }
+      return k1.ordinal() - k2.ordinal();
+
+
+    }
+  };
+
+  private void simplifyListA1(List<RexNode> terms) {
+    terms.sort(COMPARISIONS_FIRST_COMPARATOR);
+    for (int i = 0; i < terms.size(); i++) {
+
+      RelOptPredicateList newPredicates =
+          predicates.union(rexBuilder, RelOptPredicateList.of(rexBuilder, terms.subList(0, i)));
+      RexSimplify simplify = withUnknownAsFalse(false).withPredicates(newPredicates);
+      terms.set(i, simplify.simplify(terms.get(i)));
     }
   }
 
@@ -551,7 +580,7 @@ public class RexSimplify {
 
     RexSimplify s = this;
     List<RexNode> pred = new LinkedList<>();
-    if (!predTerms.isEmpty()) {
+    if (false && !predTerms.isEmpty()) {
 
       Queue<RexNode> q = new LinkedList<>();
 
@@ -596,11 +625,11 @@ public class RexSimplify {
         pred.add(term2);
       }
 
-      RelOptPredicateList preds = RelOptPredicateList.of(rexBuilder, pred);
-      s = withPredicates(preds);
+      //      s = withPredicates(preds);
     }
 
-    s.simplifyList(terms);
+    s.simplifyListA1(terms);
+
     s.simplifyList(notTerms);
 
     RexNode retNode;
@@ -608,6 +637,9 @@ public class RexSimplify {
       retNode = s.simplifyAnd2ForUnknownAsFalse(terms, notTerms);
     } else {
       retNode = s.simplifyAnd2(terms, notTerms);
+    }
+    if (true) {
+      return retNode;
     }
 
     if (retNode.isAlwaysFalse()) {
@@ -687,6 +719,7 @@ public class RexSimplify {
 
   private <C extends Comparable<C>> RexNode simplifyAnd2ForUnknownAsFalse(
       List<RexNode> terms, List<RexNode> notTerms, Class<C> clazz) {
+    RexSimplify ss=this;
     for (RexNode term : terms) {
       if (term.isAlwaysFalse()) {
         return rexBuilder.makeLiteral(false);
@@ -806,10 +839,13 @@ public class RexSimplify {
         // or weaken terms that are partially implied.
         // E.g. given predicate "x >= 5" and term "x between 3 and 10"
         // we weaken to term to "x between 5 and 10".
-        final RexNode term2 = simplifyUsingPredicates(term, clazz);
+        final RexNode term2 = ss.simplifyUsingPredicates(term, clazz);
         if (term2 != term) {
           terms.set(i, term = term2);
         }
+        RelOptPredicateList newPreds = ss.predicates.union(rexBuilder,
+            RelOptPredicateList.of(rexBuilder, Lists.newArrayList(term)));
+//        ss = withPredicates(newPreds);
         // Range
         if (comparison != null
             && comparison.kind != SqlKind.NOT_EQUALS) { // not supported yet
