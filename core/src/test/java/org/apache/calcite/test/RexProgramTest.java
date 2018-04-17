@@ -1305,7 +1305,7 @@ public class RexProgramTest {
         ImmutableList.of(eq(eq(aRef, literal1), trueLiteral),
             eq(bRef, literal1));
     checkSimplifyFilter(and(args),
-        "AND(=(?0.a, 1), =(?0.b, 1))");
+        "AND(=(?0.b, 1), =(?0.a, 1))");
 
     // as previous, using simplifyFilterPredicates
     assertThat(simplify.withUnknownAsFalse(true)
