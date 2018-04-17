@@ -539,10 +539,34 @@ public class RexSimplify {
     RelOptUtil.decomposeConjunction(e, terms, notTerms);
     simplifyList(terms);
     simplifyList(notTerms);
-    if (unknownAsFalse) {
-      return simplifyAnd2ForUnknownAsFalse(terms, notTerms);
+
+    final List<RexNode> predTerms = new ArrayList<>();
+    for (RexNode rexNode : terms) {
+      if(SqlKind.COMPARISON.contains(rexNode.getKind())){
+        if (rexNode instanceof RexCall) {
+          RexCall rexCall = (RexCall) rexNode;
+          List<RexNode> operands = rexCall.getOperands();
+
+          if ((RexUtil.isReferenceOrAccess(operands.get(0), true)
+              && operands.get(1).isA(SqlKind.LITERAL))
+              || (RexUtil.isReferenceOrAccess(operands.get(1), true)
+                  && operands.get(1).isA(SqlKind.LITERAL))) {
+            predTerms.add(rexCall);
+          }
+        }
+      }
     }
-    return simplifyAnd2(terms, notTerms);
+
+    RexSimplify s = this;
+    if (!predTerms.isEmpty()) {
+      RelOptPredicateList preds = RelOptPredicateList.of(rexBuilder, predTerms);
+      s = withPredicates(preds);
+    }
+
+    if (unknownAsFalse) {
+      return s.simplifyAnd2ForUnknownAsFalse(terms, notTerms);
+    }
+    return s.simplifyAnd2(terms, notTerms);
   }
 
   RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
