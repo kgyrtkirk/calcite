@@ -267,7 +267,8 @@ public class RexSimplify {
     }
   }
 
-  Comparator<? super RexNode> COMPARISIONS_FIRST_COMPARATOR = new Comparator<RexNode>() {
+  static final Comparator<? super RexNode> COMPARISIONS_FIRST_COMPARATOR =
+      new Comparator<RexNode>() {
 
     @Override public int compare(RexNode o1, RexNode o2) {
       SqlKind k1 = o1.getKind();
