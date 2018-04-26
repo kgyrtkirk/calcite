@@ -277,7 +277,7 @@ public class RexSimplify {
           SqlKind k2 = o2.getKind();
           boolean isCmp1 = SqlKind.COMPARISON.contains(k1);
           boolean isCmp2 = SqlKind.COMPARISON.contains(k2);
-          if ((isCmp1 ^ isCmp2)) {
+          if (isCmp1 ^ isCmp2) {
             if (isCmp2) {
               return 1;
             } else {
