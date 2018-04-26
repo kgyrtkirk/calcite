@@ -41,7 +41,6 @@ import com.google.common.collect.Range;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -269,33 +268,7 @@ public class RexSimplify {
     }
   }
 
-  static final Comparator<? super RexNode> COMPARISIONS_FIRST_COMPARATOR =
-      new Comparator<RexNode>() {
-
-        @Override public int compare(RexNode o1, RexNode o2) {
-          SqlKind k1 = o1.getKind();
-          SqlKind k2 = o2.getKind();
-          boolean isCmp1 = SqlKind.COMPARISON.contains(k1);
-          boolean isCmp2 = SqlKind.COMPARISON.contains(k2);
-          if (isCmp1 ^ isCmp2) {
-            if (isCmp2) {
-              return 1;
-            } else {
-              return -1;
-            }
-          } else {
-            return o1.toString().compareTo(o2.toString());
-          }
-        }
-      };
-
-  public static int cc1 = 0;
   private void simplifyListA1(List<RexNode> terms) {
-    cc1++;
-    if (cc1 > 443825) {
-      int asd = 1;
-    }
-    //    terms.sort(COMPARISIONS_FIRST_COMPARATOR);
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
