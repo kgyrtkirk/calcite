@@ -268,7 +268,7 @@ public class RexSimplify {
     }
   }
 
-  private void simplifyListA1(List<RexNode> terms) {
+  private void simplifyAndTerms(List<RexNode> terms) {
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
@@ -587,7 +587,7 @@ public class RexSimplify {
     RelOptUtil.decomposeConjunction(e, terms, notTerms);
 
     if (unknownAsFalse) {
-      simplifyListA1(terms);
+      simplifyAndTerms(terms);
     } else {
       simplifyList(terms);
     }
