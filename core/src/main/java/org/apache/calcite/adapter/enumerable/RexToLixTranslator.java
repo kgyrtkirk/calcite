@@ -541,8 +541,7 @@ public class RexToLixTranslator {
           }
           // If this is a widening cast, no need to pad.
           if (SqlTypeUtil.comparePrecision(sourcePrecision, targetPrecision)
-              >= 0
-              && targetPrecision != RelDataType.PRECISION_NOT_SPECIFIED) {
+              >= 0) {
             pad = false;
           }
           // fall through
@@ -779,6 +778,8 @@ public class RexToLixTranslator {
     case DECIMAL:
       final BigDecimal bd = literal.getValueAs(BigDecimal.class);
       if (javaClass == float.class) {
+        return Expressions.constant(bd, javaClass);
+      } else if (javaClass == double.class) {
         return Expressions.constant(bd, javaClass);
       }
       assert javaClass == BigDecimal.class;

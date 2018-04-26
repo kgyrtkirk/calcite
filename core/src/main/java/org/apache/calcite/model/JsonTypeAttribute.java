@@ -14,32 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.linq4j.test;
-
-import org.apache.calcite.linq4j.function.FunctionTest;
-import org.apache.calcite.linq4j.tree.TypeTest;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+package org.apache.calcite.model;
 
 /**
- * Suite of all Linq4j tests.
+ * JSON object representing a type attribute.
  */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PrimitiveTest.class,
-    Linq4jTest.class,
-    ExpressionTest.class,
-    OptimizerTest.class,
-    InlinerTest.class,
-    LookupImplTest.class,
-    DeterministicTest.class,
-    BlockBuilderTest.class,
-    FunctionTest.class,
-    TypeTest.class,
-    CorrelateJoinTest.class
-    })
-public class Linq4jSuite {
+public class JsonTypeAttribute {
+  /** Name of this attribute.
+   *
+   * <p>Required.
+   */
+  public String name;
+
+  /** Type of this attribute.
+   *
+   * <p>Required.
+   */
+  public String type;
 }
 
-// End Linq4jSuite.java
+// End JsonTypeAttribute.java

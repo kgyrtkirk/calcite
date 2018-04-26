@@ -14,32 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.linq4j.test;
+package org.apache.calcite.sql.ddl;
 
-import org.apache.calcite.linq4j.function.FunctionTest;
-import org.apache.calcite.linq4j.tree.TypeTest;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.parser.SqlParserPos;
 
 /**
- * Suite of all Linq4j tests.
+ * Parse tree for {@code DROP TYPE} statement.
  */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PrimitiveTest.class,
-    Linq4jTest.class,
-    ExpressionTest.class,
-    OptimizerTest.class,
-    InlinerTest.class,
-    LookupImplTest.class,
-    DeterministicTest.class,
-    BlockBuilderTest.class,
-    FunctionTest.class,
-    TypeTest.class,
-    CorrelateJoinTest.class
-    })
-public class Linq4jSuite {
+public class SqlDropType extends SqlDropObject {
+  private static final SqlOperator OPERATOR =
+      new SqlSpecialOperator("DROP TYPE", SqlKind.DROP_TYPE);
+
+  SqlDropType(SqlParserPos pos, boolean ifExists, SqlIdentifier name) {
+    super(OPERATOR, pos, ifExists, name);
+  }
 }
 
-// End Linq4jSuite.java
+// End SqlDropType.java

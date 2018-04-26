@@ -59,7 +59,6 @@ import com.google.common.collect.Sets;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -512,7 +511,7 @@ public class SqlValidatorUtil {
    *
    * @param typeFactory     Type factory
    * @param leftType        Type of left input to join
-   * @param rightType       Type of right input to join
+   * @param rightType       Type of right input to join, or null for semi-join
    * @param fieldNameList   If not null, overrides the original names of the
    *                        fields
    * @param systemFieldList List of system fields that will be prefixed to
@@ -672,19 +671,21 @@ public class SqlValidatorUtil {
    * Derives the list of column names suitable for NATURAL JOIN. These are the
    * columns that occur exactly once on each side of the join.
    *
+   * @param nameMatcher Whether matches are case-sensitive
    * @param leftRowType  Row type of left input to the join
    * @param rightRowType Row type of right input to the join
    * @return List of columns that occur once on each side
    */
   public static List<String> deriveNaturalJoinColumnList(
+      SqlNameMatcher nameMatcher,
       RelDataType leftRowType,
       RelDataType rightRowType) {
     final List<String> naturalColumnNames = new ArrayList<>();
     final List<String> leftNames = leftRowType.getFieldNames();
     final List<String> rightNames = rightRowType.getFieldNames();
     for (String name : leftNames) {
-      if ((Collections.frequency(leftNames, name) == 1)
-          && (Collections.frequency(rightNames, name) == 1)) {
+      if (nameMatcher.frequency(leftNames, name) == 1
+          && nameMatcher.frequency(rightNames, name) == 1) {
         naturalColumnNames.add(name);
       }
     }
@@ -948,6 +949,37 @@ public class SqlValidatorUtil {
       flattenedBitSets.add(ImmutableBitSet.union(o));
     }
     return ImmutableList.copyOf(flattenedBitSets);
+  }
+
+  /**
+   * Finds a {@link org.apache.calcite.jdbc.CalciteSchema.TypeEntry} in a
+   * given schema whose type has the given name, possibly qualified.
+   *
+   * @param rootSchema root schema
+   * @param typeName name of the type, may be qualified or fully-qualified
+   *
+   * @return TypeEntry with a table with the given name, or null
+   */
+  public static CalciteSchema.TypeEntry getTypeEntry(
+      CalciteSchema rootSchema, SqlIdentifier typeName) {
+    final String name;
+    final List<String> path;
+    if (typeName.isSimple()) {
+      path = ImmutableList.of();
+      name = typeName.getSimple();
+    } else {
+      path = Util.skipLast(typeName.names);
+      name = Util.last(typeName.names);
+    }
+    CalciteSchema schema = rootSchema;
+    for (String p : path) {
+      if (schema == rootSchema
+          && SqlNameMatchers.withCaseSensitive(true).matches(p, schema.getName())) {
+        continue;
+      }
+      schema = schema.getSubSchema(p, true);
+    }
+    return schema == null ? null : schema.getType(name, false);
   }
 
   /**

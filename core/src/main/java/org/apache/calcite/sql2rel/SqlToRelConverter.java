@@ -2038,10 +2038,9 @@ public class SqlToRelConverter {
         final RelDataType leftRowType = leftNamespace.getRowType();
         final RelDataType rightRowType = rightNamespace.getRowType();
         final List<String> columnList =
-            SqlValidatorUtil.deriveNaturalJoinColumnList(leftRowType,
-                rightRowType);
-        conditionExp = convertUsing(leftNamespace, rightNamespace,
-            columnList);
+            SqlValidatorUtil.deriveNaturalJoinColumnList(
+                catalogReader.nameMatcher(), leftRowType, rightRowType);
+        conditionExp = convertUsing(leftNamespace, rightNamespace, columnList);
       } else {
         conditionExp =
             convertJoinCondition(
@@ -4771,7 +4770,6 @@ public class SqlToRelConverter {
     /** Expressions to be evaluated as rows are being placed into the
      * aggregate's hash table. This is when group functions such as TUMBLE
      * cause rows to be expanded. */
-    private final List<RexNode> midExprs = new ArrayList<>();
 
     private final List<AggregateCall> aggCalls = new ArrayList<>();
     private final Map<SqlNode, RexNode> aggMapping = new HashMap<>();

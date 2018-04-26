@@ -14,32 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.linq4j.test;
+package org.apache.calcite.model;
 
-import org.apache.calcite.linq4j.function.FunctionTest;
-import org.apache.calcite.linq4j.tree.TypeTest;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Suite of all Linq4j tests.
+ * Type schema element.
+ *
+ * <p>Occurs within {@link JsonMapSchema#tables}.
+ *
+ * @see JsonRoot Description of schema elements
  */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PrimitiveTest.class,
-    Linq4jTest.class,
-    ExpressionTest.class,
-    OptimizerTest.class,
-    InlinerTest.class,
-    LookupImplTest.class,
-    DeterministicTest.class,
-    BlockBuilderTest.class,
-    FunctionTest.class,
-    TypeTest.class,
-    CorrelateJoinTest.class
-    })
-public class Linq4jSuite {
+public class JsonType {
+  /** Name of this type.
+   *
+   * <p>Required.
+   */
+  public String name;
+
+  /** Type if this is not a struct.
+   */
+  public String type;
+
+  /** Definition of the attributes of this type.
+   */
+  public final List<JsonTypeAttribute> attributes = new ArrayList<>();
+
+  public void accept(ModelHandler handler) {
+    handler.visit(this);
+  }
 }
 
-// End Linq4jSuite.java
+// End JsonType.java

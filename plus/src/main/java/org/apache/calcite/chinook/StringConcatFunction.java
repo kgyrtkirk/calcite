@@ -14,32 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.linq4j.test;
-
-import org.apache.calcite.linq4j.function.FunctionTest;
-import org.apache.calcite.linq4j.tree.TypeTest;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+package org.apache.calcite.chinook;
 
 /**
- * Suite of all Linq4j tests.
+ * Example query for checking query projections
  */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PrimitiveTest.class,
-    Linq4jTest.class,
-    ExpressionTest.class,
-    OptimizerTest.class,
-    InlinerTest.class,
-    LookupImplTest.class,
-    DeterministicTest.class,
-    BlockBuilderTest.class,
-    FunctionTest.class,
-    TypeTest.class,
-    CorrelateJoinTest.class
-    })
-public class Linq4jSuite {
+public class StringConcatFunction {
+
+  public String eval(String first, String second) {
+    return "CONCAT = [" + first + "+" + second + "]";
+  }
+
 }
 
-// End Linq4jSuite.java
+// End StringConcatFunction.java
