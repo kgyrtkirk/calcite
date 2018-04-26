@@ -287,12 +287,21 @@ public class RexSimplify {
 
   private void simplifyListA1(List<RexNode> terms) {
     terms.sort(COMPARISIONS_FIRST_COMPARATOR);
+    RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
 
-      RelOptPredicateList newPredicates =
-          predicates.union(rexBuilder, RelOptPredicateList.of(rexBuilder, terms.subList(0, i)));
-      RexSimplify simplify = withUnknownAsFalse(false).withPredicates(newPredicates);
-      terms.set(i, simplify.simplify(terms.get(i)));
+      //      RelOptPredicateList newPredicates =
+      //          predicates.union(rexBuilder, RelOptPredicateList.of(rexBuilder, terms.subList(0, i)));
+      //      RexSimplify simplify = withUnknownAsFalse(false).withPredicates(newPredicates);
+      RexNode simplifiedTerm = simplify.simplify(terms.get(i));
+      terms.set(i, simplifiedTerm);
+      if (SqlKind.COMPARISON.contains(simplifiedTerm.getKind())) {
+
+        RelOptPredicateList newPredicates = predicates.union(rexBuilder,
+            RelOptPredicateList.of(rexBuilder, terms.subList(i, i + 1)));
+        simplify = simplify.withPredicates(newPredicates);
+
+      }
     }
   }
 
