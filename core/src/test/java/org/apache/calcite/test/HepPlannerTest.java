@@ -32,7 +32,7 @@ import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rel.rules.ProjectToCalcRule;
 import org.apache.calcite.rel.rules.ReduceExpressionsRule;
 import org.apache.calcite.rel.rules.UnionToDistinctRule;
-
+import org.apache.calcite.rex.RexSimplify;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -157,6 +157,7 @@ public class HepPlannerTest extends RelOptTestBase {
 
   //~ Methods ----------------------------------------------------------------
 
+  @Override
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(HepPlannerTest.class);
   }
@@ -327,9 +328,11 @@ public class HepPlannerTest extends RelOptTestBase {
 
   @Test public void testRuleApplyCount() {
     final long applyTimes1 = checkRuleApplyCount(HepMatchOrder.ARBITRARY);
+    System.out.println(RexSimplify.cc1);
     assertThat(applyTimes1, is(5451L));
 
     final long applyTimes2 = checkRuleApplyCount(HepMatchOrder.DEPTH_FIRST);
+    System.out.println(RexSimplify.cc1);
     assertThat(applyTimes2, is(403L));
 
     // DEPTH_FIRST has 10x fewer matches than ARBITRARY
