@@ -1323,7 +1323,7 @@ public class RexProgramTest {
         ImmutableList.of(eq(eq(aRef, literal1), trueLiteral),
             eq(bRef, literal1));
     checkSimplifyFilter(and(args),
-        "AND(=(?0.b, 1), =(?0.a, 1))");
+        "AND(=(?0.a, 1), =(?0.b, 1))");
 
     // as previous, using simplifyFilterPredicates
     assertThat(simplify.withUnknownAsFalse(true)
@@ -1342,7 +1342,7 @@ public class RexProgramTest {
 
     // equality on constants, can remove the equality on the variables
     checkSimplifyFilter(and(eq(aRef, literal1), eq(bRef, literal1), eq(aRef, bRef)),
-        "AND(=(?0.b, 1), =(?0.a, 1))");
+        "AND(=(?0.a, 1), =(?0.b, 1))");
 
     // condition not satisfiable
     checkSimplifyFilter(and(eq(aRef, literal1), eq(bRef, literal10), eq(aRef, bRef)),
@@ -1375,7 +1375,7 @@ public class RexProgramTest {
     checkSimplifyFilter(
         and(lt(literal1, aRef), lt(aRef, literal5)),
         RelOptPredicateList.EMPTY,
-        "AND(<(?0.a, 5), <(1, ?0.a))");
+        "AND(<(1, ?0.a), <(?0.a, 5))");
 
     // condition "1 > a && 5 > x" yields "1 > a"
     checkSimplifyFilter(
@@ -1394,7 +1394,7 @@ public class RexProgramTest {
     checkSimplifyFilter(
         and(gt(aRef, literal1), lt(aRef, literal10), lt(aRef, literal5)),
         RelOptPredicateList.EMPTY,
-        "AND(<(?0.a, 5), >(?0.a, 1))");
+        "AND(>(?0.a, 1), <(?0.a, 5))");
 
     // condition "a > 1 && a < 10 && a < 5"
     // with pre-condition "a > 5"
@@ -1422,7 +1422,7 @@ public class RexProgramTest {
         and(gt(aRef, literal1), lt(aRef, literal10), lt(aRef, literal5)),
         RelOptPredicateList.of(rexBuilder,
             ImmutableList.of(lt(bRef, literal10), ge(aRef, literal1))),
-        "AND(<(?0.a, 5), >(?0.a, 1))");
+        "AND(>(?0.a, 1), <(?0.a, 5))");
 
     // condition "a > 1"
     // with pre-condition "b < 10 && a > 5"

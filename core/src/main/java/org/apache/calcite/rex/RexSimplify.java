@@ -295,18 +295,24 @@ public class RexSimplify {
     if (cc1 > 443825) {
       int asd = 1;
     }
-    terms.sort(COMPARISIONS_FIRST_COMPARATOR);
+    //    terms.sort(COMPARISIONS_FIRST_COMPARATOR);
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
-      RexNode simplifiedTerm = simplify.simplify(terms.get(i));
-      terms.set(i, simplifiedTerm);
-      if (SqlKind.COMPARISON.contains(simplifiedTerm.getKind())) {
-
-        RelOptPredicateList newPredicates = predicates.union(rexBuilder,
-            RelOptPredicateList.of(rexBuilder, terms.subList(i, i + 1)));
-        simplify = simplify.withPredicates(newPredicates);
-
+      RexNode t = terms.get(i);
+      if (!SqlKind.COMPARISON.contains(t.getKind())) {
+        continue;
       }
+      terms.set(i, simplify.simplify(t));
+      RelOptPredicateList newPredicates = predicates.union(rexBuilder,
+          RelOptPredicateList.of(rexBuilder, terms.subList(i, i + 1)));
+      simplify = simplify.withPredicates(newPredicates);
+    }
+    for (int i = 0; i < terms.size(); i++) {
+      RexNode t = terms.get(i);
+      if (SqlKind.COMPARISON.contains(t.getKind())) {
+        continue;
+      }
+      terms.set(i, simplify.simplify(t));
     }
   }
 
