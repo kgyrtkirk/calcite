@@ -289,10 +289,6 @@ public class RexSimplify {
     terms.sort(COMPARISIONS_FIRST_COMPARATOR);
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
-
-      //      RelOptPredicateList newPredicates =
-      //          predicates.union(rexBuilder, RelOptPredicateList.of(rexBuilder, terms.subList(0, i)));
-      //      RexSimplify simplify = withUnknownAsFalse(false).withPredicates(newPredicates);
       RexNode simplifiedTerm = simplify.simplify(terms.get(i));
       terms.set(i, simplifiedTerm);
       if (SqlKind.COMPARISON.contains(simplifiedTerm.getKind())) {
