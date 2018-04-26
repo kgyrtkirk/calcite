@@ -35,6 +35,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 
@@ -278,6 +279,29 @@ public class RexSimplify {
       terms.set(i, simplify.simplify(t));
       RelOptPredicateList newPredicates = predicates.union(rexBuilder,
           RelOptPredicateList.of(rexBuilder, terms.subList(i, i + 1)));
+      simplify = simplify.withPredicates(newPredicates);
+    }
+    for (int i = 0; i < terms.size(); i++) {
+      RexNode t = terms.get(i);
+      if (SqlKind.COMPARISON.contains(t.getKind())) {
+        continue;
+      }
+      terms.set(i, simplify.simplify(t));
+    }
+  }
+
+  private void simplifyOrTerms(List<RexNode> terms) {
+    RexSimplify simplify = withUnknownAsFalse(true);
+    for (int i = 0; i < terms.size(); i++) {
+      RexNode t = terms.get(i);
+      if (!SqlKind.COMPARISON.contains(t.getKind())) {
+        continue;
+      }
+      terms.set(i, simplify.simplify(t));
+      RexNode newPred =
+          simplify.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, terms.get(i)));
+      RelOptPredicateList newPredicates = predicates.union(rexBuilder,
+          RelOptPredicateList.of(rexBuilder, Lists.newArrayList(newPred)));
       simplify = simplify.withPredicates(newPredicates);
     }
     for (int i = 0; i < terms.size(); i++) {
@@ -950,6 +974,7 @@ public class RexSimplify {
   public RexNode simplifyOr(RexCall call) {
     assert call.getKind() == SqlKind.OR;
     final List<RexNode> terms = RelOptUtil.disjunctions(call);
+    simplifyOrTerms(terms);
     return simplifyOrs(terms);
   }
 

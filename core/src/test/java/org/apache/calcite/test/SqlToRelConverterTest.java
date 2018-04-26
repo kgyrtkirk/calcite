@@ -2775,13 +2775,6 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
-  // FIXME: at the end reconsider if this testcase is needed..
-  @Test public void testOrAlwaysTrue() {
-    final String sql = "select SAL from EMPNULLABLES_20 \n"
-        + "where SAL IS NOT NULL OR SAL is null";
-    sql(sql).ok();
-  }
-
   /**
    * Visitor that checks that every {@link RelNode} in a tree is valid.
    *

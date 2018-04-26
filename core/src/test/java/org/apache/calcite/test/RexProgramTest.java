@@ -1516,6 +1516,39 @@ public class RexProgramTest {
                 eq(aRef, literal10)),
             eq(aRef, literal1)),
         "=(?0.a, 1)");
+
+  }
+
+  @Test public void testSimplifyOrTerms() {
+    final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
+    final RelDataType rowType = typeFactory.builder()
+        .add("a", intType)
+        .build();
+
+    final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
+    final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
+    final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
+    final RexLiteral literal10 = rexBuilder.makeExactLiteral(BigDecimal.TEN);
+
+    // FIXME: symmetrical doesn't work
+    checkSimplifyFilter(
+        or(
+            ne(aRef, literal1),
+            eq(aRef, literal1)),
+        "true");
+
+    checkSimplifyFilter(
+        or(
+            isNull(aRef),
+            isNotNull(aRef)),
+        "true");
+
+    checkSimplifyFilter(
+        or(
+            isNotNull(aRef),
+            isNull(aRef)),
+        "true");
+
   }
 
   /** Unit test for
