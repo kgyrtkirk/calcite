@@ -34,6 +34,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -269,11 +270,19 @@ public class RexSimplify {
     }
   }
 
+
+  Set<SqlKind> SqlKindCOMPARISON =
+      ImmutableSet.<SqlKind> builder()
+          .addAll(SqlKind.COMPARISON)
+          .add(SqlKind.IS_NULL)
+          .add(SqlKind.IS_NOT_NULL)
+          .build();
+
   private void simplifyAndTerms(List<RexNode> terms) {
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (!SqlKind.COMPARISON.contains(t.getKind())) {
+      if (!SqlKindCOMPARISON.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -283,7 +292,7 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (SqlKind.COMPARISON.contains(t.getKind())) {
+      if (SqlKindCOMPARISON.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -294,7 +303,7 @@ public class RexSimplify {
     RexSimplify simplify = withUnknownAsFalse(true);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (!SqlKind.COMPARISON.contains(t.getKind())) {
+      if (!SqlKindCOMPARISON.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -306,7 +315,7 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (SqlKind.COMPARISON.contains(t.getKind())) {
+      if (SqlKindCOMPARISON.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -357,11 +366,44 @@ public class RexSimplify {
   private RexNode simplifyIs(RexCall call) {
     final SqlKind kind = call.getKind();
     final RexNode a = call.getOperands().get(0);
+
+    final RexNode pred = simplifyIsPredicate(kind, a);
+    if (pred != null) {
+      return pred;
+    }
+
     final RexNode simplified = simplifyIs2(kind, a);
     if (simplified != null) {
       return simplified;
     }
     return call;
+  }
+
+  private RexNode simplifyIsPredicate(SqlKind kind, RexNode a) {
+    if (!RexUtil.isReferenceOrAccess(a, true)) {
+      return null;
+    }
+
+    for (RexNode p : predicates.pulledUpPredicates) {
+      switch (p.getKind()) {
+      case IS_NULL:
+      case IS_NOT_NULL:
+        RexNode pA = ((RexCall) p).getOperands().get(0);
+        if (!RexUtil.isReferenceOrAccess(pA, true)) {
+          continue;
+        }
+        if (!a.toString().equals(pA.toString())) {
+          continue;
+        }
+        if (kind == p.getKind()) {
+          return rexBuilder.makeLiteral(true);
+        } else {
+          return rexBuilder.makeLiteral(false);
+        }
+      }
+    }
+
+    return null;
   }
 
   private RexNode simplifyIs2(SqlKind kind, RexNode a) {
@@ -417,6 +459,9 @@ public class RexSimplify {
 
   private RexNode simplifyIsNotNull(RexNode a) {
     if (!a.getType().isNullable()) {
+      return rexBuilder.makeLiteral(true);
+    }
+    if (predicates.pulledUpPredicates.contains(a)) {
       return rexBuilder.makeLiteral(true);
     }
     switch (Strong.policy(a.getKind())) {
