@@ -270,8 +270,7 @@ public class RexSimplify {
     }
   }
 
-
-  static final Set<SqlKind> KINDS1111 =
+  static final Set<SqlKind> PREDICATE_KINDS =
       ImmutableSet.<SqlKind>builder()
           .addAll(SqlKind.COMPARISON)
           .add(SqlKind.IS_NULL)
@@ -282,7 +281,7 @@ public class RexSimplify {
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (!KINDS1111.contains(t.getKind())) {
+      if (!PREDICATE_KINDS.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -292,7 +291,7 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (KINDS1111.contains(t.getKind())) {
+      if (PREDICATE_KINDS.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -303,7 +302,7 @@ public class RexSimplify {
     RexSimplify simplify = withUnknownAsFalse(true);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (!KINDS1111.contains(t.getKind())) {
+      if (!PREDICATE_KINDS.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -315,7 +314,7 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (KINDS1111.contains(t.getKind())) {
+      if (PREDICATE_KINDS.contains(t.getKind())) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
