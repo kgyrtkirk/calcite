@@ -377,7 +377,7 @@ public class RexSimplify {
 
     for (RexNode p : predicates.pulledUpPredicates) {
       IsPredicate pred = IsPredicate.of(p);
-      if (!a.toString().equals(pred.ref.toString())) {
+      if (pred == null || !a.toString().equals(pred.ref.toString())) {
         continue;
       }
       if (kind == pred.kind) {
