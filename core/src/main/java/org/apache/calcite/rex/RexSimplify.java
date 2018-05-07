@@ -384,24 +384,16 @@ public class RexSimplify {
     }
 
     for (RexNode p : predicates.pulledUpPredicates) {
-      switch (p.getKind()) {
-      case IS_NULL:
-      case IS_NOT_NULL:
-        RexNode pA = ((RexCall) p).getOperands().get(0);
-        if (!RexUtil.isReferenceOrAccess(pA, true)) {
-          continue;
-        }
-        if (!a.toString().equals(pA.toString())) {
-          continue;
-        }
-        if (kind == p.getKind()) {
-          return rexBuilder.makeLiteral(true);
-        } else {
-          return rexBuilder.makeLiteral(false);
-        }
+      IsPredicate pred = IsPredicate.of(p);
+      if (!a.toString().equals(pred.ref.toString())) {
+        continue;
+      }
+      if (kind == pred.kind) {
+        return rexBuilder.makeLiteral(true);
+      } else {
+        return rexBuilder.makeLiteral(false);
       }
     }
-
     return null;
   }
 
