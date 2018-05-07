@@ -34,7 +34,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -270,13 +269,6 @@ public class RexSimplify {
     }
   }
 
-  static final Set<SqlKind> PREDICATE_KINDS =
-      ImmutableSet.<SqlKind>builder()
-          .addAll(SqlKind.COMPARISON)
-          .add(SqlKind.IS_NULL)
-          .add(SqlKind.IS_NOT_NULL)
-          .build();
-
   private void simplifyAndTerms(List<RexNode> terms) {
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
@@ -302,7 +294,7 @@ public class RexSimplify {
     RexSimplify simplify = withUnknownAsFalse(true);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (!PREDICATE_KINDS.contains(t.getKind())) {
+      if (Predicate.of(t) == null) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -314,7 +306,7 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (PREDICATE_KINDS.contains(t.getKind())) {
+      if (Predicate.of(t) != null) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
