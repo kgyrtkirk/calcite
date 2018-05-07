@@ -1369,6 +1369,7 @@ public class RexSimplify {
     return null;
   }
 
+  /** Currently supported predicates should be marked with this interface. */
   private interface Predicate {
 
     static Predicate of(RexNode t) {
@@ -1443,8 +1444,7 @@ public class RexSimplify {
     }
   }
 
-  /** Comparison between a {@link RexInputRef} or {@link RexFieldAccess} and a
-   * literal. Literal may be on left or right side, and may be null. */
+  /** Represents an IS Predicate. */
   private static class IsPredicate implements Predicate {
     final RexNode ref;
     final SqlKind kind;
