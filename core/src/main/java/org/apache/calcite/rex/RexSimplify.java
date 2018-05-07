@@ -281,7 +281,7 @@ public class RexSimplify {
     RexSimplify simplify = withUnknownAsFalse(false);
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (!PREDICATE_KINDS.contains(t.getKind())) {
+      if (Predicate.of(t) == null) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -291,7 +291,7 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
-      if (PREDICATE_KINDS.contains(t.getKind())) {
+      if (Predicate.of(t) != null) {
         continue;
       }
       terms.set(i, simplify.simplify(t));
@@ -1385,6 +1385,18 @@ public class RexSimplify {
     return null;
   }
 
+  private interface Predicate {
+
+    static Predicate of(RexNode t) {
+      Predicate ret = Comparison.of(t);
+      if (ret != null) {
+        return ret;
+      }
+      return IsPredicate.of(t);
+    }
+
+  }
+
   private static <C extends Comparable<C>> Range<C> range(SqlKind comparison,
       C c) {
     switch (comparison) {
@@ -1406,7 +1418,7 @@ public class RexSimplify {
 
   /** Comparison between a {@link RexInputRef} or {@link RexFieldAccess} and a
    * literal. Literal may be on left or right side, and may be null. */
-  private static class Comparison {
+  private static class Comparison implements Predicate {
     final RexNode ref;
     final SqlKind kind;
     final RexLiteral literal;
@@ -1442,6 +1454,32 @@ public class RexSimplify {
                 (RexLiteral) left);
           }
         }
+      }
+      return null;
+    }
+  }
+
+  /** Comparison between a {@link RexInputRef} or {@link RexFieldAccess} and a
+   * literal. Literal may be on left or right side, and may be null. */
+  private static class IsPredicate implements Predicate {
+    final RexNode ref;
+    final SqlKind kind;
+
+    private IsPredicate(RexNode ref, SqlKind kind) {
+      this.ref = Preconditions.checkNotNull(ref);
+      this.kind = Preconditions.checkNotNull(kind);
+    }
+
+    /** Creates a comparison, or returns null. */
+    static IsPredicate of(RexNode e) {
+      switch (e.getKind()) {
+      case IS_NULL:
+      case IS_NOT_NULL:
+        RexNode pA = ((RexCall) e).getOperands().get(0);
+        if (!RexUtil.isReferenceOrAccess(pA, true)) {
+          return null;
+        }
+        return new IsPredicate(pA, e.getKind());
       }
       return null;
     }
