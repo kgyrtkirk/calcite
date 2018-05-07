@@ -1403,6 +1403,7 @@ public class RexSimplify {
     }
   }
 
+
   /** Comparison between a {@link RexInputRef} or {@link RexFieldAccess} and a
    * literal. Literal may be on left or right side, and may be null. */
   private static class Comparison {

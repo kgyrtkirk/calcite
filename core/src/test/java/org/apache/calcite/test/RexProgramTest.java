@@ -1477,11 +1477,14 @@ public class RexProgramTest {
     final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
     final RelDataType rowType = typeFactory.builder()
         .add("a", intType)
+        .add("b", intType)
         .build();
 
     final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
     final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
+    final RexNode bRef = rexBuilder.makeFieldAccess(range, 1);
     final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
+    final RexLiteral literal5 = rexBuilder.makeExactLiteral(BigDecimal.valueOf(5));
     final RexLiteral literal10 = rexBuilder.makeExactLiteral(BigDecimal.TEN);
 
     checkSimplifyFilter(
@@ -1517,6 +1520,17 @@ public class RexProgramTest {
             eq(aRef, literal1)),
         "=(?0.a, 1)");
 
+    checkSimplifyFilter(
+        and(
+            gt(aRef, literal10),
+            gt(aRef, literal1)),
+        ">(?0.a, 10)");
+
+    checkSimplifyFilter(
+        and(
+            gt(aRef, literal1),
+            gt(aRef, literal10)),
+        ">(?0.a, 10)");
   }
 
   @Test public void testSimplifyOrTerms() {
