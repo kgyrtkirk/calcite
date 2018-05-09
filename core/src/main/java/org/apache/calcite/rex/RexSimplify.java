@@ -294,7 +294,7 @@ public class RexSimplify {
     // visiting "e3(x)" we know both "e1(x)" and "e2(x)" are not true (they
     // may be unknown), because if either of them were true we would have
     // stopped.
-    RexSimplify simplify = withUnknownAsFalse(true);
+    RexSimplify simplify = this;
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
       if (Predicate.of(t) == null) {
