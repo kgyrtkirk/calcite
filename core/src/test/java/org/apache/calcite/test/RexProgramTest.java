@@ -1597,31 +1597,6 @@ public class RexProgramTest {
         "OR(IS NOT NULL(?0.b), IS NULL(?0.c))");
   }
 
-  @Test public void testSimplifyOrTerms2() {
-    final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
-    final RelDataType rowType = typeFactory.builder()
-        .add("a", intType).nullable(false)
-        .add("b", intType).nullable(true)
-        .add("c", intType).nullable(true)
-        .build();
-
-    final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
-    final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
-    final RexNode bRef = rexBuilder.makeFieldAccess(range, 1);
-    final RexNode cRef = rexBuilder.makeFieldAccess(range, 2);
-    final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
-
-    // "b != 1 or b = 1" ==> "true" (valid because we have unknownAsFalse)
-    final RexNode neOrEq = or(ne(bRef, literal1), eq(bRef, literal1));
-
-    // Careful of the excluded middle!
-    // We cannot simplify "b != 1 or b = 1" to "true" because if b is null, the
-    // result is unknown.
-    // "b is not unknown" would be a valid simplification.
-    assertThat(simplify.withUnknownAsFalse(false).simplify(neOrEq).toString(),
-        equalTo("OR(<>(?0.b, 1), IS NOT NULL(?0.b))"));
-  }
-
   /** Unit test for
    * <a href="https://issues.apache.org/jira/browse/CALCITE-1289">[CALCITE-1289]
    * RexUtil.simplifyCase() should account for nullability</a>. */
