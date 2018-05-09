@@ -1633,7 +1633,7 @@ public class RexProgramTest {
             eq(aRef, literal1),
             nullLiteral),
         "OR(=(?0.a, 1), null)",
-        "false");
+        "=(?0.a, 1)");
     checkSimplify2(
         or(
             trueLiteral,

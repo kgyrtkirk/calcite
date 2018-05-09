@@ -1037,7 +1037,9 @@ public class RexSimplify {
       case LITERAL:
         if (RexLiteral.isNullLiteral(term)) {
           if (unknownAsFalse) {
-            return rexBuilder.makeLiteral(false);
+            terms.remove(i);
+            --i;
+            continue;
           }
         } else {
           if (RexLiteral.booleanValue(term)) {
