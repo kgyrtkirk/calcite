@@ -304,7 +304,7 @@ public class RexSimplify {
       final RexNode t2 = simplify.simplify(t);
       terms.set(i, t2);
       final RexNode inverse =
-          simplifyF.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, t2));
+          simplify.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, t2));
       final RelOptPredicateList newPredicates = predicates.union(rexBuilder,
           RelOptPredicateList.of(rexBuilder, ImmutableList.of(inverse)));
       simplify = simplify.withPredicates(newPredicates);
@@ -942,7 +942,11 @@ public class RexSimplify {
       return e;
     } else if (range2.equals(Range.all())) {
       // Term is always satisfied given these predicates
-      return rexBuilder.makeLiteral(true);
+      if (unknownAsFalse) {
+        return rexBuilder.makeLiteral(true);
+      } else {
+        return simplify(rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_NULL, comparison.ref));
+      }
     } else if (range2.lowerEndpoint().equals(range2.upperEndpoint())) {
       if (range2.lowerBoundType() == BoundType.OPEN
           || range2.upperBoundType() == BoundType.OPEN) {
