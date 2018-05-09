@@ -295,7 +295,6 @@ public class RexSimplify {
     // may be unknown), because if either of them were true we would have
     // stopped.
     RexSimplify simplify = this;
-    RexSimplify simplifyF = simplify.withUnknownAsFalse(unknownAsFalse);
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
       if (Predicate.of(t) == null) {
@@ -308,7 +307,6 @@ public class RexSimplify {
       final RelOptPredicateList newPredicates = predicates.union(rexBuilder,
           RelOptPredicateList.of(rexBuilder, ImmutableList.of(inverse)));
       simplify = simplify.withPredicates(newPredicates);
-      simplifyF = simplify.withUnknownAsFalse(false);
     }
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);

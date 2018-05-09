@@ -64,7 +64,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -1570,11 +1569,11 @@ public class RexProgramTest {
     // Careful of the excluded middle!
     // We cannot simplify "b != 1 or b = 1" to "true" because if b is null, the
     // result is unknown.
-    // "b is not unknown" would be a valid simplification.
+    // "b is not unknown" would be the valid simplification.
     assertThat(simplify.withUnknownAsFalse(false).simplify(or).toString(),
         equalTo("OR(=(?0.a, 1), <>(?0.a, 1))"));
     assertThat(simplify.withUnknownAsFalse(false).simplify(neOrEq).toString(),
-        equalTo("OR(<>(?0.b, 1), =(?0.b, 1))"));
+        equalTo("OR(<>(?0.b, 1), IS NOT NULL(?0.b))"));
 
     // "a is null or a is not null" ==> "true"
     checkSimplifyFilter(
@@ -1603,8 +1602,9 @@ public class RexProgramTest {
 
   @Test public void testSimplifyOrTerms2() {
     final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
-    final RelDataType rowType = typeFactory.builder().add("a", intType).nullable(false).add("b", intType).nullable(true)
-        .add("c", intType).nullable(true).build();
+    final RelDataType rowType =
+        typeFactory.builder().add("a", intType).nullable(false).add("b", intType).nullable(true)
+            .add("c", intType).nullable(true).build();
 
     final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
     final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
@@ -1619,29 +1619,8 @@ public class RexProgramTest {
     // We cannot simplify "b != 1 or b = 1" to "true" because if b is null, the
     // result is unknown.
     // "b is not unknown" would be a valid simplification.
-    assertThat(simplify.withUnknownAsFalse(false).simplify(neOrEq).toString(), equalTo("OR(<>(?0.b, 1), =(?0.b, 1))"));
-  }
-
-  @Ignore
-  @Test public void testSimplifyAnd1() {
-    final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
-    final RelDataType rowType = typeFactory.builder().add("a", intType).nullable(false).add("b", intType).nullable(true)
-        .add("c", intType).nullable(true).build();
-
-    final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
-    final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
-    final RexNode bRef = rexBuilder.makeFieldAccess(range, 1);
-    final RexNode cRef = rexBuilder.makeFieldAccess(range, 2);
-    final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
-
-    // result is unknown.
-    // "b is not unknown" would be a valid simplification.
-    RexNode q =
-        or(
-            eq(bRef, literal1),
-            and(nullLiteral, eq(aRef, literal1)));
-    assertThat(simplify.withUnknownAsFalse(false).simplify(q).toString(),
-        equalTo("XXXX"));
+    assertThat(simplify.withUnknownAsFalse(false).simplify(neOrEq).toString(),
+        equalTo("OR(<>(?0.b, 1), IS NOT NULL(?0.b))"));
   }
 
   /** Unit test for
