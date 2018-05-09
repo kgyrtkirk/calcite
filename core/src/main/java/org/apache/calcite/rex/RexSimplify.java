@@ -294,7 +294,7 @@ public class RexSimplify {
     // visiting "e3(x)" we know both "e1(x)" and "e2(x)" are not true (they
     // may be unknown), because if either of them were true we would have
     // stopped.
-    RexSimplify simplify = withUnknownAsFalse(true);
+    RexSimplify simplify = this;
     RexSimplify simplifyF = simplify.withUnknownAsFalse(unknownAsFalse);
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
@@ -333,7 +333,7 @@ public class RexSimplify {
               ImmutableList.of(((RexCall) a).getOperands().get(0))));
     }
     final SqlKind negateKind2 = a.getKind().negateNullSafe();
-    if (unknownAsFalse && a.getKind() != negateKind2) {
+    if (a.getKind() != negateKind2) {
       return simplify(
           rexBuilder.makeCall(RexUtil.op(negateKind2),
               ((RexCall) a).getOperands()));

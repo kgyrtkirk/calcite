@@ -1555,9 +1555,10 @@ public class RexProgramTest {
         "true");
 
     // TODO: make this simplify to "true"
+    RexNode or = or(eq(aRef, literal1),
+        ne(aRef, literal1));
     checkSimplifyFilter(
-        or(eq(aRef, literal1),
-            ne(aRef, literal1)),
+        or,
         "OR(=(?0.a, 1), <>(?0.a, 1))");
 
     // "b != 1 or b = 1" ==> "true" (valid because we have unknownAsFalse)
@@ -1570,6 +1571,8 @@ public class RexProgramTest {
     // We cannot simplify "b != 1 or b = 1" to "true" because if b is null, the
     // result is unknown.
     // "b is not unknown" would be a valid simplification.
+    assertThat(simplify.withUnknownAsFalse(false).simplify(or).toString(),
+        equalTo("OR(=(?0.a, 1), <>(?0.a, 1))"));
     assertThat(simplify.withUnknownAsFalse(false).simplify(neOrEq).toString(),
         equalTo("OR(<>(?0.b, 1), =(?0.b, 1))"));
 
