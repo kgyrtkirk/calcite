@@ -1602,9 +1602,11 @@ public class RexProgramTest {
 
   @Test public void testSimplifyOrTerms2() {
     final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
-    final RelDataType rowType =
-        typeFactory.builder().add("a", intType).nullable(false).add("b", intType).nullable(true)
-            .add("c", intType).nullable(true).build();
+    final RelDataType rowType = typeFactory.builder()
+        .add("a", intType).nullable(false)
+        .add("b", intType).nullable(true)
+        .add("c", intType).nullable(true)
+        .build();
 
     final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
     final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
