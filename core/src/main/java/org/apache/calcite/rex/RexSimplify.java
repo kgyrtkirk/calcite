@@ -294,13 +294,15 @@ public class RexSimplify {
     // visiting "e3(x)" we know both "e1(x)" and "e2(x)" are not true (they
     // may be unknown), because if either of them were true we would have
     // stopped.
-    RexSimplify simplify = this;
+    RexSimplify simplify = withUnknownAsFalse(false);
+    RexSimplify simplify0 = this;
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
       if (Predicate.of(t) == null) {
         continue;
       }
       final RexNode t2 = simplify.simplify(t);
+      final RexNode t3 = simplify0.simplify(t);
       terms.set(i, t2);
       final RexNode inverse =
           simplify.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, t2));
@@ -313,7 +315,9 @@ public class RexSimplify {
       if (Predicate.of(t) != null) {
         continue;
       }
-      terms.set(i, simplify.simplify(t));
+      RexNode t2 = simplify.simplify(t);
+      RexNode t3 = simplify0.simplify(t);
+      terms.set(i, t2);
     }
   }
 
