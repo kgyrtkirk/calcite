@@ -64,6 +64,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -1618,6 +1619,7 @@ public class RexProgramTest {
     assertThat(simplify.withUnknownAsFalse(false).simplify(neOrEq).toString(), equalTo("OR(<>(?0.b, 1), =(?0.b, 1))"));
   }
 
+  @Ignore
   @Test public void testSimplifyAnd1() {
     final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
     final RelDataType rowType = typeFactory.builder().add("a", intType).nullable(false).add("b", intType).nullable(true)

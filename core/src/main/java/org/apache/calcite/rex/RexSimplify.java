@@ -295,6 +295,7 @@ public class RexSimplify {
     // may be unknown), because if either of them were true we would have
     // stopped.
     RexSimplify simplify = withUnknownAsFalse(true);
+    RexSimplify simplifyF = simplify.withUnknownAsFalse(unknownAsFalse);
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
       if (Predicate.of(t) == null) {
@@ -303,10 +304,11 @@ public class RexSimplify {
       final RexNode t2 = simplify.simplify(t);
       terms.set(i, t2);
       final RexNode inverse =
-          simplify.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, t2));
+          simplifyF.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, t2));
       final RelOptPredicateList newPredicates = predicates.union(rexBuilder,
           RelOptPredicateList.of(rexBuilder, ImmutableList.of(inverse)));
       simplify = simplify.withPredicates(newPredicates);
+      simplifyF = simplify.withUnknownAsFalse(false);
     }
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
@@ -331,7 +333,7 @@ public class RexSimplify {
               ImmutableList.of(((RexCall) a).getOperands().get(0))));
     }
     final SqlKind negateKind2 = a.getKind().negateNullSafe();
-    if (a.getKind() != negateKind2) {
+    if (unknownAsFalse && a.getKind() != negateKind2) {
       return simplify(
           rexBuilder.makeCall(RexUtil.op(negateKind2),
               ((RexCall) a).getOperands()));
