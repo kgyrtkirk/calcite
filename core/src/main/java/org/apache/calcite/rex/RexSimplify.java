@@ -709,6 +709,12 @@ public class RexSimplify {
       if (term.isAlwaysFalse()) {
         return rexBuilder.makeLiteral(false);
       }
+      if (term instanceof RexLiteral) {
+        RexLiteral rexLiteral = (RexLiteral) term;
+        if (((RexLiteral) term).isNull()) {
+          return rexBuilder.makeLiteral(false);
+        }
+      }
     }
     if (terms.isEmpty() && notTerms.isEmpty()) {
       return rexBuilder.makeLiteral(true);
@@ -1029,7 +1035,11 @@ public class RexSimplify {
       final RexNode term = simplify(terms.get(i));
       switch (term.getKind()) {
       case LITERAL:
-        if (!RexLiteral.isNullLiteral(term)) {
+        if (RexLiteral.isNullLiteral(term)) {
+          if (unknownAsFalse) {
+            return rexBuilder.makeLiteral(false);
+          }
+        } else {
           if (RexLiteral.booleanValue(term)) {
             return term; // true
           } else {
