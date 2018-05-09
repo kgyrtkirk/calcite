@@ -1621,7 +1621,7 @@ public class RexProgramTest {
         and(
             eq(aRef, literal1),
             nullLiteral),
-        "null",
+        "AND(=(?0.a, 1), null)",
         "false"
     );
     checkSimplify2(
@@ -1635,6 +1635,13 @@ public class RexProgramTest {
             falseLiteral,
             nullLiteral),
         "false",
+        "false");
+
+    checkSimplify2(
+        and(
+            nullLiteral,
+            eq(aRef, literal1)),
+        "AND(null, =(?0.a, 1))",
         "false");
 
     checkSimplify2(
