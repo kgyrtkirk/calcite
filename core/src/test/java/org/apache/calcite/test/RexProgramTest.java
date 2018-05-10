@@ -1221,7 +1221,7 @@ public class RexProgramTest {
 
     checkSimplify2(and(le(hRef, literal1), ge(hRef, literal1)),
         "AND(<=(?0.h, 1), >=(?0.h, 1))",
-        "=(?0.a, 1)");
+        "=(?0.h, 1)");
 
     checkSimplify2(and(lt(hRef, literal1), eq(hRef, literal1), ge(hRef, literal1)),
         "AND(<(?0.h, 1), =(?0.h, 1), >=(?0.h, 1))",
@@ -1556,6 +1556,9 @@ public class RexProgramTest {
     final RexNode bRef = rexBuilder.makeFieldAccess(range, 1);
     final RexNode cRef = rexBuilder.makeFieldAccess(range, 2);
     final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
+    final RexLiteral literal2 = rexBuilder.makeExactLiteral(BigDecimal.valueOf(2));
+    final RexLiteral literal3 = rexBuilder.makeExactLiteral(BigDecimal.valueOf(3));
+    final RexLiteral literal4 = rexBuilder.makeExactLiteral(BigDecimal.valueOf(4));
 
     // "a != 1 or a = 1" ==> "true"
     checkSimplifyFilter(
@@ -1605,6 +1608,19 @@ public class RexProgramTest {
         or(isNotNull(bRef),
             isNull(cRef)),
         "OR(IS NOT NULL(?0.b), IS NULL(?0.c))");
+
+    // multiple predicates are handled correctly
+    checkSimplifyFilter(
+        and(
+            or(
+                eq(bRef, literal1),
+                eq(bRef, literal2)),
+            eq(bRef, literal2),
+            eq(aRef, literal3),
+            or(
+                eq(aRef, literal3),
+                eq(aRef, literal4))),
+        "AND(=(?0.b, 2), =(?0.a, 3))");
   }
 
   @Test public void testSimplifyUnknown() {
