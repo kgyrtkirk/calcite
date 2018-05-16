@@ -521,7 +521,7 @@ public class RexImplicationCheckerTest {
       executor = holder.get();
       simplify =
           new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY, false,
-              executor);
+              executor).withParanoid(true);
       checker = new RexImplicationChecker(rexBuilder, executor, rowType);
     }
 
