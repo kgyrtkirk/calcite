@@ -1563,7 +1563,7 @@ public class RexProgramTest {
             ne(aRef, literal1)),
         "OR(=(?0.a, 1), <>(?0.a, 1))");
 
-    // "b != 1 or b = 1" ==> "true" (valid because we have unknownAsFalse)
+    // "b != 1 or b = 1" is not simplifyable because b might be null
     final RexNode neOrEq = or(
         ne(bRef, literal1),
         eq(bRef, literal1));
