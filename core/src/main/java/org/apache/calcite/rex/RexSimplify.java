@@ -970,6 +970,7 @@ public class RexSimplify {
       // no change
       return e;
     } else if (range2.equals(Range.all())) {
+      // Range is always satisfied given these predicates; but nullability might be problematic
       return simplify(rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_NULL, comparison.ref));
     } else if (range2.lowerEndpoint().equals(range2.upperEndpoint())) {
       if (range2.lowerBoundType() == BoundType.OPEN
