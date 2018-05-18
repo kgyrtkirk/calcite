@@ -1567,7 +1567,7 @@ public class RexProgramTest {
     final RexNode neOrEq = or(
         ne(bRef, literal1),
         eq(bRef, literal1));
-    checkSimplifyFilter(neOrEq, "true");
+    checkSimplifyFilter(neOrEq, "OR(<>(?0.b, 1), IS NOT NULL(?0.b))");
 
     // Careful of the excluded middle!
     // We cannot simplify "b != 1 or b = 1" to "true" because if b is null, the
