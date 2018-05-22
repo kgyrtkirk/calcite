@@ -79,6 +79,18 @@ public class RexAnalyzer {
       values.add(new NlsString("", null, null));
       values.add(new NlsString("hello", null, null));
       break;
+    case TIMESTAMP:
+      values.add(0L); // 1970-01-01 00:00:00
+      break;
+    case DATE:
+      values.add(0); // 1970-01-01
+      values.add(365); // 1971-01-01
+      values.add(-365); // 1969-01-01
+      break;
+    case TIME:
+      values.add(0); // 00:00:00.000
+      values.add(86_399_000); // 23:59:59.000
+      break;
     default:
       throw new AssertionError("don't know values for " + variable
           + " of type " + variable.getType());

@@ -16,7 +16,11 @@
  */
 package org.apache.calcite.rex;
 
+import org.apache.calcite.avatica.util.DateTimeUtils;
+import org.apache.calcite.avatica.util.TimeUnit;
+import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rel.metadata.NullSentinel;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.util.NlsString;
 import org.apache.calcite.util.Util;
 
@@ -85,7 +89,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
   }
 
   public Comparable visitLiteral(RexLiteral literal) {
-    return Util.first(literal.getValue(), NullSentinel.INSTANCE);
+    return Util.first(literal.getValue4(), NullSentinel.INSTANCE);
   }
 
   public Comparable visitOver(RexOver over) {
@@ -167,9 +171,31 @@ public class RexInterpreter implements RexVisitor<Comparable> {
       return cast(call, values);
     case COALESCE:
       return coalesce(call, values);
+    case CEIL:
+    case FLOOR:
+      return ceil(call, values);
+    case EXTRACT:
+      return extract(call, values);
     default:
       throw unbound(call);
     }
+  }
+
+  private Comparable extract(RexCall call, List<Comparable> values) {
+    final Comparable v = values.get(1);
+    if (v == N) {
+      return N;
+    }
+    final TimeUnitRange timeUnitRange = (TimeUnitRange) values.get(0);
+    final int v2;
+    if (v instanceof Long) {
+      // TIMESTAMP
+      v2 = (int) (((Long) v) / TimeUnit.DAY.multiplier.longValue());
+    } else {
+      // DATE
+      v2 = (Integer) v;
+    }
+    return DateTimeUtils.unixDateExtract(timeUnitRange, v2);
   }
 
   private Comparable coalesce(RexCall call, List<Comparable> values) {
@@ -179,6 +205,41 @@ public class RexInterpreter implements RexVisitor<Comparable> {
       }
     }
     return N;
+  }
+
+  private Comparable ceil(RexCall call, List<Comparable> values) {
+    if (values.get(0) == N) {
+      return N;
+    }
+    final Long v = (Long) values.get(0);
+    final TimeUnitRange unit = (TimeUnitRange) values.get(1);
+    switch (unit) {
+    case YEAR:
+    case MONTH:
+      switch (call.getKind()) {
+      case FLOOR:
+        return new BigDecimal(DateTimeUtils.unixTimestampFloor(unit, v));
+      default:
+        return new BigDecimal(DateTimeUtils.unixTimestampCeil(unit, v));
+      }
+    }
+    final TimeUnitRange subUnit = subUnit(unit);
+    for (long v2 = v;;) {
+      final int e = DateTimeUtils.unixTimestampExtract(subUnit, v2);
+      if (e == 0) {
+        return new BigDecimal(v2);
+      }
+      v2 -= unit.startUnit.multiplier.longValue();
+    }
+  }
+
+  private TimeUnitRange subUnit(TimeUnitRange unit) {
+    switch (unit) {
+    case QUARTER:
+      return TimeUnitRange.MONTH;
+    default:
+      return TimeUnitRange.DAY;
+    }
   }
 
   private Comparable cast(RexCall call, List<Comparable> values) {
