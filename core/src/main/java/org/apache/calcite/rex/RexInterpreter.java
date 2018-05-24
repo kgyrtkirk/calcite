@@ -294,6 +294,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     }
     Comparable v0 = values.get(0);
     Comparable v1 = values.get(1);
+
     if (v0 instanceof Number && v1 instanceof NlsString) {
       try {
         v1 = new BigDecimal(((NlsString) v1).getValue());
@@ -307,6 +308,12 @@ public class RexInterpreter implements RexVisitor<Comparable> {
       } catch (NumberFormatException e) {
         return false;
       }
+    }
+    if (v0 instanceof Number) {
+      v0 = number(v0);
+    }
+    if (v1 instanceof Number) {
+      v1 = number(v1);
     }
     //noinspection unchecked
     final int c = v0.compareTo(v1);
