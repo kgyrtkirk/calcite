@@ -345,55 +345,6 @@ public class RexSimplify {
     }
   }
 
-  private void simplifyAndTerms(List<RexNode> terms) {
-    RexSimplify simplify = withUnknownAsFalse(false);
-    for (int i = 0; i < terms.size(); i++) {
-      RexNode t = terms.get(i);
-      if (Predicate.of(t) == null) {
-        continue;
-      }
-      terms.set(i, simplify.simplify(t));
-      RelOptPredicateList newPredicates = simplify.predicates.union(rexBuilder,
-          RelOptPredicateList.of(rexBuilder, terms.subList(i, i + 1)));
-      simplify = simplify.withPredicates(newPredicates);
-    }
-    for (int i = 0; i < terms.size(); i++) {
-      RexNode t = terms.get(i);
-      if (Predicate.of(t) != null) {
-        continue;
-      }
-      terms.set(i, simplify.simplify(t));
-    }
-  }
-
-  private void simplifyOrTerms(List<RexNode> terms) {
-    // Suppose we are processing "e1(x) OR e2(x) OR e3(x)". When we are
-    // visiting "e3(x)" we know both "e1(x)" and "e2(x)" are not true (they
-    // may be unknown), because if either of them were true we would have
-    // stopped.
-    RexSimplify simplify = this;
-    for (int i = 0; i < terms.size(); i++) {
-      final RexNode t = terms.get(i);
-      if (Predicate.of(t) == null) {
-        continue;
-      }
-      final RexNode t2 = simplify.simplify(t);
-      terms.set(i, t2);
-      final RexNode inverse =
-          simplify.simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, t2));
-      final RelOptPredicateList newPredicates = simplify.predicates.union(rexBuilder,
-          RelOptPredicateList.of(rexBuilder, ImmutableList.of(inverse)));
-      simplify = simplify.withPredicates(newPredicates);
-    }
-    for (int i = 0; i < terms.size(); i++) {
-      final RexNode t = terms.get(i);
-      if (Predicate.of(t) != null) {
-        continue;
-      }
-      terms.set(i, simplify.simplify(t));
-    }
-  }
-
   private RexNode simplifyNot(RexCall call) {
     final RexNode a = call.getOperands().get(0);
     switch (a.getKind()) {
