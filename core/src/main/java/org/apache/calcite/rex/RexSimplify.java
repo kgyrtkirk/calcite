@@ -1250,7 +1250,7 @@ public class RexSimplify {
   /** Removes any casts that change nullability but not type.
    *
    * <p>For example, {@code CAST(1 = 0 AS BOOLEAN)} becomes {@code 1 = 0}. */
-  public RexNode removeNullabilityCast(RexNode e) {
+  private RexNode removeNullabilityCast(RexNode e) {
     return RexUtil.removeNullabilityCast(rexBuilder.getTypeFactory(), e);
   }
 
