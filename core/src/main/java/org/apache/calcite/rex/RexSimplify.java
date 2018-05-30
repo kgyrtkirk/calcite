@@ -686,8 +686,7 @@ public class RexSimplify {
     return simplifyAnd2(terms, notTerms);
   }
 
-  // package-protected only to support a deprecated method; treat as private
-  RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
+  private RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
     for (RexNode term : terms) {
       if (term.isAlwaysFalse()) {
         return rexBuilder.makeLiteral(false);
@@ -720,7 +719,7 @@ public class RexSimplify {
 
   /** As {@link #simplifyAnd2(List, List)} but we assume that if the expression
    * returns UNKNOWN it will be interpreted as FALSE. */
-  RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
+  private RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
       List<RexNode> notTerms) {
     //noinspection unchecked
     return simplifyAnd2ForUnknownAsFalse(terms, notTerms, Comparable.class);
