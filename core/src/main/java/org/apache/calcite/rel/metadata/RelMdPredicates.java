@@ -410,8 +410,7 @@ public class RelMdPredicates
     final RexSimplify simplify =
         new RexSimplify(rexBuilder, predicates, true, executor);
     RexNode disjPred = simplify.simplify(
-        rB.makeCall(SqlStdOperatorTable.OR,
-            finalResidualPreds));
+        rexBuilder.makeCall(SqlStdOperatorTable.OR, finalResidualPreds));
     if (!disjPred.isAlwaysTrue()) {
       preds.add(disjPred);
     }
