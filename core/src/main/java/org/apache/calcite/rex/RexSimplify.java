@@ -276,7 +276,7 @@ public class RexSimplify {
   /**
    * Simplifies a conjunction of boolean expressions.
    */
-  public RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
+  private RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (RexNode e : nodes) {
@@ -1036,7 +1036,7 @@ public class RexSimplify {
   }
 
   /** Simplifies OR(x, x) into x, and similar. */
-  public RexNode simplifyOr(RexCall call) {
+  private RexNode simplifyOr(RexCall call) {
     assert call.getKind() == SqlKind.OR;
     final List<RexNode> terms = RelOptUtil.disjunctions(call);
     simplifyOrTerms(terms);
@@ -1045,7 +1045,7 @@ public class RexSimplify {
 
   /** Simplifies a list of terms and combines them into an OR.
    * Modifies the list in place. */
-  public RexNode simplifyOrs(List<RexNode> terms) {
+  private RexNode simplifyOrs(List<RexNode> terms) {
     if (paranoid) {
       final RexNode before = RexUtil.composeDisjunction(rexBuilder, terms);
       return verify(before, simplifier -> simplifier.simplifyOrs(terms));
