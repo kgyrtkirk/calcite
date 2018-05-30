@@ -1798,13 +1798,6 @@ public class RexUtil {
   }
 
   @Deprecated // to be removed before 2.0
-  public static RexNode simplifyAnd(RexBuilder rexBuilder, RexCall e,
-      boolean unknownAsFalse) {
-    return new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY,
-        unknownAsFalse, EXECUTOR).simplifyAnd(e);
-  }
-
-  @Deprecated // to be removed before 2.0
   public static RexNode simplifyAnd2(RexBuilder rexBuilder,
       List<RexNode> terms, List<RexNode> notTerms) {
     return new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY, false,
