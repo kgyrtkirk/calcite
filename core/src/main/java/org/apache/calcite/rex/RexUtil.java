@@ -390,7 +390,7 @@ public class RexUtil {
   /** Tries to decompose the RexNode which is a RexCall into non-literal
    * RexNodes. */
   private static void decompose(Set<RexNode> set, RexNode rexNode) {
-    if(true) return;
+    //    if(true) return;
     if (rexNode instanceof RexCall) {
       for (RexNode r : ((RexCall) rexNode).getOperands()) {
         decompose(set, r);

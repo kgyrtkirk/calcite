@@ -191,7 +191,7 @@ public class RelMdPredicates
         int sIdx = ((RexInputRef) expr.e).getIndex();
         m.set(sIdx, expr.i);
         columnsMappedBuilder.set(sIdx);
-      // Project can also generate constants. We need to include them.
+        // Project can also generate constants. We need to include them.
       } else if (RexLiteral.isNullLiteral(expr.e)) {
         projectPullUpPredicates.add(
             rexBuilder.makeCall(SqlStdOperatorTable.IS_NULL,
@@ -201,8 +201,8 @@ public class RelMdPredicates
             ImmutableList.of(rexBuilder.makeInputRef(project, expr.i), expr.e);
         final SqlOperator op = args.get(0).getType().isNullable()
             || args.get(1).getType().isNullable()
-            ? SqlStdOperatorTable.IS_NOT_DISTINCT_FROM
-            : SqlStdOperatorTable.EQUALS;
+              ? SqlStdOperatorTable.IS_NOT_DISTINCT_FROM
+              : SqlStdOperatorTable.EQUALS;
         projectPullUpPredicates.add(rexBuilder.makeCall(op, args));
       }
     }
@@ -491,7 +491,7 @@ public class RelMdPredicates
     final RexSimplify simplifier;
 
     JoinConditionBasedPredicateInference(Join joinRel,
-            RexNode lPreds, RexNode rPreds, RexSimplify simplifier) {
+        RexNode lPreds, RexNode rPreds, RexSimplify simplifier) {
       this(joinRel, joinRel instanceof SemiJoin, lPreds, rPreds, simplifier);
     }
 
@@ -594,7 +594,7 @@ public class RelMdPredicates
         infer(leftChildPredicates, allExprDigests, inferredPredicates,
             includeEqualityInference,
             joinType == JoinRelType.LEFT ? rightFieldsBitSet
-                : allFieldsBitSet);
+              : allFieldsBitSet);
         break;
       }
       switch (joinType) {
@@ -603,7 +603,7 @@ public class RelMdPredicates
         infer(rightChildPredicates, allExprDigests, inferredPredicates,
             includeEqualityInference,
             joinType == JoinRelType.RIGHT ? leftFieldsBitSet
-                : allFieldsBitSet);
+              : allFieldsBitSet);
         break;
       }
 
@@ -634,18 +634,18 @@ public class RelMdPredicates
         Iterable<RexNode> pulledUpPredicates;
         if (isSemiJoin) {
           pulledUpPredicates = Iterables.concat(
-                RelOptUtil.conjunctions(leftChildPredicates),
-                leftInferredPredicates);
+              RelOptUtil.conjunctions(leftChildPredicates),
+              leftInferredPredicates);
         } else {
           pulledUpPredicates = Iterables.concat(
-                RelOptUtil.conjunctions(leftChildPredicates),
-                RelOptUtil.conjunctions(rightChildPredicates),
-                RexUtil.retainDeterministic(
+              RelOptUtil.conjunctions(leftChildPredicates),
+              RelOptUtil.conjunctions(rightChildPredicates),
+              RexUtil.retainDeterministic(
                   RelOptUtil.conjunctions(joinRel.getCondition())),
-                inferredPredicates);
+              inferredPredicates);
         }
         return RelOptPredicateList.of(rexBuilder, pulledUpPredicates,
-          leftInferredPredicates, rightInferredPredicates);
+            leftInferredPredicates, rightInferredPredicates);
       case LEFT:
         return RelOptPredicateList.of(rexBuilder,
             RelOptUtil.conjunctions(leftChildPredicates),
@@ -677,6 +677,7 @@ public class RelMdPredicates
           continue;
         }
         for (Mapping m : mappings(r)) {
+          Rotor.relMD.incrementAndGet();
           RexNode tr = r.accept(
               new RexPermuteInputsShuttle(m, joinRel.getInput(0),
                   joinRel.getInput(1)));
