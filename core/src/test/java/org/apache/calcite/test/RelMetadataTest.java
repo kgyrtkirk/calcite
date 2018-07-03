@@ -1534,7 +1534,7 @@ public class RelMetadataTest extends SqlToRelTestBase {
    * <a href="https://issues.apache.org/jira/browse/CALCITE-2205">[CALCITE-2205]</a>.
    * Since this is a performance problem, the test result does not
    * change, but takes over 15 minutes before the fix and 6 seconds after. */
-  @Test public void testPullUpPredicatesForExprsItr() {
+  @Test(timeout = 20_000) public void testPullUpPredicatesForExprsItr() {
     // If we're running Windows, we are probably in a VM and the test may
     // exceed timeout by a small margin.
     Assume.assumeThat("Too slow to run on Windows",
@@ -1553,75 +1553,13 @@ public class RelMetadataTest extends SqlToRelTestBase {
         + "join emp c\n"
         + "on b.mgr =a.mgr and a.empno =b.deptno and a.comm=b.comm\n"
         + "  and a.deptno=b.deptno and a.job=b.job and a.ename=b.ename\n"
-        + "  and a.mgr=b.deptno and a.slacker=b.slacker and a.deptno=c.deptno";
+        + "  and a.mgr=b.deptno and a.slacker=b.slacker";
     // Lock to ensure that only one test is using this method at a time.
     try (final JdbcAdapterTest.LockWrapper ignore =
              JdbcAdapterTest.LockWrapper.lock(LOCK)) {
       final RelNode rel = convertSql(sql);
       final RelMetadataQuery mq = RelMetadataQuery.instance();
       RelOptPredicateList inputSet = mq.getPulledUpPredicates(rel.getInput(0));
-      System.out.println(Rotor.report());
-      assertThat(inputSet.pulledUpPredicates.size(), is(18));
-    }
-  }
-
-  @Test public void testPullUpPredicatesForExprsItr2() {
-    // If we're running Windows, we are probably in a VM and the test may
-    // exceed timeout by a small margin.
-    Assume.assumeThat("Too slow to run on Windows",
-        File.separatorChar, Is.is('/'));
-    final String sql = "select a.EMPNO, a.ENAME\n"
-        + "from (select * from sales.emp where empno=3) a\n"
-        + "join (select * from sales.emp where deptno=9) b\n"
-        + "on a.empno = b.empno ";
-    // Lock to ensure that only one test is using this method at a time.
-    try (final JdbcAdapterTest.LockWrapper ignore =
-        JdbcAdapterTest.LockWrapper.lock(LOCK)) {
-      final RelNode rel = convertSql(sql);
-      final RelMetadataQuery mq = RelMetadataQuery.instance();
-      RelOptPredicateList inputSet = mq.getPulledUpPredicates(rel.getInput(0));
-      assertThat(inputSet.pulledUpPredicates.size(), is(18));
-    }
-  }
-
-  @Test public void testPullUpPredicatesForExprsItr3() {
-    // If we're running Windows, we are probably in a VM and the test may
-    // exceed timeout by a small margin.
-    final String sql = "select a.EMPNO, a.ENAME\n"
-        + "from (select * from sales.emp ) a\n"
-        + "join (select * from sales.emp ) b on (b.empno=a.empno and a.comm<>b.comm )\n"
-        + "join (select * from sales.emp ) c\n"
-        + "on b.mgr =a.mgr and a.empno =b.deptno and a.comm=b.comm\n"
-        + "  and a.deptno=b.deptno and a.job=b.job and a.ename=b.ename\n"
-        + "  and a.mgr=b.deptno and a.slacker=b.slacker and a.deptno=c.deptno";
-    // Lock to ensure that only one test is using this method at a time.
-    try (final JdbcAdapterTest.LockWrapper ignore =
-        JdbcAdapterTest.LockWrapper.lock(LOCK)) {
-      final RelNode rel = convertSql(sql);
-      final RelMetadataQuery mq = RelMetadataQuery.instance();
-      RelOptPredicateList inputSet = mq.getPulledUpPredicates(rel.getInput(0));
-      System.out.println(Rotor.relMD.get());
-      assertThat(inputSet.pulledUpPredicates.size(), is(18));
-    }
-  }
-
-  @Test public void testPullUpPredicatesForExprsItr4() {
-    // If we're running Windows, we are probably in a VM and the test may
-    // exceed timeout by a small margin.
-    final String sql = "select a.EMPNO, a.ENAME\n"
-        + "from (select * from sales.emp ) a\n"
-        + "join (select * from sales.emp ) b on (b.empno=a.empno and a.comm<>b.comm )\n"
-        + "join (select * from sales.emp ) c\n"
-        + "on b.mgr =a.mgr and a.empno =b.deptno and a.comm=b.comm\n"
-        + "  and a.deptno=b.deptno and a.job=b.job and a.ename=b.ename\n"
-        + "  and a.mgr=b.deptno and a.slacker=b.slacker and a.deptno=c.deptno";
-    // Lock to ensure that only one test is using this method at a time.
-    try (final JdbcAdapterTest.LockWrapper ignore =
-        JdbcAdapterTest.LockWrapper.lock(LOCK)) {
-      final RelNode rel = convertSql(sql);
-      final RelMetadataQuery mq = RelMetadataQuery.instance();
-      RelOptPredicateList inputSet = mq.getPulledUpPredicates(rel.getInput(0));
-      System.out.println(Rotor.relMD.get());
       assertThat(inputSet.pulledUpPredicates.size(), is(18));
     }
   }
