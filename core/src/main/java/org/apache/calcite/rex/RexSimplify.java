@@ -24,7 +24,6 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.Strong;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.NullSentinel;
-import org.apache.calcite.rel.metadata.Rotor;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -174,8 +173,6 @@ public class RexSimplify {
   }
 
   private RexNode simplify_(RexNode e) {
-    Rotor.simplify.incrementAndGet();
-
     switch (e.getKind()) {
     case AND:
       return simplifyAnd((RexCall) e);

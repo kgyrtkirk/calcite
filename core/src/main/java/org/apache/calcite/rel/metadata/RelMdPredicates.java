@@ -677,7 +677,6 @@ public class RelMdPredicates
           continue;
         }
         for (Mapping m : mappings(r)) {
-          Rotor.relMD.incrementAndGet();
           RexNode tr = r.accept(
               new RexPermuteInputsShuttle(m, joinRel.getInput(0),
                   joinRel.getInput(1)));
