@@ -124,7 +124,7 @@ public class RexSimplify {
               executor);
   }
 
-  /** Returns a RexSimplify the same as this but with a specified {@link #predicateElimination} 
+  /** Returns a RexSimplify the same as this but with a specified {@link #predicateElimination}
    * value. */
   private RexSimplify withPredicateElimination(boolean predicateElimination) {
     return predicateElimination == this.predicateElimination
