@@ -119,7 +119,7 @@ public class RexSimplify {
    */
   public RexSimplify withParanoid(boolean paranoid) {
     return paranoid == this.paranoid
-        ? this
+      ? this
       : new RexSimplify(rexBuilder, predicates, unknownAsFalse, predicateElimination, paranoid,
               executor);
   }
