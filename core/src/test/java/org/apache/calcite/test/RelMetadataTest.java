@@ -1560,7 +1560,7 @@ public class RelMetadataTest extends SqlToRelTestBase {
       final RelNode rel = convertSql(sql);
       final RelMetadataQuery mq = RelMetadataQuery.instance();
       RelOptPredicateList inputSet = mq.getPulledUpPredicates(rel.getInput(0));
-      System.out.println(Rotor.relMD.get());
+      System.out.println(Rotor.report());
       assertThat(inputSet.pulledUpPredicates.size(), is(18));
     }
   }

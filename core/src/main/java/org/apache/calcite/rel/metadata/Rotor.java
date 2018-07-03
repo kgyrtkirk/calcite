@@ -23,5 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Rotor {
 
   public static AtomicInteger relMD = new AtomicInteger(0);
+  public static AtomicInteger simplify = new AtomicInteger(0);
+
+  public static String report() { 
+    return String.format("relMD: %s, simplify: %s", relMD, simplify);
+    
+  }
 
 }
