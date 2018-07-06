@@ -685,6 +685,7 @@ public class RexSimplify {
   }
 
   private RexNode simplifyAndCore(final List<RexNode> terms, final List<RexNode> notTerms) {
+    // FIXME: this conditional should be removed after LOGIC_2VALUED_TRUE is supported
     if (unknownAsFalse) {
       simplifyAndTerms(terms);
     } else {
