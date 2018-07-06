@@ -60,6 +60,12 @@ public class RexSimplify {
   final boolean unknownAsFalse;
   private final RexExecutor executor;
 
+  enum LogicMode {
+    LOGIC_3VALUED,
+    LOGIC_2VALUED_PINNED_TRUE,
+    LOGIC_2VALUED_PINNED_FALSE,
+    LOGIC_2VALUED_PINNED_NULL,
+  }
   /**
    * Creates a RexSimplify.
    *
@@ -92,7 +98,12 @@ public class RexSimplify {
   //~ Methods ----------------------------------------------------------------
 
   /** Returns a RexSimplify the same as this but with a specified
-   * {@link #unknownAsFalse} value. */
+   * {@link #unknownAsFalse} value.
+   * 
+   * @deprecated you may encapsulate the input into an "f(x) is true" to achieve
+   * unknownAsFalse
+   */
+  @Deprecated // to be removed before 2.0
   public RexSimplify withUnknownAsFalse(boolean unknownAsFalse) {
     return unknownAsFalse == this.unknownAsFalse
         ? this
