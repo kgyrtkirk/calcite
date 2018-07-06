@@ -63,8 +63,10 @@ public class RexSimplify {
   enum LogicMode {
     LOGIC_3VALUED,
     LOGIC_2VALUED_PINNED_TRUE,
+    /* not yet supported
     LOGIC_2VALUED_PINNED_FALSE,
     LOGIC_2VALUED_PINNED_NULL,
+    */
   }
   /**
    * Creates a RexSimplify.
