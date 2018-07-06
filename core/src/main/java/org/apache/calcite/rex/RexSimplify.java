@@ -60,7 +60,7 @@ public class RexSimplify {
   final boolean unknownAsFalse;
   private final RexExecutor executor;
 
-  enum LogicMode {
+  private enum LogicMode {
     LOGIC_3VALUED,
     LOGIC_2VALUED_PINNED_TRUE,
     /* not yet supported
@@ -733,14 +733,10 @@ public class RexSimplify {
 
   /** As {@link #simplifyAnd2(List, List)} but we assume that if the expression
    * returns UNKNOWN it will be interpreted as FALSE. */
+  // FIXME: invoked from RexUtil
   RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
       List<RexNode> notTerms) {
     //noinspection unchecked
-    return simplifyAnd2ForUnknownAsFalse(terms, notTerms, Comparable.class);
-  }
-
-  private <C extends Comparable<C>> RexNode simplifyAnd2ForUnknownAsFalse(
-      List<RexNode> terms, List<RexNode> notTerms, Class<C> clazz) {
     for (RexNode term : terms) {
       if (term.isAlwaysFalse() || RexLiteral.isNullLiteral(term)) {
         return rexBuilder.makeLiteral(false);
@@ -755,7 +751,7 @@ public class RexSimplify {
     }
     // Try to simplify the expression
     final Multimap<String, Pair<String, RexNode>> equalityTerms = ArrayListMultimap.create();
-    final Map<String, Pair<Range<C>, List<RexNode>>> rangeTerms =
+    final Map<String, Pair<Range<Comparable>, List<RexNode>>> rangeTerms =
         new HashMap<>();
     final Map<String, String> equalityConstantTerms = new HashMap<>();
     final Set<String> negatedTerms = new HashSet<>();
@@ -768,7 +764,7 @@ public class RexSimplify {
       final Comparison comparison = Comparison.of(predicate);
       if (comparison != null
           && comparison.kind != SqlKind.NOT_EQUALS) { // not supported yet
-        final C v0 = comparison.literal.getValueAs(clazz);
+        final Comparable v0 = comparison.literal.getValueAs(Comparable.class);
         if (v0 != null) {
           final RexNode result = processRange(rexBuilder, terms, rangeTerms,
               predicate, comparison.ref, v0, comparison.kind);
@@ -860,14 +856,14 @@ public class RexSimplify {
         // or weaken terms that are partially implied.
         // E.g. given predicate "x >= 5" and term "x between 3 and 10"
         // we weaken to term to "x between 5 and 10".
-        final RexNode term2 = simplifyUsingPredicates(term, clazz);
+        final RexNode term2 = simplifyUsingPredicates(term, Comparable.class);
         if (term2 != term) {
           terms.set(i, term = term2);
         }
         // Range
         if (comparison != null
             && comparison.kind != SqlKind.NOT_EQUALS) { // not supported yet
-          final C constant = comparison.literal.getValueAs(clazz);
+          final Comparable constant = comparison.literal.getValueAs(Comparable.class);
           final RexNode result = processRange(rexBuilder, terms, rangeTerms,
               term, comparison.ref, constant, comparison.kind);
           if (result != null) {
