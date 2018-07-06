@@ -300,23 +300,6 @@ public class RexSimplify {
     return simplifyUsingPredicates(e2, clazz);
   }
 
-  /**
-   * Simplifies a conjunction of boolean expressions.
-   */
-  private RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
-    final List<RexNode> terms = new ArrayList<>();
-    final List<RexNode> notTerms = new ArrayList<>();
-    for (RexNode e : nodes) {
-      RelOptUtil.decomposeConjunction(e, terms, notTerms);
-    }
-    simplifyList(terms);
-    simplifyList(notTerms);
-    if (unknownAsFalse) {
-      return simplifyAnd2ForUnknownAsFalse(terms, notTerms);
-    }
-    return simplifyAnd2(terms, notTerms);
-  }
-
   private void simplifyList(List<RexNode> terms) {
     for (int i = 0; i < terms.size(); i++) {
       terms.set(i, withUnknownAsFalse(false).simplify_(terms.get(i)));
@@ -698,6 +681,10 @@ public class RexSimplify {
     final List<RexNode> notTerms = new ArrayList<>();
     RelOptUtil.decomposeConjunction(e, terms, notTerms);
 
+    return simplifyAndCore(terms, notTerms);
+  }
+
+  private RexNode simplifyAndCore(final List<RexNode> terms, final List<RexNode> notTerms) {
     if (unknownAsFalse) {
       simplifyAndTerms(terms);
     } else {
@@ -715,6 +702,13 @@ public class RexSimplify {
     if (terms.isEmpty() && notTerms.isEmpty()) {
       return rexBuilder.makeLiteral(true);
     }
+
+    if (terms.size() == 1 && notTerms.isEmpty()) {
+      // Make sure "x OR y OR x" (a single-term conjunction) gets simplified.
+      // FIXME: I guess this simplify_ is not needed..
+      return simplify_(terms.get(0));
+    }
+
     if (unknownAsFalse) {
       return simplifyAnd2ForUnknownAsFalse(terms, notTerms);
     }
@@ -748,10 +742,6 @@ public class RexSimplify {
    * returns UNKNOWN it will be interpreted as FALSE. */
   private RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
       List<RexNode> notTerms) {
-    if (terms.size() == 1 && notTerms.isEmpty()) {
-      // Make sure "x OR y OR x" (a single-term conjunction) gets simplified.
-      return simplify_(terms.get(0));
-    }
     // Try to simplify the expression
     final Multimap<String, Pair<String, RexNode>> equalityTerms = ArrayListMultimap.create();
     final Map<String, Pair<Range<Comparable>, List<RexNode>>> rangeTerms =
@@ -1614,7 +1604,13 @@ public class RexSimplify {
    * @return simplified conjunction of predicates for the filter, null if always false
    */
   public RexNode simplifyFilterPredicates(Iterable<? extends RexNode> predicates) {
-    final RexNode simplifiedAnds = simplifyAnds(predicates);
+    final List<RexNode> terms = new ArrayList<>();
+    final List<RexNode> notTerms = new ArrayList<>();
+    for (RexNode p : predicates) {
+      RelOptUtil.decomposeConjunction(p, terms, notTerms);
+    }
+
+    final RexNode simplifiedAnds = simplifyAndCore(terms, notTerms);
     if (simplifiedAnds.isAlwaysFalse()) {
       return null;
     }
