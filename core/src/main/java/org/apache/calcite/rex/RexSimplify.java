@@ -56,12 +56,25 @@ public class RexSimplify {
   private final boolean paranoid;
   public final RexBuilder rexBuilder;
   private final RelOptPredicateList predicates;
+  @Deprecated
   final boolean unknownAsFalse;
   private final RexExecutor executor;
 
+  final LogicMode logicMode;
+
   private enum LogicMode {
-    LOGIC_3VALUED,
-    LOGIC_2VALUED_PINNED_TRUE,
+    LOGIC_3VALUED {
+      @Override public boolean isAlwaysFalse(RexNode term) {
+        return term.isAlwaysFalse();
+      }
+    },
+    LOGIC_2VALUED_PINNED_TRUE {
+      @Override public boolean isAlwaysFalse(RexNode term) {
+        return (term.isAlwaysFalse() || RexLiteral.isNullLiteral(term));
+      }
+    },;
+
+    abstract public boolean isAlwaysFalse(RexNode term);
     /* not yet supported
     LOGIC_2VALUED_PINNED_FALSE,
     LOGIC_2VALUED_PINNED_NULL,
@@ -86,6 +99,7 @@ public class RexSimplify {
     this.rexBuilder = Preconditions.checkNotNull(rexBuilder);
     this.predicates = Preconditions.checkNotNull(predicates);
     this.unknownAsFalse = unknownAsFalse;
+    this.logicMode = unknownAsFalse ? LogicMode.LOGIC_2VALUED_PINNED_TRUE : LogicMode.LOGIC_3VALUED;
     this.paranoid = paranoid;
     this.executor = Preconditions.checkNotNull(executor);
   }
@@ -691,6 +705,12 @@ public class RexSimplify {
     }
 
     simplifyList(notTerms);
+
+    for (RexNode term : terms) {
+      if (logicMode.isAlwaysFalse(term)) {
+        return rexBuilder.makeLiteral(false);
+      }
+    }
 
     if (unknownAsFalse) {
       return simplifyAnd2ForUnknownAsFalse(terms, notTerms);
