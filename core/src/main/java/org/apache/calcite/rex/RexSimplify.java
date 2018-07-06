@@ -711,7 +711,10 @@ public class RexSimplify {
         return rexBuilder.makeLiteral(false);
       }
     }
-
+    // FIXME: prune "true"-s here? ; or they are absent already?
+    if (terms.isEmpty() && notTerms.isEmpty()) {
+      return rexBuilder.makeLiteral(true);
+    }
     if (unknownAsFalse) {
       return simplifyAnd2ForUnknownAsFalse(terms, notTerms);
     }
@@ -719,14 +722,6 @@ public class RexSimplify {
   }
 
   private RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
-    for (RexNode term : terms) {
-      if (term.isAlwaysFalse()) {
-        return rexBuilder.makeLiteral(false);
-      }
-    }
-    if (terms.isEmpty() && notTerms.isEmpty()) {
-      return rexBuilder.makeLiteral(true);
-    }
     // If one of the not-disjunctions is a disjunction that is wholly
     // contained in the disjunctions list, the expression is not
     // satisfiable.
@@ -753,15 +748,6 @@ public class RexSimplify {
    * returns UNKNOWN it will be interpreted as FALSE. */
   private RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
       List<RexNode> notTerms) {
-    //noinspection unchecked
-    for (RexNode term : terms) {
-      if (term.isAlwaysFalse() || RexLiteral.isNullLiteral(term)) {
-        return rexBuilder.makeLiteral(false);
-      }
-    }
-    if (terms.isEmpty() && notTerms.isEmpty()) {
-      return rexBuilder.makeLiteral(true);
-    }
     if (terms.size() == 1 && notTerms.isEmpty()) {
       // Make sure "x OR y OR x" (a single-term conjunction) gets simplified.
       return simplify_(terms.get(0));
