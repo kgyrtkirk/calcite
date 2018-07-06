@@ -48,7 +48,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Context required to simplify a row-expression.
@@ -170,7 +169,8 @@ public class RexSimplify {
    * @param e Expression to simplify
    */
   public RexNode simplify(RexNode e) {
-    return verify(e, simplifier -> simplifier.simplify_(e));
+    RexNode simplified = this.withParanoid(false).simplify_(e);
+    return verify(e, simplified);
   }
 
   private RexNode simplify_(RexNode e) {
@@ -289,7 +289,7 @@ public class RexSimplify {
   /**
    * Simplifies a conjunction of boolean expressions.
    */
-  public RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
+  private RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (RexNode e : nodes) {
@@ -679,8 +679,7 @@ public class RexSimplify {
     return builder.build();
   }
 
-  // public only to support a deprecated method; treat as private
-  public RexNode simplifyAnd(RexCall e) {
+  private RexNode simplifyAnd(RexCall e) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     RelOptUtil.decomposeConjunction(e, terms, notTerms);
@@ -699,8 +698,7 @@ public class RexSimplify {
     return simplifyAnd2(terms, notTerms);
   }
 
-  // package-protected only to support a deprecated method; treat as private
-  RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
+  private RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
     for (RexNode term : terms) {
       if (term.isAlwaysFalse()) {
         return rexBuilder.makeLiteral(false);
@@ -734,7 +732,7 @@ public class RexSimplify {
   /** As {@link #simplifyAnd2(List, List)} but we assume that if the expression
    * returns UNKNOWN it will be interpreted as FALSE. */
   // FIXME: invoked from RexUtil
-  RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
+  private RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
       List<RexNode> notTerms) {
     //noinspection unchecked
     for (RexNode term : terms) {
@@ -1045,7 +1043,7 @@ public class RexSimplify {
   }
 
   /** Simplifies OR(x, x) into x, and similar. */
-  public RexNode simplifyOr(RexCall call) {
+  private RexNode simplifyOr(RexCall call) {
     assert call.getKind() == SqlKind.OR;
     final List<RexNode> terms = RelOptUtil.disjunctions(call);
     simplifyOrTerms(terms);
@@ -1054,11 +1052,7 @@ public class RexSimplify {
 
   /** Simplifies a list of terms and combines them into an OR.
    * Modifies the list in place. */
-  public RexNode simplifyOrs(List<RexNode> terms) {
-    if (paranoid) {
-      final RexNode before = RexUtil.composeDisjunction(rexBuilder, terms);
-      return verify(before, simplifier -> simplifier.simplifyOrs(terms));
-    }
+  private RexNode simplifyOrs(List<RexNode> terms) {
     for (int i = 0; i < terms.size(); i++) {
       final RexNode term = simplify_(terms.get(i));
       switch (term.getKind()) {
@@ -1084,9 +1078,7 @@ public class RexSimplify {
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
 
-  private RexNode verify(RexNode before,
-      Function<RexSimplify, RexNode> simplifier) {
-    final RexNode simplified = simplifier.apply(withParanoid(false));
+  private RexNode verify(RexNode before, RexNode simplified) {
     if (!paranoid) {
       return simplified;
     }
@@ -1260,7 +1252,7 @@ public class RexSimplify {
   /** Removes any casts that change nullability but not type.
    *
    * <p>For example, {@code CAST(1 = 0 AS BOOLEAN)} becomes {@code 1 = 0}. */
-  public RexNode removeNullabilityCast(RexNode e) {
+  private RexNode removeNullabilityCast(RexNode e) {
     return RexUtil.removeNullabilityCast(rexBuilder.getTypeFactory(), e);
   }
 
