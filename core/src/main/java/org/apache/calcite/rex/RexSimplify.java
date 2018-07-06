@@ -731,7 +731,6 @@ public class RexSimplify {
 
   /** As {@link #simplifyAnd2(List, List)} but we assume that if the expression
    * returns UNKNOWN it will be interpreted as FALSE. */
-  // FIXME: invoked from RexUtil
   private RexNode simplifyAnd2ForUnknownAsFalse(List<RexNode> terms,
       List<RexNode> notTerms) {
     //noinspection unchecked
