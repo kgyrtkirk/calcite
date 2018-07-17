@@ -792,6 +792,7 @@ public class RexSimplify {
       }
     }
 
+    //    if(false)
     for (int i = 0; i < terms.size(); i++) {
       RexNode term = terms.get(i);
       if (!RexUtil.isDeterministic(term)) {
