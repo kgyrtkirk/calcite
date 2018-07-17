@@ -739,9 +739,9 @@ public class RexSimplify {
       // Make sure "x OR y OR x" (a single-term conjunction) gets simplified.
       // FIXME: I think this invocation simplify_ is not needed - because it's redundant..
       // or it should be iun normal circumstances; RelMdPredicates skips the usual route...
-      if (experimental2)
-        return terms.get(0);
-      else
+      //      if (experimental2)
+      //        return terms.get(0);
+      //      else
       return simplify_(terms.get(0));
     }
 
