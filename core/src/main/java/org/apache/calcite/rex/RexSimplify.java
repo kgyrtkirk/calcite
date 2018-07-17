@@ -62,6 +62,7 @@ public class RexSimplify {
 
   final LogicMode logicMode;
   private boolean experimental = true;
+  private boolean experimental2 = true;
 
   private enum LogicMode {
     LOGIC_3VALUED {
@@ -246,7 +247,18 @@ public class RexSimplify {
       Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
     simplifyList(operands);
-
+    
+    if (experimental2) // redundant
+    {
+      if (e.getKind() == SqlKind.EQUALS) {
+        if (operands.get(0).isAlwaysTrue()) {
+          return operands.get(1);
+        }
+        if (operands.get(1).isAlwaysTrue()) {
+          return operands.get(0);
+      }
+    }
+    }
     // Simplify "x <op> x"
     final RexNode o0 = operands.get(0);
     final RexNode o1 = operands.get(1);
@@ -783,6 +795,7 @@ public class RexSimplify {
         continue;
       }
       // Simplify BOOLEAN expressions if possible
+      if (!experimental2) // redundant
       while (term.getKind() == SqlKind.EQUALS) {
         RexCall call = (RexCall) term;
         if (call.getOperands().get(0).isAlwaysTrue()) {
