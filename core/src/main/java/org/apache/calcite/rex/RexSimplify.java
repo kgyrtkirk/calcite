@@ -61,6 +61,7 @@ public class RexSimplify {
   private final RexExecutor executor;
 
   final LogicMode logicMode;
+  private boolean experimental = true;
 
   private enum LogicMode {
     LOGIC_3VALUED {
@@ -918,6 +919,7 @@ public class RexSimplify {
     // Remove not necessary IS NOT NULL expressions.
     //
     // Example. IS NOT NULL(x) AND x < 5  : x < 5
+    if (!experimental) // this is redundant
     for (RexNode operand : notNullOperands) {
       if (!comparedOperands.contains(operand.toString())) {
         terms.add(
