@@ -738,6 +738,9 @@ public class RexSimplify {
     if (terms.size() == 1 && notTerms.isEmpty()) {
       // Make sure "x OR y OR x" (a single-term conjunction) gets simplified.
       // FIXME: I think this invocation simplify_ is not needed - because it's redundant..
+      if (experimental2)
+        return terms.get(0);
+      else
       return simplify_(terms.get(0));
     }
 
