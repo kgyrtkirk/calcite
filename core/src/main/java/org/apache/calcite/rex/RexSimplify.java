@@ -195,39 +195,27 @@ public class RexSimplify {
    * @param e Expression to simplify
    */
   public RexNode simplify(RexNode e) {
-    RexNode simplified = this.withParanoid(false).simplify_(e).node;
+    RexNode simplified = this.withParanoid(false).simplify_(e);
     return verify(e, simplified);
   }
 
-  private static class SimplifyRes {
-    public SimplifyRes(RexNode e) {
-      node = e;
-    }
-
-    RexNode node;
-
-    public static SimplifyRes of(RexNode rexNode) {
-      return new SimplifyRes(rexNode);
-    }
-  }
-
-  private SimplifyRes simplify_(RexNode e) {
+  private RexNode simplify_(RexNode e) {
     switch (e.getKind()) {
     case AND:
-      return new SimplifyRes(simplifyAnd((RexCall) e));
+      return simplifyAnd((RexCall) e);
     case OR:
-      return new SimplifyRes(simplifyOr((RexCall) e));
+      return simplifyOr((RexCall) e);
     case NOT:
       return simplifyNot((RexCall) e);
     case CASE:
-      return new SimplifyRes(simplifyCase((RexCall) e));
+      return simplifyCase((RexCall) e);
     case COALESCE:
-      return new SimplifyRes(simplifyCoalesce((RexCall) e));
+      return simplifyCoalesce((RexCall) e);
     case CAST:
-      return new SimplifyRes(simplifyCast((RexCall) e));
+      return simplifyCast((RexCall) e);
     case CEIL:
     case FLOOR:
-      return new SimplifyRes(simplifyCeilFloor((RexCall) e));
+      return simplifyCeilFloor((RexCall) e);
     case IS_NULL:
     case IS_NOT_NULL:
     case IS_TRUE:
@@ -235,7 +223,7 @@ public class RexSimplify {
     case IS_FALSE:
     case IS_NOT_FALSE:
       assert e instanceof RexCall;
-      return new SimplifyRes(simplifyIs((RexCall) e));
+      return simplifyIs((RexCall) e);
     case EQUALS:
     case GREATER_THAN:
     case GREATER_THAN_OR_EQUAL:
@@ -244,18 +232,18 @@ public class RexSimplify {
     case NOT_EQUALS:
       return simplifyComparison((RexCall) e);
     default:
-      return new SimplifyRes(e);
+      return e;
     }
   }
 
   // e must be a comparison (=, >, >=, <, <=, !=)
-  private SimplifyRes simplifyComparison(RexCall e) {
+  private RexNode simplifyComparison(RexCall e) {
     //noinspection unchecked
     return simplifyComparison(e, Comparable.class);
   }
 
   // e must be a comparison (=, >, >=, <, <=, !=)
-  private <C extends Comparable<C>> SimplifyRes simplifyComparison(RexCall e,
+  private <C extends Comparable<C>> RexNode simplifyComparison(RexCall e,
       Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
     simplifyList(operands);
@@ -264,10 +252,10 @@ public class RexSimplify {
     {
       if (e.getKind() == SqlKind.EQUALS) {
         if (operands.get(0).isAlwaysTrue()) {
-          return SimplifyRes.of(operands.get(1));
+          return operands.get(1);
         }
         if (operands.get(1).isAlwaysTrue()) {
-          return SimplifyRes.of(operands.get(0));
+          return operands.get(0);
       }
     }
     }
@@ -338,7 +326,7 @@ public class RexSimplify {
 
   private void simplifyList(List<RexNode> terms) {
     for (int i = 0; i < terms.size(); i++) {
-      terms.set(i, withUnknownAsFalse(false).simplify_(terms.get(i)).node);
+      terms.set(i, withUnknownAsFalse(false).simplify_(terms.get(i)));
     }
   }
 
@@ -391,7 +379,7 @@ public class RexSimplify {
     }
   }
 
-  private SimplifyRes simplifyNot(RexCall call) {
+  private RexNode simplifyNot(RexCall call) {
     final RexNode a = call.getOperands().get(0);
     switch (a.getKind()) {
     case NOT:
@@ -415,8 +403,7 @@ public class RexSimplify {
       final List<RexNode> newOperands = new ArrayList<>();
       for (RexNode operand : ((RexCall) a).getOperands()) {
         newOperands.add(
-                // FIXME: XXX
-            simplify_(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operand)).node);
+            simplify_(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operand)));
       }
       return simplify_(
           rexBuilder.makeCall(SqlStdOperatorTable.OR, newOperands));
@@ -426,12 +413,12 @@ public class RexSimplify {
       final List<RexNode> newOperands = new ArrayList<>();
       for (RexNode operand : ((RexCall) a).getOperands()) {
         newOperands.add(
-                simplify_(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operand)).node);
+            simplify_(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operand)));
       }
       return simplify_(
           rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands));
     }
-    return new SimplifyRes(call);
+    return call;
   }
 
   private RexNode simplifyIs(RexCall call) {
@@ -768,7 +755,7 @@ public class RexSimplify {
     for (RexNode notDisjunction : notTerms) {
       terms.add(
           simplify_(
-                      rexBuilder.makeCall(SqlStdOperatorTable.NOT, notDisjunction)).node);
+              rexBuilder.makeCall(SqlStdOperatorTable.NOT, notDisjunction)));
     }
     return RexUtil.composeConjunction(rexBuilder, terms, false);
   }
@@ -980,7 +967,7 @@ public class RexSimplify {
     for (RexNode notDisjunction : notTerms) {
       final RexNode call =
           rexBuilder.makeCall(SqlStdOperatorTable.NOT, notDisjunction);
-      terms.add(simplify_(call).node);
+      terms.add(simplify_(call));
     }
     // The negated terms: only deterministic expressions
     for (String negatedTerm : negatedTerms) {
