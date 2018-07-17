@@ -67,10 +67,18 @@ public class RexSimplify {
       @Override public boolean isAlwaysFalse(RexNode term) {
         return term.isAlwaysFalse();
       }
+
+      @Override public boolean isAlwaysTrue(RexNode term) {
+        return term.isAlwaysTrue();
+      }
     },
     LOGIC_2VALUED_PINNED_TRUE {
       @Override public boolean isAlwaysFalse(RexNode term) {
         return (term.isAlwaysFalse() || RexLiteral.isNullLiteral(term));
+      }
+
+      @Override public boolean isAlwaysTrue(RexNode term) {
+        return term.isAlwaysTrue();
       }
     },;
 
@@ -79,6 +87,8 @@ public class RexSimplify {
     LOGIC_2VALUED_PINNED_FALSE,
     LOGIC_2VALUED_PINNED_NULL,
     */
+
+    abstract public boolean isAlwaysTrue(RexNode term);
   }
   /**
    * Creates a RexSimplify.
@@ -699,6 +709,13 @@ public class RexSimplify {
         return rexBuilder.makeLiteral(false);
       }
     }
+
+    for (RexNode term : notTerms) {
+      if (logicMode.isAlwaysTrue(term)) {
+        return rexBuilder.makeLiteral(false);
+      }
+    }
+
     // FIXME: prune "true"-s here? ; or they are absent already?
     if (terms.isEmpty() && notTerms.isEmpty()) {
       return rexBuilder.makeLiteral(true);
@@ -717,19 +734,6 @@ public class RexSimplify {
   }
 
   private RexNode simplifyAnd2(List<RexNode> terms, List<RexNode> notTerms) {
-    // If one of the not-disjunctions is a disjunction that is wholly
-    // contained in the disjunctions list, the expression is not
-    // satisfiable.
-    //
-    // Example #1. x AND y AND z AND NOT (x AND y)  - not satisfiable
-    // Example #2. x AND y AND NOT (x AND y)        - not satisfiable
-    // Example #3. x AND y AND NOT (x AND y AND z)  - may be satisfiable
-    for (RexNode notDisjunction : notTerms) {
-      final List<RexNode> terms2 = RelOptUtil.conjunctions(notDisjunction);
-      if (terms.containsAll(terms2)) {
-        return rexBuilder.makeLiteral(false);
-      }
-    }
     // Add the NOT disjunctions back in.
     for (RexNode notDisjunction : notTerms) {
       terms.add(
