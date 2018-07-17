@@ -301,6 +301,7 @@ public class RexSimplify {
       }
     }
 
+    // FIXME: this actually "checks" that simplifyList have done anything..
     // If none of the arguments were simplified, return the call unchanged.
     final RexNode e2;
     if (operands.equals(e.operands)) {
@@ -855,9 +856,11 @@ public class RexSimplify {
         // or weaken terms that are partially implied.
         // E.g. given predicate "x >= 5" and term "x between 3 and 10"
         // we weaken to term to "x between 5 and 10".
+        if (!experimental) { // REDUNDANT
         final RexNode term2 = simplifyUsingPredicates(term, Comparable.class);
         if (term2 != term) {
           terms.set(i, term = term2);
+        }
         }
         // Range
         if (comparison != null
