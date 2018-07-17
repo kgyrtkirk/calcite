@@ -775,7 +775,7 @@ public class RexSimplify {
     final Set<String> comparedOperands = new HashSet<>();
 
     // Add the predicates from the source to the range terms.
-    if (!experimental)
+    if (!experimental) // not redundant; because of processRange
     for (RexNode predicate : predicates.pulledUpPredicates) {
       final Comparison comparison = Comparison.of(predicate);
       if (comparison != null
