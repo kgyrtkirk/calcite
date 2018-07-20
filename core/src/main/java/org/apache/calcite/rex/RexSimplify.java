@@ -192,6 +192,11 @@ public class RexSimplify {
     case LESS_THAN_OR_EQUAL:
     case NOT_EQUALS:
       return simplifyComparison((RexCall) e);
+    case LITERAL:
+      if (unknownAsFalse && RexUtil.isNullLiteral(e, true)) {
+        return rexBuilder.makeLiteral(false);
+      }
+      return e;
     default:
       return e;
     }
@@ -207,7 +212,7 @@ public class RexSimplify {
   private <C extends Comparable<C>> RexNode simplifyComparison(RexCall e,
       Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
-    simplifyList(operands);
+    simplifyList2(operands);
 
     // Simplify "x <op> x"
     final RexNode o0 = operands.get(0);
@@ -227,6 +232,13 @@ public class RexSimplify {
         // "x != x" simplifies to "false" (similarly < and >)
         return rexBuilder.makeLiteral(false);
       }
+    }
+
+    if (RexUtil.isNullLiteral(o0, true)) {
+      return simplify_(o0);
+    }
+    if (RexUtil.isNullLiteral(o1, true)) {
+      return simplify_(o1);
     }
 
     // Simplify "<literal1> <op> <literal2>"
@@ -283,7 +295,7 @@ public class RexSimplify {
       RelOptUtil.decomposeConjunction(e, terms, notTerms);
     }
     simplifyList(terms);
-    simplifyList(notTerms);
+    simplifyList2(notTerms);
     if (unknownAsFalse) {
       return simplifyAnd2ForUnknownAsFalse(terms, notTerms);
     }
@@ -292,12 +304,18 @@ public class RexSimplify {
 
   private void simplifyList(List<RexNode> terms) {
     for (int i = 0; i < terms.size(); i++) {
+      terms.set(i, this.simplify_(terms.get(i)));
+    }
+  }
+
+  private void simplifyList2(List<RexNode> terms) {
+    for (int i = 0; i < terms.size(); i++) {
       terms.set(i, withUnknownAsFalse(false).simplify_(terms.get(i)));
     }
   }
 
   private void simplifyAndTerms(List<RexNode> terms) {
-    RexSimplify simplify = withUnknownAsFalse(false);
+    RexSimplify simplify = this;
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
       if (Predicate.of(t) == null) {

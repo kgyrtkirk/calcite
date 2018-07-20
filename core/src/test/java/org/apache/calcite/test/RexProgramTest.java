@@ -1617,51 +1617,73 @@ public class RexProgramTest {
   @Test public void testSimplifyUnknown() {
     final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
     final RelDataType rowType = typeFactory.builder()
-        .add("a", intType).nullable(true)
+            .add("a", intType).nullable(true)
+            .add("b", intType).nullable(true)
         .build();
 
     final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
     final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
+    final RexNode bRef = rexBuilder.makeFieldAccess(range, 1);
     final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
 
 
-    checkSimplify2(
-        and(eq(aRef, literal1),
-            nullLiteral),
-        "AND(=(?0.a, 1), null)",
-        "false");
-    checkSimplify2(
-        and(trueLiteral,
-            nullLiteral),
-        "null",
-        "false");
-    checkSimplify2(
-        and(falseLiteral,
-            nullLiteral),
-        "false",
-        "false");
+    //    checkSimplify2(
+    //        and(eq(aRef, literal1),
+    //            nullLiteral),
+    //        "AND(=(?0.a, 1), null)",
+    //        "false");
+    //    checkSimplify2(
+    //        and(trueLiteral,
+    //            nullLiteral),
+    //        "null",
+    //        "false");
+    //    checkSimplify2(
+    //        and(falseLiteral,
+    //            nullLiteral),
+    //        "false",
+    //        "false");
+    //
+    //    checkSimplify2(
+    //        and(nullLiteral,
+    //            eq(aRef, literal1)),
+    //        "AND(null, =(?0.a, 1))",
+    //        "false");
+    //
+    //    checkSimplify2(
+    //        or(eq(aRef, literal1),
+    //            nullLiteral),
+    //        "OR(=(?0.a, 1), null)",
+    //        "=(?0.a, 1)");
+    //    checkSimplify2(
+    //        or(trueLiteral,
+    //            nullLiteral),
+    //        "true",
+    //        "true");
+    //    checkSimplify2(
+    //        or(falseLiteral,
+    //            nullLiteral),
+    //        "null",
+    //        "false");
 
     checkSimplify2(
-        and(nullLiteral,
-            eq(aRef, literal1)),
-        "AND(null, =(?0.a, 1))",
-        "false");
+            eq(falseLiteral,
+                    nullLiteral),
+            "null",
+            "false");
 
     checkSimplify2(
-        or(eq(aRef, literal1),
-            nullLiteral),
-        "OR(=(?0.a, 1), null)",
-        "=(?0.a, 1)");
+            eq(falseLiteral,
+                    nullLiteral),
+            "null",
+            "false");
+
     checkSimplify2(
-        or(trueLiteral,
-            nullLiteral),
-        "true",
-        "true");
-    checkSimplify2(
-        or(falseLiteral,
-            nullLiteral),
-        "null",
-        "false");
+            and(
+                    eq(aRef, literal1),
+                    eq(bRef, nullLiteral)),
+            "AND(=(?0.a, 1), null)",
+            "false");
+
   }
 
   @Ignore
