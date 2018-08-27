@@ -228,12 +228,14 @@ public class SqlSelect extends SqlCall {
 
   // Override SqlCall, to introduce a sub-query frame.
   @Override public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
-    // FIXME: is this if and that method needed any more?
     if (!writer.inQuery()) {
       // If this SELECT is the topmost item in a sub-query, introduce a new
       // frame. (The topmost item in the sub-query might be a UNION or
       // ORDER. In this case, we don't need a wrapper frame.)
+      final SqlWriter.Frame frame =
+          writer.startList(SqlWriter.FrameTypeEnum.SUB_QUERY, "(", ")");
       getOperator().unparse(writer, this, 0, 0);
+      writer.endList(frame);
     } else {
       getOperator().unparse(writer, this, leftPrec, rightPrec);
     }
