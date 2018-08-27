@@ -201,6 +201,7 @@ public class SqlInOperator extends SqlBinaryOperator {
     // FIXME: left/right precedence.. 
     List<SqlNode> opList = call.getOperandList();
     assert(opList.size()>=1);
+
     Frame frame1 = writer.startList(FrameTypeEnum.SIMPLE, "(", ")");
     SqlNode sqlNode = opList.get(0);
     sqlNode.unparse(writer, leftPrec, rightPrec);
@@ -213,8 +214,6 @@ public class SqlInOperator extends SqlBinaryOperator {
     }
     writer.endList(frame2);
     
-    
-
 
   }
 
