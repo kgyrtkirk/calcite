@@ -199,17 +199,15 @@ public class SqlInOperator extends SqlBinaryOperator {
     List<SqlNode> opList = call.getOperandList();
     assert(opList.size()>=1);
 
-    Frame frame1 = writer.startList(FrameTypeEnum.SIMPLE, "(", ")");
     SqlNode sqlNode = opList.get(0);
     sqlNode.unparse(writer, leftPrec, rightPrec);
-    writer.endList(frame1);
     writer.sep("IN");
-    Frame frame2 = writer.startList(FrameTypeEnum.SIMPLE, "(", ")");
+    Frame frame = writer.startList(FrameTypeEnum.SIMPLE, "(", ")");
     for (SqlNode op : opList.subList(1, opList.size())) {
       writer.sep(",");
       op.unparse(writer, leftPrec, rightPrec);
     }
-    writer.endList(frame2);
+    writer.endList(frame);
     
 
   }

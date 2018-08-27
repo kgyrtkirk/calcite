@@ -386,9 +386,38 @@ public class RelToSqlConverterTest {
     final RelToSqlConverter converter = new RelToSqlConverter(dialect);
     final SqlNode sqlNode = converter.visitChild(0, rel).asStatement();
     String sqlStr = sqlNode.toSqlString(dialect).getSql();
-    assertEquals("select * from emp where deptno in (10,20)", sqlStr);
+    assertEquals("SELECT *\n" +
+            "FROM scott.EMP\n" +
+            "WHERE DEPTNO IN (20, 21)", sqlStr);
   }
 
+  @Test public void testHiveIn2() {
+    // this can't be tested using "sql" because Calcite's sql parser replaces INs with ORs or subqueries.
+    final RelBuilder builder = RelBuilder.create(RelBuilderTest.config().build());
+    RexBuilder rexBuilder = builder.getRexBuilder();
+    RelNode root =
+            builder.scan("EMP")
+                    .filter(rexBuilder.makeCall(SqlStdOperatorTable.IN, 
+                            rexBuilder.makeCall(SqlStdOperatorTable.ROW,
+                                    builder.field("DEPTNO"), builder.field("JOB")),
+                            rexBuilder.makeCall(SqlStdOperatorTable.ROW,
+                                    builder.literal(1), builder.literal("PRESIDENT")),
+                            rexBuilder.makeCall(SqlStdOperatorTable.ROW,
+                                    builder.literal(2), builder.literal("PRESIDENT"))
+                            )
+                            )
+                    .build();
+    RelNode rel = root;
+
+    SqlDialect dialect = SqlDialect.DatabaseProduct.HIVE.getDialect();
+    final RelToSqlConverter converter = new RelToSqlConverter(dialect);
+    final SqlNode sqlNode = converter.visitChild(0, rel).asStatement();
+    String sqlStr = sqlNode.toSqlString(dialect).getSql();
+    assertEquals("SELECT *\n" +
+            "FROM scott.EMP\n" +
+            "WHERE ROW(DEPTNO, JOB) IN (ROW(1, 'PRESIDENT'), ROW(2, 'PRESIDENT'))" +
+            "", sqlStr);
+  }
 
   @Test public void testSelectQueryWithLimitClause() {
     String query = "select \"product_id\"  from \"product\" limit 100 offset 10";
