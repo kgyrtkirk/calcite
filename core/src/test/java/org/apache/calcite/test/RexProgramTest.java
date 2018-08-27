@@ -1664,6 +1664,26 @@ public class RexProgramTest {
         "false");
   }
 
+  @Test public void testSimplifyXeqX() {
+    final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
+    final RelDataType rowType = typeFactory.builder()
+            .add("a", intType).nullable(true)
+            .add("b", intType)
+            .build();
+
+    final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
+    final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
+    final RexNode bRef = rexBuilder.makeFieldAccess(range, 1);
+    final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
+    final RexLiteral literal5 = rexBuilder.makeExactLiteral(BigDecimal.valueOf(5));
+    final RexLiteral literal10 = rexBuilder.makeExactLiteral(BigDecimal.TEN);
+
+    checkSimplify2(
+            eq(aRef, aRef),
+            "=(?0.a, ?0.a)",
+            "IS NOT NULL(?0.a)");
+  }
+
   @Ignore
   @Test public void testSimplifyAnd3() {
     final RelDataType boolType = typeFactory.createSqlType(SqlTypeName.BOOLEAN);

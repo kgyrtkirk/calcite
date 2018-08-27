@@ -23,9 +23,14 @@ import org.apache.calcite.sql.ExplicitOperatorBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
+import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlSyntax;
+import org.apache.calcite.sql.SqlWriter;
+import org.apache.calcite.sql.SqlWriter.Frame;
+import org.apache.calcite.sql.SqlWriter.FrameTypeEnum;
 import org.apache.calcite.sql.type.ComparableOperandTypeChecker;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandTypes;
@@ -36,6 +41,7 @@ import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.Litmus;
+import org.apache.calcite.util.Util;
 
 import com.google.common.collect.ImmutableList;
 
@@ -43,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.apache.calcite.util.Static.RESOURCE;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Definition of the SQL <code>IN</code> operator, which tests for a value's
@@ -181,6 +188,36 @@ public class SqlInOperator extends SqlBinaryOperator {
     // we should coerce the LHS to a scalar.
     return ordinal == 0;
   }
+
+  @Override public SqlSyntax getSyntax() {
+    return SqlSyntax.SPECIAL;
+  }
+  
+  @Override public void unparse(
+          SqlWriter writer,
+          SqlCall call,
+          int leftPrec,
+          int rightPrec) {
+    // FIXME: left/right precedence.. 
+    List<SqlNode> opList = call.getOperandList();
+    assert(opList.size()>=1);
+    Frame frame1 = writer.startList(FrameTypeEnum.SIMPLE, "(", ")");
+    SqlNode sqlNode = opList.get(0);
+    sqlNode.unparse(writer, leftPrec, rightPrec);
+    writer.endList(frame1);
+    writer.sep("IN");
+    Frame frame2 = writer.startList(FrameTypeEnum.SIMPLE, "(", ")");
+    for (SqlNode op : opList.subList(1, opList.size())) {
+      writer.sep(",");
+      op.unparse(writer, leftPrec, rightPrec);
+    }
+    writer.endList(frame2);
+    
+    
+
+
+  }
+
 }
 
 // End SqlInOperator.java

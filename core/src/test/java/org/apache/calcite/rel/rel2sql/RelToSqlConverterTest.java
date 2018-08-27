@@ -26,6 +26,7 @@ import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rules.UnionMergeRule;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.runtime.FlatLists;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlDialect;
@@ -35,14 +36,17 @@ import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 import org.apache.calcite.sql.dialect.HiveSqlDialect;
 import org.apache.calcite.sql.dialect.JethroDataSqlDialect;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.test.CalciteAssert;
+import org.apache.calcite.test.RelBuilderTest;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
+import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -55,9 +59,11 @@ import java.util.List;
 
 import junit.framework.AssertionFailedError;
 
+import static org.apache.calcite.test.Matchers.hasTree;
 import static org.apache.calcite.test.Matchers.isLinux;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -364,6 +370,25 @@ public class RelToSqlConverterTest {
         + "FROM foodmart.reserve_employee";
     sql(query).withHive().ok(expected);
   }
+
+  @Test public void testHiveIn() {
+    // this can't be tested using "sql" because Calcite's sql parser replaces INs with ORs or subqueries.
+    final RelBuilder builder = RelBuilder.create(RelBuilderTest.config().build());
+    RexBuilder rexBuilder = builder.getRexBuilder();
+    RelNode root =
+            builder.scan("EMP")
+                    .filter(rexBuilder.makeCall(SqlStdOperatorTable.IN, builder.field("DEPTNO"),
+                            builder.literal(20), builder.literal(21)))
+                    .build();
+    RelNode rel = root;
+
+    SqlDialect dialect = SqlDialect.DatabaseProduct.HIVE.getDialect();
+    final RelToSqlConverter converter = new RelToSqlConverter(dialect);
+    final SqlNode sqlNode = converter.visitChild(0, rel).asStatement();
+    String sqlStr = sqlNode.toSqlString(dialect).getSql();
+    assertEquals("select * from emp where deptno in (10,20)", sqlStr);
+  }
+
 
   @Test public void testSelectQueryWithLimitClause() {
     String query = "select \"product_id\"  from \"product\" limit 100 offset 10";
