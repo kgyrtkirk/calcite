@@ -195,6 +195,7 @@ public class SqlInOperator extends SqlBinaryOperator {
           SqlCall call,
           int leftPrec,
           int rightPrec) {
+    // FIXME I'm tempted to use 0,0 as precedences...not sure if that would be ok...
     List<SqlNode> opList = call.getOperandList();
     assert(opList.size()>=1);
 
