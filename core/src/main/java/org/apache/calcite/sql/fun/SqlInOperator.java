@@ -185,33 +185,6 @@ public class SqlInOperator extends SqlBinaryOperator {
     // we should coerce the LHS to a scalar.
     return ordinal == 0;
   }
-
-  @Override public SqlSyntax getSyntax() {
-    return SqlSyntax.SPECIAL;
-  }
-  
-  @Override public void unparse(
-          SqlWriter writer,
-          SqlCall call,
-          int leftPrec,
-          int rightPrec) {
-    // FIXME I'm tempted to use 0,0 as precedences...not sure if that would be ok...
-    List<SqlNode> opList = call.getOperandList();
-    assert(opList.size()>=1);
-
-    SqlNode sqlNode = opList.get(0);
-    sqlNode.unparse(writer, leftPrec, getLeftPrec());
-    writer.sep("IN");
-    Frame frame = writer.startList(FrameTypeEnum.SETOP, "(", ")");
-    for (SqlNode op : opList.subList(1, opList.size())) {
-      writer.sep(",");
-      op.unparse(writer, getRightPrec(), rightPrec);
-    }
-    writer.endList(frame);
-    
-
-  }
-
 }
 
 // End SqlInOperator.java

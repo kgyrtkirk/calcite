@@ -554,8 +554,9 @@ public abstract class SqlImplementor {
           List<RexNode> operands = call.operands;
           SqlNode op0;
             final List<SqlNode> cols = toSql(program, operands);
-            op0 = new SqlNodeList(cols, POS);
-          return call.getOperator().createCall(POS, cols);
+          SqlNode op1 = cols.get(0);
+          op0 = new SqlNodeList(cols.subList(1, cols.size()), POS);
+          return call.getOperator().createCall(POS, op1, op0);
         }
 
       case EXISTS:
