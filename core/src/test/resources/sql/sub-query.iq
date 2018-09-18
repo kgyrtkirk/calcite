@@ -1217,7 +1217,7 @@ from "scott".emp;
 (14 rows)
 
 !ok
-EnumerableCalc(expr#0..2=[{inputs}], expr#3=[IS NOT NULL($t2)], expr#4=[true], expr#5=[false], expr#6=[CASE($t3, $t4, $t5)], expr#7=[NOT($t6)], SAL=[$t1], EXPR$1=[$t7])
+EnumerableCalc(expr#0..2=[{inputs}], expr#3=[IS NOT NULL($t2)], expr#4=[true], expr#5=[AND($t3, $t4)], expr#6=[false], expr#7=[NOT($t3)], expr#8=[AND($t6, $t7)], expr#9=[OR($t5, $t8)], expr#10=[NOT($t9)], SAL=[$t1], EXPR$1=[$t10])
   EnumerableJoin(condition=[true], joinType=[left])
     EnumerableCalc(expr#0..7=[{inputs}], EMPNO=[$t0], SAL=[$t5])
       EnumerableTableScan(table=[[scott, EMP]])

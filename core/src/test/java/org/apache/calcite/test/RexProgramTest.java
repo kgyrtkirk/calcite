@@ -1072,12 +1072,12 @@ public class RexProgramTest extends RexProgramBuilderBase {
 
     // case: remove false branches
     checkSimplify(case_(eq(bRef, cRef), dRef, falseLiteral, aRef, eRef),
-        "CASE(=(?0.b, ?0.c), ?0.d, ?0.e)");
+        "OR(AND(=(?0.b, ?0.c), ?0.d), AND(?0.e, NOT(=(?0.b, ?0.c))))");
 
     // case: true branches become the last branch
     checkSimplify(
         case_(eq(bRef, cRef), dRef, trueLiteral, aRef, eq(cRef, dRef), eRef, cRef),
-        "CASE(=(?0.b, ?0.c), ?0.d, ?0.a)");
+        "OR(AND(=(?0.b, ?0.c), ?0.d), AND(?0.a, NOT(=(?0.b, ?0.c))))");
 
     // case: singleton
     checkSimplify(case_(trueLiteral, aRef, eq(cRef, dRef), eRef, cRef), "?0.a");
