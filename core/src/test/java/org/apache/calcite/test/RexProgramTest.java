@@ -582,6 +582,13 @@ public class RexProgramTest extends RexProgramBuilderBase {
 
   }
 
+  @Test public void xxx() {
+    checkSimplify2(
+        and( isNull(vBool()), or(isNotNull(vBool()),vBool(2))),
+        "AND(IS NULL(?0.bool0), OR(IS NOT NULL(?0.bool0), ?0.bool2))",
+        "AND(IS NULL(?0.bool0), ?0.bool2)");
+  }
+
   @Test public void xAndNotX() {
     checkSimplify2(
         and(vBool(), not(vBool()),
