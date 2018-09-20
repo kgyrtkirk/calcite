@@ -442,7 +442,7 @@ public class RexSimplify {
       if (kind == pred.kind) {
         return rexBuilder.makeLiteral(true);
       } else if (kind.negate() == pred.kind) {
-        return rexBuilder.makeLiteral(false);
+        throw new RuntimeException("asd");
       }
     }
     return null;
