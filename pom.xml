@@ -73,10 +73,10 @@ limitations under the License.
     <elasticsearch.version>6.2.4</elasticsearch.version>
     <esri-geometry-api.version>2.2.0</esri-geometry-api.version>
     <findbugs.version>3.0.1</findbugs.version>
-    <fmpp-maven-plugin.version>1.0</fmpp-maven-plugin.version>
+    <drill-fmpp-maven-plugin.version>1.14.0</drill-fmpp-maven-plugin.version>
     <foodmart-data-hsqldb.version>0.3</foodmart-data-hsqldb.version>
     <foodmart-queries.version>0.4.1</foodmart-queries.version>
-    <forbiddenapis.version>2.5</forbiddenapis.version>
+    <forbiddenapis.version>2.6</forbiddenapis.version>
     <freemarker.version>2.3.25-incubating</freemarker.version>
     <git-commit-id-plugin.version>2.1.9</git-commit-id-plugin.version>
     <geode.version>1.6.0</geode.version>
@@ -106,6 +106,7 @@ limitations under the License.
     <jmh.version>1.12</jmh.version>
     <jsoup.version>1.11.3</jsoup.version>
     <junit.version>4.12</junit.version>
+    <checkstyle.version>7.8.2</checkstyle.version>
     <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
     <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
@@ -132,7 +133,7 @@ limitations under the License.
     <xalan.version>2.7.1</xalan.version>
     <xerces.version>2.9.1</xerces.version>
     <sketches.version>0.9.0</sketches.version>
-    <fmpp.version>0.9.14</fmpp.version>
+    <fmpp.version>0.9.16</fmpp.version>
 
     <!-- Other properties (not version numbers) -->
     <maven-javadoc-plugin.excludePackageNames>
@@ -699,6 +700,11 @@ limitations under the License.
         </executions>
         <dependencies>
           <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+          </dependency>
+          <dependency>
             <groupId>net.hydromatic</groupId>
             <artifactId>toolbox</artifactId>
             <version>${hydromatic-toolbox.version}</version>
@@ -813,9 +819,9 @@ limitations under the License.
       <plugins>
         <!-- Sorted by groupId, artifactId. -->
         <plugin>
-          <groupId>com.googlecode.fmpp-maven-plugin</groupId>
-          <artifactId>fmpp-maven-plugin</artifactId>
-          <version>${fmpp-maven-plugin.version}</version>
+          <groupId>org.apache.drill.tools</groupId>
+          <artifactId>drill-fmpp-maven-plugin</artifactId>
+          <version>${drill-fmpp-maven-plugin.version}</version>
           <dependencies>
             <dependency>
               <groupId>org.freemarker</groupId>

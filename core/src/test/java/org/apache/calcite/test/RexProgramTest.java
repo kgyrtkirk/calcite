@@ -1200,6 +1200,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify(isNotNull(not(vBool())), "IS NOT NULL(?0.bool0)");
     checkSimplify(isNotNull(not(vBoolNotNull())), "true");
 
+    // "null is null" to "true"
+    checkSimplify(isNull(nullBool), "true");
     // "(x + y) is null" simplifies to "x is null or y is null"
     checkSimplify(isNull(plus(vInt(0), vInt(1))),
         "OR(IS NULL(?0.int0), IS NULL(?0.int1))");
@@ -1215,6 +1217,24 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify(isNotNull(plus(vIntNotNull(0), vIntNotNull(1))), "true");
     checkSimplify(isNotNull(plus(vIntNotNull(0), vInt(1))),
         "IS NOT NULL(?0.int1)");
+  }
+
+  @Test public void simplifyStrong() {
+    checkSimplify2(ge(trueLiteral, falseLiteral), "true", "true");
+    checkSimplify2(ge(trueLiteral, nullBool), "null", "false");
+    checkSimplify2(ge(nullBool, nullBool), "null", "false");
+    checkSimplify2(gt(trueLiteral, nullBool), "null", "false");
+    checkSimplify2(le(trueLiteral, nullBool), "null", "false");
+    checkSimplify2(lt(trueLiteral, nullBool), "null", "false");
+
+    checkSimplify2(not(nullBool), "null", "false");
+    checkSimplify2(ne(vInt(), nullBool), "null", "false");
+    checkSimplify2(eq(vInt(), nullBool), "null", "false");
+
+    checkSimplify2(plus(vInt(), nullInt), "null", "false");
+    checkSimplify2(sub(vInt(), nullInt), "null", "false");
+    checkSimplify2(mul(vInt(), nullInt), "null", "false");
+    checkSimplify2(div(vInt(), nullInt), "null", "false");
   }
 
   @Test public void testSimplifyFilter() {
@@ -1526,6 +1546,13 @@ public class RexProgramTest extends RexProgramBuilderBase {
         or(isNotNull(bRef),
             isNull(cRef)),
         "OR(IS NOT NULL(?0.b), IS NULL(?0.c))");
+
+    // "b is null or b is not false" unchanged
+    checkSimplifyFilter(
+        or(isNull(bRef),
+            isNotFalse(bRef)),
+        "OR(IS NULL(?0.b), IS NOT FALSE(?0.b))"
+    );
 
     // multiple predicates are handled correctly
     checkSimplifyFilter(
@@ -2098,6 +2125,13 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify2(
         coalesce(unaryPlus(nullInt), unaryPlus(vInt())),
         "...", "...");
+  }
+
+  @Test
+  public void simplifyNull() {
+    checkSimplify2(nullBool, "null", "false");
+    // null int must not be simplified to false
+    checkSimplify2(nullInt, "null", "null");
   }
 
   /** Converts a map to a string, sorting on the string representation of its

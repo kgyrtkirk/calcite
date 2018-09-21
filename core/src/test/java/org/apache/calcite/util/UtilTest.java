@@ -38,7 +38,6 @@ import org.apache.calcite.test.Matchers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultiset;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
@@ -225,7 +224,7 @@ public class UtilTest {
     assertEquals(
         "ID$0$_3__c_6_17__21__17__2d__15__7f__6cd9__fffd_",
         Util.toJavaId(
-            new String(bytes1, "EUC-JP"),
+            new String(bytes1, "EUC-JP"), // CHECKSTYLE: IGNORE 0
             0));
     byte[] bytes2 = {
         64, 32, 43, -45, -23, 0, 43, 54, 119, -32, -56, -34
@@ -233,7 +232,7 @@ public class UtilTest {
     assertEquals(
         "ID$0$_30c__3617__2117__2d15__7fde__a48f_",
         Util.toJavaId(
-            new String(bytes1, "UTF-16"),
+            new String(bytes1, "UTF-16"), // CHECKSTYLE: IGNORE 0
             0));
   }
 
@@ -1572,6 +1571,7 @@ public class UtilTest {
     checkHash(Double.MIN_VALUE);
   }
 
+  @SuppressWarnings("deprecation")
   public void checkHash(double v) {
     assertThat(Double.valueOf(v).hashCode(), is(Utilities.hashCode(v)));
     final long long_ = (long) v;
@@ -1641,18 +1641,6 @@ public class UtilTest {
     assertThat(checkNav(treeSet3, "FOO").size(), equalTo(3));
     assertThat(checkNav(treeSet3, "FoO").size(), equalTo(3));
     assertThat(checkNav(treeSet3, "BAR").size(), equalTo(1));
-
-    final ImmutableSortedSet<String> treeSet4 =
-        ImmutableSortedSet.copyOf(comparator, treeSet);
-    final NavigableSet<String> navigableSet4 =
-        Compatible.INSTANCE.navigableSet(treeSet4);
-    assertThat(treeSet4.size(), equalTo(5));
-    assertThat(navigableSet4.size(), equalTo(5));
-    assertThat(navigableSet4, equalTo((SortedSet<String>) treeSet4));
-    assertThat(checkNav(navigableSet4, "foo").size(), equalTo(3));
-    assertThat(checkNav(navigableSet4, "FOO").size(), equalTo(3));
-    assertThat(checkNav(navigableSet4, "FoO").size(), equalTo(3));
-    assertThat(checkNav(navigableSet4, "BAR").size(), equalTo(1));
   }
 
   private NavigableSet<String> checkNav(NavigableSet<String> set, String s) {

@@ -1252,7 +1252,7 @@ public abstract class AbstractMaterializedViewRule extends RelOptRule {
       if (topProject != null && !unionRewriting) {
         // We have a Project on top, gather only what is needed
         final RelOptUtil.InputFinder inputFinder =
-            new RelOptUtil.InputFinder(new LinkedHashSet<RelDataTypeField>());
+            new RelOptUtil.InputFinder(new LinkedHashSet<>());
         for (RexNode e : topProject.getChildExps()) {
           e.accept(inputFinder);
         }
@@ -2541,8 +2541,9 @@ public abstract class AbstractMaterializedViewRule extends RelOptRule {
         // Both present, we need to merge
         if (c1.size() < c2.size()) {
           // We swap them to merge
-          c1 = c2;
-          p1 = p2;
+          Set<RexTableInputRef> c2Temp = c2;
+          c2 = c1;
+          c1 = c2Temp;
         }
         for (RexTableInputRef newRef : c2) {
           c1.add(newRef);

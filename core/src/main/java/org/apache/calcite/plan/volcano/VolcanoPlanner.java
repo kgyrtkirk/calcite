@@ -79,6 +79,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -501,13 +502,7 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
     unmapRuleDescription(rule);
 
     // Remove operands.
-    for (Iterator<RelOptRuleOperand> iter = classOperands.values().iterator();
-         iter.hasNext();) {
-      RelOptRuleOperand entry = iter.next();
-      if (entry.getRule().equals(rule)) {
-        iter.remove();
-      }
-    }
+    classOperands.values().removeIf(entry -> entry.getRule().equals(rule));
 
     // Remove trait mappings. (In particular, entries from conversion
     // graph.)
@@ -858,8 +853,10 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
     }
     final RelSubset subset = registerImpl(rel, set);
 
+    // Checking if tree is valid considerably slows down planning
+    // Only doing it if logger level is debug or finer
     if (LOGGER.isDebugEnabled()) {
-      validate();
+      assert isValid(Litmus.THROW);
     }
 
     return subset;
@@ -883,31 +880,26 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
   /**
    * Checks internal consistency.
    */
-  protected void validate() {
+  protected boolean isValid(Litmus litmus) {
     for (RelSet set : allSets) {
       if (set.equivalentSet != null) {
-        throw new AssertionError(
-            "set [" + set
-            + "] has been merged: it should not be in the list");
+        return litmus.fail("set [{}] has been merged: it should not be in the list", set);
       }
       for (RelSubset subset : set.subsets) {
         if (subset.set != set) {
-          throw new AssertionError(
-              "subset [" + subset.getDescription()
-              + "] is in wrong set [" + set + "]");
+          return litmus.fail("subset [{}] is in wrong set [{}]",
+              subset.getDescription(), set);
         }
         for (RelNode rel : subset.getRels()) {
           RelOptCost relCost = getCost(rel, rel.getCluster().getMetadataQuery());
           if (relCost.isLt(subset.bestCost)) {
-            throw new AssertionError(
-                "rel [" + rel.getDescription()
-                + "] has lower cost " + relCost
-                + " than best cost " + subset.bestCost
-                + " of subset [" + subset.getDescription() + "]");
+            return litmus.fail("rel [{}] has lower cost {} than best cost {} of subset [{}]",
+                rel.getDescription(), relCost, subset.bestCost, subset.getDescription());
           }
         }
       }
     }
+    return litmus.succeed();
   }
 
   public void registerAbstractRelationalRules() {
@@ -1168,7 +1160,7 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
     pw.println("Original rel:");
     pw.println(originalRootString);
     pw.println("Sets:");
-    Ordering<RelSet> ordering = Ordering.from((o1, o2) -> o1.id - o2.id);
+    Ordering<RelSet> ordering = Ordering.from(Comparator.comparingInt(o -> o.id));
     for (RelSet set : ordering.immutableSortedCopy(allSets)) {
       pw.println("Set#" + set.id
           + ", type: " + set.subsets.get(0).getRowType());
@@ -1640,7 +1632,7 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
     // not established. So, give the subset another change to figure out
     // its cost.
     final RelMetadataQuery mq = rel.getCluster().getMetadataQuery();
-    subset.propagateCostImprovements(this, mq, rel, new HashSet<RelSubset>());
+    subset.propagateCostImprovements(this, mq, rel, new HashSet<>());
 
     return subset;
   }
