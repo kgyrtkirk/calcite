@@ -16,6 +16,19 @@
  */
 package org.apache.calcite.rex;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.linq4j.Ord;
@@ -24,6 +37,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.Strong;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.NullSentinel;
+import org.apache.calcite.rex.RexSimplify.CaseElement.CaseBranch;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -39,18 +53,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Context required to simplify a row-expression.
@@ -594,8 +596,83 @@ public class RexSimplify {
     }
   }
 
+  class CaseElement {
+
+    class CaseBranch {
+
+      private RexNode cond;
+      private RexNode value;
+
+      public CaseBranch(RexNode cond, RexNode value) {
+        this.cond = cond;
+        this.value = value;
+      }
+
+    }
+
+    private List<CaseBranch> branches = new ArrayList<>();
+
+    public CaseElement(List<RexNode> operands) {
+      for (int i = 1; i < operands.size(); i += 2) {
+        branches.add(new CaseBranch(operands.get(i - 1), operands.get(i)));
+      }
+      // add else branch with true
+      branches.add(new CaseBranch(rexBuilder.makeLiteral(true), operands.get(operands.size() - 1)));
+    }
+
+  }
+
+  private RexNode simplifyCase0(RexCall call) {
+    // run simplification on all operands
+    final List<RexNode> operands = new ArrayList(call.getOperands());
+    simplifyList(operands);
+
+    CaseElement caseElement = new CaseElement(operands);
+
+    // remove branches with invalid conditions
+    caseElement.branches.removeIf(branch -> branch.cond.isAlwaysFalse() || RexUtil.isNull(branch.cond));
+
+    // delete all branches after the first AlwaysTrue
+    List<CaseBranch> branches = caseElement.branches;
+    for (int i = 0; i < branches.size(); i++) {
+      CaseBranch branch = branches.get(i);
+      if (branch.cond.isAlwaysTrue()) {
+        //branch.cond = rexBuilder.makeLiteral(true);
+        branches.subList(i + 1, branches.size()).clear();
+        break;
+      }
+    }
+
+    // collect cardianlity of values
+    Set<String> values = caseElement.branches.stream().map(branch -> {
+      if (unknownAsFalse && RexUtil.isNull(branch.value)) {
+        return rexBuilder.makeLiteral(false).toString();
+      } else {
+        return branch.value.toString();
+      }
+    }).collect(Collectors.toSet());
+
+    if(values.size() == 1) {
+      final RexNode firstValue = caseElement.branches.get(0).value;
+      if (!call.getType().equals(firstValue .getType())) {
+        return rexBuilder.makeAbstractCast(call.getType(), firstValue );
+      }
+      return firstValue ;
+    }
+
+    if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
+
+    }
+    return call;
+  }
+
   private RexNode simplifyCase(RexCall call) {
-    final List<RexNode> operands = call.getOperands();
+    if (false) {
+      return simplifyCase0(call);
+    }
+
+    final List<RexNode> operands = new ArrayList(call.getOperands());
+    simplifyList(operands);
     final List<RexNode> newOperands = new ArrayList<>();
     final Set<String> values = new HashSet<>();
     for (int i = 0; i < operands.size(); i++) {
@@ -720,8 +797,7 @@ public class RexSimplify {
     for (; pos < pairs.size(); pos++) {
       // False block
       Pair<RexNode, RexNode> pair = pairs.get(pos);
-      if (!pair.getValue().isAlwaysFalse()
-          && !RexUtil.isNull(pair.getValue())) {
+      if (!(pair.getValue().isAlwaysFalse() || RexUtil.isNull(pair.getValue()))) {
         break;
       }
     }
