@@ -772,9 +772,9 @@ public class RexSimplify {
       final List<Pair<RexNode, RexNode>> pairs = casePairs(rexBuilder, newOperands);
       final RexNode result = simplifyBooleanCase(rexBuilder, pairs, unknownAsFalse);
       if (result != null) {
-//        if (!call.getType().equals(result.getType())) {
-//          return rexBuilder.makeCast(call.getType(), result);
-//        }
+        if (!call.getType().equals(result.getType())) {
+          return simplify_(rexBuilder.makeCast(call.getType(), result));
+        }
         return simplify_(result);
       }
     }
@@ -1426,7 +1426,13 @@ public class RexSimplify {
       return Objects.requireNonNull(
           Iterables.getOnlyElement(reducedValues));
     default:
-      return e;
+      RexNode op = simplify_(operand);
+      
+      if(op.equals(operand))
+        return e;
+      else
+      return       rexBuilder.makeCast(e.getType(), op);
+
     }
   }
 
