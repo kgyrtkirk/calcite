@@ -1427,6 +1427,8 @@ public class RexSimplify {
           Iterables.getOnlyElement(reducedValues));
     default:
       RexNode op = simplify_(operand);
+      if(op.getKind() ==  SqlKind.CAST)
+        return op;
       
       if(op.equals(operand))
         return e;
