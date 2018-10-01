@@ -230,8 +230,8 @@ public class RexSimplify {
       return simplifyComparison((RexCall) e);
 //    case FIELD_ACCESS:
 //    simplifyType((RexFieldAccess)e);
-    case INPUT_REF:
-    return simplifyType((RexInputRef)e);
+//    case INPUT_REF:
+//    return simplifyType((RexInputRef)e);
     default:
       return e;
     }
@@ -483,7 +483,7 @@ public class RexSimplify {
 
         RelDataType newType = rexBuilder.typeFactory.createTypeWithNullability(type, false);
 //        return new RexInputRef(a.getIndex(), newType);
-        return rexBuilder.makeCast(newType, a,false);
+        return rexBuilder.makeCast(newType, a, true);
       }
     }
     return a;
@@ -893,7 +893,8 @@ public class RexSimplify {
       List<Pair<RexNode, RexNode>> pairs) {
     for (Pair<RexNode, RexNode> pair : pairs) {
       if (pair.getKey().getType().isNullable()
-          || pair.getValue().getType().isNullable()) {
+//          || pair.getValue().getType().isNullable()
+          ) {
         return null;
       }
     }
