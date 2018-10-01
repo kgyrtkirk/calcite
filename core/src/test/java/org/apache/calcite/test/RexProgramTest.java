@@ -1686,6 +1686,23 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(result, is(caseNode));
   }
 
+  @Test public void testSimplifyCaseNullableInt() {
+
+    checkSimplify2(
+        //        case_(isNotNull(vInt(1))
+        isFalse(isNotDistinctFrom(vBool(0), vBool(1))),
+        "IS DISTINCT FROM(?0.bool0, ?0.bool1)",
+        "IS DISTINCT FROM(?0.bool0, ?0.bool1)");
+
+    RexNode condition = eq(input(tVarchar(), 0), literal("S"));
+    RexNode caseNode = case_(condition, literal("A"), literal("B"));
+
+    RexCall result = (RexCall) simplify.simplify(caseNode);
+    assertThat(result.getType().isNullable(), is(false));
+    assertThat(result.getType().getSqlTypeName(), is(SqlTypeName.CHAR));
+    assertThat(result, is(caseNode));
+  }
+
   @Test public void testSimplifyAnd() {
     RelDataType booleanNotNullableType =
         typeFactory.createTypeWithNullability(
