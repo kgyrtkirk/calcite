@@ -230,8 +230,8 @@ public class RexSimplify {
       return simplifyComparison((RexCall) e);
 //    case FIELD_ACCESS:
 //    simplifyType((RexFieldAccess)e);
-//    case INPUT_REF:
-//    return simplifyType((RexInputRef)e);
+    case INPUT_REF:
+    return simplifyType((RexInputRef)e);
     default:
       return e;
     }
