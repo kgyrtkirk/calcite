@@ -306,11 +306,11 @@ public class RexSimplify {
 
     // If none of the arguments were simplified, return the call unchanged.
     final RexNode e2;
-//    if (operands.equals(e.operands)) {
-//      e2 = e;
-//    } else {
+    if (operands.equals(e.operands)) {
+      e2 = e;
+    } else {
       e2 = rexBuilder.makeCall(e.op, operands);
-//    }
+    }
     return simplifyUsingPredicates(e2, clazz);
   }
 
@@ -471,7 +471,7 @@ public class RexSimplify {
     }
   }
 
-  private RexInputRef simplifyType(RexInputRef a) {
+  private RexNode simplifyType(RexInputRef a) {
     for (RexNode p : predicates.pulledUpPredicates) {
       IsPredicate pred = IsPredicate.of(p);
       if (pred == null || !a.toString().equals(pred.ref.toString())) {
@@ -479,8 +479,11 @@ public class RexSimplify {
       }
       RelDataType type = a.getType();
       if(type.isNullable()) {
+//        final RexNode e3 = rexBuilder.makeCast(e.getType(), e2, true);
+
         RelDataType newType = rexBuilder.typeFactory.createTypeWithNullability(type, false);
-        return new RexInputRef(a.getIndex(), newType);
+//        return new RexInputRef(a.getIndex(), newType);
+        return rexBuilder.makeCast(newType, a,false);
       }
     }
     return a;

@@ -1690,8 +1690,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
 
     checkSimplify2(
         case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral), 
-"AND(IS NOT NULL($0), =($0, 1))",
-"=($0, 1)");
+"AND(IS NOT NULL($0), =(CAST($0):INTEGER NOT NULL, 1))",
+"=(CAST($0):INTEGER NOT NULL, 1)");
 //    checkSimplify2(
 //        case_(isNotNull(vInt()), eq(vInt(),literal(BigDecimal.ONE)), falseLiteral), 
 //"CASE(IS NOT NULL(?0.int0), =(?0.int0, 1), false)",
