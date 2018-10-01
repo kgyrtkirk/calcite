@@ -1077,7 +1077,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // case: true branches become the last branch
     checkSimplify(
         case_(eq(bRef, cRef), dRef, trueLiteral, aRef, eq(cRef, dRef), eRef, cRef),
-        "OR(AND(=(?0.b, ?0.c), ?0.d), AND(?0.a, NOT(=(?0.b, ?0.c))))");
+        "OR(AND(=(?0.b, ?0.c), ?0.d), AND(?0.a, <>(?0.b, ?0.c)))");
 
     // case: singleton
     checkSimplify(case_(trueLiteral, aRef, eq(cRef, dRef), eRef, cRef), "?0.a");
@@ -1685,22 +1685,17 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(result.getType().getSqlTypeName(), is(SqlTypeName.CHAR));
     assertThat(result, is(caseNode));
   }
-
+  
   @Test public void testSimplifyCaseNullableInt() {
 
     checkSimplify2(
-        //        case_(isNotNull(vInt(1))
-        isFalse(isNotDistinctFrom(vBool(0), vBool(1))),
-        "IS DISTINCT FROM(?0.bool0, ?0.bool1)",
-        "IS DISTINCT FROM(?0.bool0, ?0.bool1)");
-
-    RexNode condition = eq(input(tVarchar(), 0), literal("S"));
-    RexNode caseNode = case_(condition, literal("A"), literal("B"));
-
-    RexCall result = (RexCall) simplify.simplify(caseNode);
-    assertThat(result.getType().isNullable(), is(false));
-    assertThat(result.getType().getSqlTypeName(), is(SqlTypeName.CHAR));
-    assertThat(result, is(caseNode));
+        case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral), 
+"AND(IS NOT NULL($0), =($0, 1))",
+"=($0, 1)");
+//    checkSimplify2(
+//        case_(isNotNull(vInt()), eq(vInt(),literal(BigDecimal.ONE)), falseLiteral), 
+//"CASE(IS NOT NULL(?0.int0), =(?0.int0, 1), false)",
+//"CASE(IS NOT NULL(?0.int0), =(?0.int0, 1), false)");
   }
 
   @Test public void testSimplifyAnd() {

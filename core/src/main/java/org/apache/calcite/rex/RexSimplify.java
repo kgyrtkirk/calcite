@@ -37,6 +37,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.Strong;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.NullSentinel;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexSimplify.CaseElement.CaseBranch;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
@@ -117,6 +118,14 @@ public class RexSimplify {
       : new RexSimplify(rexBuilder, predicates, unknownAsFalse, predicateElimination, paranoid,
               executor);
   }
+  
+  private RexSimplify addPredicate(RexNode predicate) {
+    RelOptPredicateList newPredicates = predicates.union(rexBuilder,
+        RelOptPredicateList.of(rexBuilder, ImmutableList.of(predicate)));
+    return withPredicates(newPredicates);
+  }
+
+  
 
   /** Returns a RexSimplify the same as this but which verifies that
    * the expression before and after simplification are equivalent.
@@ -219,6 +228,10 @@ public class RexSimplify {
     case LESS_THAN_OR_EQUAL:
     case NOT_EQUALS:
       return simplifyComparison((RexCall) e);
+//    case FIELD_ACCESS:
+//    simplifyType((RexFieldAccess)e);
+    case INPUT_REF:
+    return simplifyType((RexInputRef)e);
     default:
       return e;
     }
@@ -293,11 +306,11 @@ public class RexSimplify {
 
     // If none of the arguments were simplified, return the call unchanged.
     final RexNode e2;
-    if (operands.equals(e.operands)) {
-      e2 = e;
-    } else {
+//    if (operands.equals(e.operands)) {
+//      e2 = e;
+//    } else {
       e2 = rexBuilder.makeCall(e.op, operands);
-    }
+//    }
     return simplifyUsingPredicates(e2, clazz);
   }
 
@@ -446,6 +459,31 @@ public class RexSimplify {
       }
     }
     return null;
+  }
+  
+  private void simplifyType(RexFieldAccess a) {
+    for (RexNode p : predicates.pulledUpPredicates) {
+      IsPredicate pred = IsPredicate.of(p);
+      if (pred == null || !a.toString().equals(pred.ref.toString())) {
+        continue;
+      }
+     new RexFieldAccess(a.getReferenceExpr(), a.getField());
+    }
+  }
+
+  private RexInputRef simplifyType(RexInputRef a) {
+    for (RexNode p : predicates.pulledUpPredicates) {
+      IsPredicate pred = IsPredicate.of(p);
+      if (pred == null || !a.toString().equals(pred.ref.toString())) {
+        continue;
+      }
+      RelDataType type = a.getType();
+      if(type.isNullable()) {
+        RelDataType newType = rexBuilder.typeFactory.createTypeWithNullability(type, false);
+        return new RexInputRef(a.getIndex(), newType);
+      }
+    }
+    return a;
   }
 
   private RexNode simplifyIs2(SqlKind kind, RexNode a) {
@@ -657,7 +695,7 @@ public class RexSimplify {
       if (!call.getType().equals(firstValue .getType())) {
         return rexBuilder.makeAbstractCast(call.getType(), firstValue );
       }
-      return firstValue ;
+      return firstValue;
     }
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
@@ -672,6 +710,22 @@ public class RexSimplify {
     }
 
     final List<RexNode> operands = new ArrayList(call.getOperands());
+    
+    RexSimplify branchSimplifier = this;
+    for (int i = 0; i < operands.size(); i+=2) {
+      RexNode cond = operands.get(i+0);
+      
+      RexNode newCond = branchSimplifier.withUnknownAsFalse(true).simplify_(cond);
+      operands.set(i+0, newCond);
+      
+      if(i+1<operands.size()) {
+      RexNode value = operands.get(i+1);
+      RexNode newValue = branchSimplifier.withUnknownAsFalse(false).addPredicate(cond).
+          simplify_(value);
+      operands.set(i+1, newValue);
+      }
+    }
+    
     simplifyList(operands);
     final List<RexNode> newOperands = new ArrayList<>();
     final Set<String> values = new HashSet<>();
@@ -715,10 +769,10 @@ public class RexSimplify {
       final List<Pair<RexNode, RexNode>> pairs = casePairs(rexBuilder, newOperands);
       final RexNode result = simplifyBooleanCase(rexBuilder, pairs, unknownAsFalse);
       if (result != null) {
-        if (!call.getType().equals(result.getType())) {
-          return rexBuilder.makeCast(call.getType(), result);
-        }
-        return result;
+//        if (!call.getType().equals(result.getType())) {
+//          return rexBuilder.makeCast(call.getType(), result);
+//        }
+        return simplify_(result);
       }
     }
     if (newOperands.equals(operands)) {
