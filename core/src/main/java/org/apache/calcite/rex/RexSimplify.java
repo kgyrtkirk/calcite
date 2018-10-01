@@ -230,8 +230,8 @@ public class RexSimplify {
       return simplifyComparison((RexCall) e);
 //    case FIELD_ACCESS:
 //    simplifyType((RexFieldAccess)e);
-    case INPUT_REF:
-    return simplifyType((RexInputRef)e);
+//    case INPUT_REF:
+//    return simplifyType((RexInputRef)e);
     default:
       return e;
     }
@@ -715,6 +715,7 @@ public class RexSimplify {
     final List<RexNode> operands = new ArrayList(call.getOperands());
     
     RexSimplify branchSimplifier = this;
+    if(false)
     for (int i = 0; i < operands.size(); i+=2) {
       RexNode cond = operands.get(i+0);
       
@@ -729,7 +730,7 @@ public class RexSimplify {
       }
     }
     
-    simplifyList(operands);
+    // simplifyList(operands);
     final List<RexNode> newOperands = new ArrayList<>();
     final Set<String> values = new HashSet<>();
     for (int i = 0; i < operands.size(); i++) {
