@@ -721,11 +721,12 @@ public class RexSimplify {
     final List<RexNode> operands = new ArrayList(call.getOperands());
     
     RexSimplify branchSimplifier = this;
+
     for (int i = 0; i < operands.size(); i+=2) {
       if(i+1<operands.size()) {
       RexNode cond = operands.get(i+0);
       
-      RexNode newCond = branchSimplifier.withUnknownAsFalse(true).simplify_(cond);
+      RexNode newCond = branchSimplifier.withUnknownAsFalse(true).simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE,cond));
       operands.set(i+0, newCond);
       
       RexNode value = operands.get(i+1);
@@ -733,7 +734,7 @@ public class RexSimplify {
           simplify_(value);
       operands.set(i+1, newValue);
       
-      RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true).simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
+      RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true).simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, newCond));
       branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
       }else {
         boolean bug=false;
@@ -816,7 +817,7 @@ public class RexSimplify {
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
       List<Pair<RexNode, RexNode>> pairs, boolean unknownAsFalse) {
-    RexNode result;
+    RexNode result = null;
     // 1) Possible simplification if unknown is treated as false:
     //   CASE
     //   WHEN p1 THEN TRUE

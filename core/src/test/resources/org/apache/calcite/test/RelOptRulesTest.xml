@@ -446,7 +446,7 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
             <![CDATA[
 LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8])
   LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8])
-    LogicalFilter(condition=[NOT(CASE(=($10, 0), false, IS TRUE(<=($0, $9)), true, >($10, $11), null, <=($0, $9)))])
+    LogicalFilter(condition=[NOT(CAST(OR(AND(=($10, 0), false), AND(IS TRUE(<=($0, $9)), NOT(=($10, 0))), AND(>($10, $11), null, NOT(=($10, 0)), NOT(IS TRUE(<=($0, $9)))), AND(<=($0, $9), NOT(=($10, 0)), NOT(IS TRUE(<=($0, $9))), NOT(>($10, $11))))):BOOLEAN)])
       LogicalJoin(condition=[true], joinType=[inner])
         LogicalTableScan(table=[[CATALOG, SALES, EMP]])
         LogicalAggregate(group=[{}], m=[MAX($0)], c=[COUNT()], d=[COUNT($0)])
@@ -6888,7 +6888,7 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
             <![CDATA[
 LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8])
   LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8])
-    LogicalFilter(condition=[CASE(=($10, 0), false, IS TRUE(>($0, $9)), true, >($10, $11), null, >($0, $9))])
+    LogicalFilter(condition=[CAST(OR(AND(=($10, 0), false), AND(IS TRUE(>($0, $9)), NOT(=($10, 0))), AND(>($10, $11), null, NOT(=($10, 0)), NOT(IS TRUE(>($0, $9)))), AND(>($0, $9), NOT(=($10, 0)), NOT(IS TRUE(>($0, $9))), NOT(>($10, $11))))):BOOLEAN])
       LogicalJoin(condition=[true], joinType=[inner])
         LogicalTableScan(table=[[CATALOG, SALES, EMP]])
         LogicalAggregate(group=[{}], m=[MIN($0)], c=[COUNT()], d=[COUNT($0)])

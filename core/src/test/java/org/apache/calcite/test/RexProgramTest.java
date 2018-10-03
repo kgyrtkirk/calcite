@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.calcite.avatica.SqlType;
 import org.apache.calcite.avatica.util.ByteString;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptUtil;
@@ -2209,6 +2210,19 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // null int must not be simplified to false
     checkSimplify2(nullInt, "null", "null");
   }
+  
+  @Test
+  public void simplifyNull2() {
+    RexNode nullType = nullBool;
+   
+    RexNode node = or(rexBuilder.constantNull(), vBool());
+    assertThat(node.getType(),is(vBool().getType()));
+    
+//    checkSimplify2(
+//    or( eq(vBool(),trueLiteral), rexBuilder.constantNull()),
+//    "x","x");
+  }
+  
 
   /** Converts a map to a string, sorting on the string representation of its
    * keys. */
