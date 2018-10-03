@@ -736,8 +736,9 @@ public class RexSimplify {
       RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true).simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
       branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
       }else {
+        boolean bug=true;
         RexNode value = operands.get(i);
-        RexNode newValue = branchSimplifier.withUnknownAsFalse(false).
+        RexNode newValue = branchSimplifier.withUnknownAsFalse(bug).
             simplify_(value);
         operands.set(i, newValue);
         
