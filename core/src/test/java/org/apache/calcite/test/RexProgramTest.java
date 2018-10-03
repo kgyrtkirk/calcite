@@ -2174,6 +2174,16 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify2(nullInt, "null", "null");
   }
 
+  @Test
+  public void simplifyNull2() {
+    RexNode node2 = or(vBoolNotNull(), rexBuilder.constantNull());
+    assertThat(node2.getType(), is(vBool().getType()));
+
+    RexNode node1 = or(rexBuilder.constantNull(), vBool());
+    assertThat(node1.getType(), is(vBool().getType()));
+
+  }
+
   /** Converts a map to a string, sorting on the string representation of its
    * keys. */
   private static String getString(ImmutableMap<RexNode, RexNode> map) {
