@@ -130,7 +130,7 @@ public class RexAnalyzer {
     @Override public Void visitCall(RexCall call) {
       switch (call.getKind()) {
       case CAST:
-        ++unsupportedCount;
+//        ++unsupportedCount;
         return null;
       default:
         return super.visitCall(call);
