@@ -15,13 +15,19 @@
  * limitations under the License.
  */
 
+package org.apache.calcite.adapter.geode.rel;
+
+import org.junit.ClassRule;
+
 /**
- * Contains query transformation rules relating to generating SQL for
- * foreign JDBC databases.
+ * Base class which allows sharing same geode instance across all tests. Also due to legacy
+ * reasons there can't be more than one Geode instance (running in parallel) for a single JVM.
  */
-@PackageMarker
-package org.apache.calcite.rel.jdbc;
+public abstract class AbstractGeodeTest {
 
-import org.apache.calcite.avatica.util.PackageMarker;
+  @ClassRule
+  public static final GeodeEmbeddedPolicy POLICY = GeodeEmbeddedPolicy.create().share();
 
-// End package-info.java
+}
+
+// End AbstractGeodeTest.java

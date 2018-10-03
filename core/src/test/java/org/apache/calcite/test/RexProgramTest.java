@@ -74,6 +74,25 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 
+import org.junit.Before;
+import org.junit.Test;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThat;
+
 /**
  * Unit tests for {@link RexProgram} and
  * {@link org.apache.calcite.rex.RexProgramBuilder}.
@@ -701,6 +720,19 @@ public class RexProgramTest extends RexProgramBuilderBase {
                 varCharType11, rexBuilder.makeInputRef(varCharType10, 0))), is(true));
   }
 
+  @Test public void removeRedundantCast() {
+    checkSimplify(cast(vInt(), nullable(tInt())), "?0.int0");
+    checkSimplify(cast(vInt(), tInt()), "CAST(?0.int0):INTEGER NOT NULL");
+    checkSimplify(cast(vIntNotNull(), nullable(tInt())), "CAST(?0.notNullInt0):INTEGER");
+    checkSimplify(cast(vIntNotNull(), tInt()), "?0.notNullInt0");
+
+    // Nested int int cast is removed
+    checkSimplify(cast(cast(vVarchar(), tInt()), tInt()), "CAST(?0.varchar0):INTEGER NOT NULL");
+    checkSimplify(cast(cast(vVarchar(), tInt()), tVarchar()),
+        "CAST(CAST(?0.varchar0):INTEGER NOT NULL):VARCHAR CHARACTER SET \"ISO-8859-1\" "
+            + "COLLATE \"ISO-8859-1$en_US$primary\" NOT NULL");
+  }
+
   /** Unit test for {@link org.apache.calcite.rex.RexUtil#toCnf}. */
   @Test public void testCnf() {
     final RelDataType booleanType =
@@ -1107,6 +1139,12 @@ public class RexProgramTest extends RexProgramBuilderBase {
             falseLiteral, trueLiteral),
         "OR(?0.a, AND(?0.d, NOT(?0.b), NOT(?0.c)), AND(NOT(?0.b), NOT(?0.c), NOT(?0.e)))");
 
+    checkSimplify(
+        case_(eq(falseLiteral, falseLiteral), falseLiteral,
+              eq(falseLiteral, falseLiteral), trueLiteral,
+              trueLiteral
+    ), "false");
+
     // is null, applied to not-null value
     checkSimplify(rexBuilder.makeCall(SqlStdOperatorTable.IS_NULL, aRef),
         "false");
@@ -1182,15 +1220,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify(gt(hRef, hRef), "false");
     checkSimplify2(gt(iRef, iRef), ">(?0.i, ?0.i)", "false");
     checkSimplify(gt(iRef, hRef), ">(?0.i, ?0.h)");
-
-    checkSimplify(coalesce(hRef, iRef), "?0.h"); // first arg not null
-    checkSimplify(coalesce(iRef, hRef), "COALESCE(?0.i, ?0.h)"); // a0 nullable
-    checkSimplify(coalesce(iRef, iRef), "?0.i"); // repeated arg
-    checkSimplify(coalesce(hRef, hRef), "?0.h"); // repeated arg
-    checkSimplify(coalesce(hRef, literal1), "?0.h");
-    checkSimplify(coalesce(iRef, literal1), "COALESCE(?0.i, 1)");
-    checkSimplify(coalesce(iRef, plus(iRef, hRef), literal1, hRef),
-        "COALESCE(?0.i, +(?0.i, ?0.h), 1)");
 
     // "(not x) is null" to "x is null"
     checkSimplify(isNull(not(vBool())), "IS NULL(?0.bool0)");
@@ -1479,6 +1508,24 @@ public class RexProgramTest extends RexProgramBuilderBase {
         and(gt(aRef, literal1),
             gt(aRef, literal10)),
         ">(?0.a, 10)");
+
+    // "null AND NOT(null OR x)" => "null AND NOT(x)"
+    checkSimplify2(
+        and(nullBool,
+            not(or(nullBool, vBool()))),
+        "AND(null, NOT(?0.bool0))",
+        "false");
+
+    // "x1 AND x2 AND x3 AND NOT(x1) AND NOT(x2) AND NOT(x0)" =>
+    // "x3 AND null AND x1 IS NULL AND x2 IS NULL AND NOT(x0)"
+    checkSimplify2(
+        and(vBool(1), vBool(2),
+            vBool(3), not(vBool(1)),
+            not(vBool(2)), not(vBool())),
+        "AND(?0.bool3, null, IS NULL(?0.bool1),"
+            + " IS NULL(?0.bool2), NOT(?0.bool0))",
+        "false"
+    );
   }
 
   @Test public void testSimplifyOrTerms() {
@@ -1564,6 +1611,12 @@ public class RexProgramTest extends RexProgramBuilderBase {
             or(eq(aRef, literal3),
                 eq(aRef, literal4))),
         "AND(=(?0.b, 2), =(?0.a, 3))");
+
+    checkSimplify2(
+        or(lt(vInt(), nullInt),
+            ne(literal(0), vInt())),
+        "OR(null, <>(0, ?0.int0))",
+        "<>(0, ?0.int0)");
   }
 
   @Test public void testSimplifyUnknown() {
@@ -2129,14 +2182,21 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "IS DISTINCT FROM(?0.bool0, ?0.bool1)");
   }
 
-  @Ignore("[CALCITE-2505] java.lang.AssertionError: result mismatch")
-  @Test public void coalescePlusNull() {
-    // when applied to {?0.int0=-1},
-    // COALESCE(+(null), +(?0.int0)) yielded -1,
-    // and +(null) yielded NULL
-    checkSimplify2(
-        coalesce(unaryPlus(nullInt), unaryPlus(vInt())),
-        "...", "...");
+  @Test public void testSimplifyCoalesce() {
+    checkSimplify(coalesce(vIntNotNull(), vInt()), "?0.notNullInt0"); // first arg not null
+    checkSimplify(coalesce(vInt(), vIntNotNull()), "COALESCE(?0.int0, ?0.notNullInt0)");
+    checkSimplify(coalesce(vInt(), vInt()), "?0.int0"); // repeated arg
+    checkSimplify(coalesce(vIntNotNull(), vIntNotNull()), "?0.notNullInt0"); // repeated arg
+    checkSimplify(coalesce(vIntNotNull(), literal(1)), "?0.notNullInt0");
+    checkSimplify(coalesce(vInt(), literal(1)), "COALESCE(?0.int0, 1)");
+    checkSimplify(coalesce(vInt(), plus(vInt(), vIntNotNull()), literal(1), vIntNotNull()),
+        "COALESCE(?0.int0, +(?0.int0, ?0.notNullInt0), 1)");
+    checkSimplify2(coalesce(gt(nullInt, nullInt), trueLiteral),
+        "COALESCE(null, true)", "COALESCE(null, true)");
+    checkSimplify2(coalesce(unaryPlus(nullInt), unaryPlus(vInt())),
+        "COALESCE(null, +(?0.int0))", "COALESCE(null, +(?0.int0))");
+    checkSimplify(coalesce(unaryPlus(vInt(1)), unaryPlus(vInt())),
+        "COALESCE(+(?0.int1), +(?0.int0))");
   }
 
   @Test
@@ -2156,27 +2216,50 @@ public class RexProgramTest extends RexProgramBuilderBase {
     return map2.toString();
   }
 
-  @Test public void testSimplifyNot() {
+  @Test public void testSimplifyFalse() {
     final RelDataType booleanNullableType =
         typeFactory.createTypeWithNullability(
             typeFactory.createSqlType(SqlTypeName.BOOLEAN), true);
-    final RexNode booleanInput = rexBuilder.makeInputRef(booleanNullableType, 0);
-    final RexNode isFalse = rexBuilder.makeCall(SqlStdOperatorTable.IS_FALSE, booleanInput);
+    final RexNode booleanInput = input(booleanNullableType, 0);
+    final RexNode isFalse = isFalse(booleanInput);
     final RexCall result = (RexCall) simplify(isFalse);
     assertThat(result.getType().isNullable(), is(false));
-    assertThat(result.getOperator(), is((SqlOperator) SqlStdOperatorTable.IS_FALSE));
+    assertThat(result.getOperator(), is(SqlStdOperatorTable.IS_FALSE));
     assertThat(result.getOperands().size(), is(1));
     assertThat(result.getOperands().get(0), is(booleanInput));
 
     // Make sure that IS_FALSE(IS_FALSE(nullable boolean)) != IS_TRUE(nullable boolean)
     // IS_FALSE(IS_FALSE(null)) = IS_FALSE(false) = true
     // IS_TRUE(null) = false
-    final RexNode isFalseIsFalse = rexBuilder.makeCall(SqlStdOperatorTable.IS_FALSE, isFalse);
+    final RexNode isFalseIsFalse = isFalse(isFalse);
     final RexCall result2 = (RexCall) simplify(isFalseIsFalse);
     assertThat(result2.getType().isNullable(), is(false));
-    assertThat(result2.getOperator(), is((SqlOperator) SqlStdOperatorTable.IS_NOT_FALSE));
+    assertThat(result2.getOperator(), is(SqlStdOperatorTable.IS_NOT_FALSE));
     assertThat(result2.getOperands().size(), is(1));
     assertThat(result2.getOperands().get(0), is(booleanInput));
+  }
+
+  @Test public void testSimplifyNot() {
+    // "NOT(NOT(x))" => "x"
+    checkSimplify(not(not(vBool())), "?0.bool0");
+    // "NOT(true)"  => "false"
+    checkSimplify(not(trueLiteral), "false");
+    // "NOT(false)" => "true"
+    checkSimplify(not(falseLiteral), "true");
+    // "NOT(IS FALSE(x))" => "IS NOT FALSE(x)"
+    checkSimplify(not(isFalse(vBool())), "IS NOT FALSE(?0.bool0)");
+    // "NOT(IS TRUE(x))" => "IS NOT TRUE(x)"
+    checkSimplify(not(isTrue(vBool())), "IS NOT TRUE(?0.bool0)");
+    // "NOT(IS NULL(x))" => "IS NOT NULL(x)"
+    checkSimplify(not(isNull(vBool())), "IS NOT NULL(?0.bool0)");
+    // "NOT(IS NOT NULL(x)) => "IS NULL(x)"
+    checkSimplify(not(isNotNull(vBool())), "IS NULL(?0.bool0)");
+    // "NOT(AND(x0,x1))" => "OR(NOT(x0),NOT(x1))"
+    checkSimplify(not(and(vBool(0), vBool(1))),
+        "OR(NOT(?0.bool0), NOT(?0.bool1))");
+    // "NOT(OR(x0,x1))" => "AND(NOT(x0),NOT(x1))"
+    checkSimplify(not(or(vBool(0), vBool(1))),
+        "AND(NOT(?0.bool0), NOT(?0.bool1))");
   }
 
   private RexNode simplify(RexNode e) {

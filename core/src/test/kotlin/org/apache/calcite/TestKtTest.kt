@@ -13,23 +13,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * A JSON model of a simple Calcite schema.
  */
-{
-  "version": "1.0",
-  "defaultSchema": "TEST",
-  "schemas": [
-    {
-      "name": "TEST",
-      "type": "custom",
-      "factory": "org.apache.calcite.adapter.geode.simple.GeodeSchemaFactory",
-      "operand": {
-        "locatorHost": "localhost",
-        "locatorPort": "10334",
-        "regions": "BookMaster,Customer,InventoryItem,BookOrder",
-        "pdxSerializablePackagePath": "net.tzolov.geode.bookstore.domain.*"
-      }
+package org.apache.calcite
+
+import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.junit.JUnitAsserter
+
+class TestKtTest {
+    @Test
+    fun `a test to verify how Kotlin test passes in CI`() {
+        JUnitAsserter.hashCode() // make maven-dependency-plugin happy
+        assertEquals("Hello, world", "Hello, world", message = "42")
     }
-  ]
 }

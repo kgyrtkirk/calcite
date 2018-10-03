@@ -392,6 +392,11 @@ public class RexSimplify {
     case NOT:
       // NOT NOT x ==> x
       return simplify_(((RexCall) a).getOperands().get(0));
+    case LITERAL:
+      if (a.getType().getSqlTypeName() == SqlTypeName.BOOLEAN
+          && !RexLiteral.isNullLiteral(a)) {
+        return rexBuilder.makeLiteral(!RexLiteral.booleanValue(a));
+      }
     }
     final SqlKind negateKind = a.getKind().negate();
     if (a.getKind() != negateKind) {
@@ -615,9 +620,10 @@ public class RexSimplify {
   private RexNode simplifyCoalesce(RexCall call) {
     final Set<String> digests = new HashSet<>();
     final List<RexNode> operands = new ArrayList<>();
+    final RexSimplify simplify = withUnknownAsFalse(false);
     for (RexNode operand : call.getOperands()) {
-      operand = simplify_(operand);
-      if (digests.add(operand.digest)) {
+      operand = simplify.simplify_(operand);
+      if (digests.add(operand.toString())) {
         operands.add(operand);
       }
       if (!operand.getType().isNullable()) {
@@ -970,16 +976,19 @@ public class RexSimplify {
       }
       notSatisfiableNullables.add(notDisjunction);
     }
+
     if (notSatisfiableNullables != null) {
+      // Remove the intersection of "terms" and "notTerms"
       terms.removeAll(notSatisfiableNullables);
+      notTerms.removeAll(notSatisfiableNullables);
+
+      // The intersection simplify to "null and x1 is null and x2 is null..."
       terms.add(rexBuilder.makeNullLiteral(notSatisfiableNullables.get(0).getType()));
       for (RexNode notSatisfiableNullable : notSatisfiableNullables) {
         terms.add(
             simplifyIs((RexCall)
                 rexBuilder.makeCall(SqlStdOperatorTable.IS_NULL, notSatisfiableNullable)));
       }
-      // NULL AND (x IS NULL)
-      return rexBuilder.makeCall(SqlStdOperatorTable.AND, terms);
     }
     // Add the NOT disjunctions back in.
     for (RexNode notDisjunction : notTerms) {
@@ -1430,15 +1439,22 @@ public class RexSimplify {
       return Objects.requireNonNull(
           Iterables.getOnlyElement(reducedValues));
     default:
-      RexNode op = simplify_(operand);
-      if(op.getKind() ==  SqlKind.CAST)
-        return op;
-      
-      if(op.equals(operand))
-        return e;
-      else
-      return       rexBuilder.makeCast(e.getType(), op);
-
+//<<<<<<< HEAD
+//      RexNode op = simplify_(operand);
+//      if(op.getKind() ==  SqlKind.CAST)
+//        return op;
+//      
+//      if(op.equals(operand))
+//        return e;
+//      else
+//      return       rexBuilder.makeCast(e.getType(), op);
+//
+//=======
+//      if (operand.getType().equals(e.getType())) {
+//        return simplify_(operand);
+//      }
+      return e;
+//>>>>>>> asf/master
     }
   }
 

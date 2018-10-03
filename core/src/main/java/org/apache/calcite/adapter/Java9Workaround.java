@@ -13,35 +13,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * A JSON model of a simple Calcite schema.
  */
-{
-  "version": "1.0",
-  "defaultSchema": "geode_raw",
-  "schemas": [
-    {
-      "name": "geode_raw",
-      "type": "custom",
-      "factory": "org.apache.calcite.adapter.geode.rel.GeodeSchemaFactory",
-      "operand": {
-        "locatorHost": "localhost",
-        "locatorPort": "10334",
-        "regions": "Zips",
-        "pdxSerializablePackagePath": ".*"
-      }
-    },
-    {
-      "name": "geode",
-      "tables": [
-        {
-          "name": "ZIPS",
-          "type": "view",
-          "sql": [
-            "select \"_id\" AS \"id\", \"city\", \"loc\", cast(\"pop\" AS integer) AS \"pop\", cast(\"state\" AS varchar(2)) AS \"state\" from \"geode_raw\".\"Zips\""
-          ]
-        }
-      ]
-    }
-  ]
+package org.apache.calcite.adapter;
+
+/**
+ * JavaDoc from Java 9 seems to fail when package contents is empty.
+ * The sole purpose of this class it to make package non empty.
+ */
+class Java9Workaround {
 }
+
+// End Java9Workaround.java

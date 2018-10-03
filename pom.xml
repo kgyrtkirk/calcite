@@ -46,6 +46,11 @@ limitations under the License.
   </mailingLists>
 
   <properties>
+    <!-- Ensure that source and target version are overridden from base ASF POM.
+         This is also used by forbiddenapis to ensure correct signatures are loaded. -->
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+
     <surefire.parallel>both</surefire.parallel>
     <surefire.threadCount>1</surefire.threadCount>
     <surefire.perCoreThreadCount>true</surefire.perCoreThreadCount>
@@ -106,6 +111,7 @@ limitations under the License.
     <jmh.version>1.12</jmh.version>
     <jsoup.version>1.11.3</jsoup.version>
     <junit.version>4.12</junit.version>
+    <kotlin.version>1.2.71</kotlin.version>
     <checkstyle.version>7.8.2</checkstyle.version>
     <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
     <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
@@ -136,6 +142,8 @@ limitations under the License.
     <fmpp.version>0.9.16</fmpp.version>
 
     <!-- Other properties (not version numbers) -->
+    <!-- Java 1.8 does not support -html5, so override via profile for Java 1.8 -->
+    <maven-javadoc-html5>-html5</maven-javadoc-html5>
     <maven-javadoc-plugin.excludePackageNames>
       org.apache.calcite.benchmarks.generated,
       org.apache.calcite.sql.parser.babel,
@@ -235,6 +243,7 @@ limitations under the License.
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-pool2</artifactId>
         <version>${commons-pool2.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.datastax.cassandra</groupId>
@@ -245,6 +254,30 @@ limitations under the License.
         <groupId>org.apache.cassandra</groupId>
         <artifactId>cassandra-all</artifactId>
         <version>${cassandra.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-jdk8</artifactId>
+        <version>${kotlin.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-test</artifactId>
+        <version>${kotlin.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-test-junit</artifactId>
+        <version>${kotlin.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.esri.geometry</groupId>
@@ -280,6 +313,7 @@ limitations under the License.
         <groupId>com.google.code.findbugs</groupId>
         <artifactId>jsr305</artifactId>
         <version>${findbugs.version}</version>
+        <optional>true</optional>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -613,7 +647,7 @@ limitations under the License.
             <exclude>**/src/test/resources/**/*.txt</exclude>
             <exclude>**/src/test/resources/bug/archers.json</exclude>
             <exclude>**/src/test/resources/foodmart-schema.spec</exclude>
-            <exclude>**/src/test/resources/zips-mini.json</exclude>
+            <exclude>**/src/test/resources/*.json</exclude>
             <exclude>**/data.txt</exclude>
             <exclude>**/data2.txt</exclude>
 
@@ -672,9 +706,9 @@ limitations under the License.
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <!-- If you are looking to change source/target, 
+             change the maven.compiler.{source,target} property -->
         <configuration>
-          <source>8</source>
-          <target>8</target>
           <compilerArgument>-Xlint:deprecation</compilerArgument>
         </configuration>
       </plugin>
@@ -737,20 +771,8 @@ limitations under the License.
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
       <plugin>
-        <!-- This is the configuration used by "mvn javadoc:javadoc". It is
-             configured strict, so that it shows errors such as broken links in
-             javadoc on private methods. The configuration for "mvn site" is
-             under "reporting", and is more lenient. -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <additionalparam>-html5</additionalparam>
-          <links>
-            <link>${maven-javadoc-plugin.link}</link>
-          </links>
-          <excludePackageNames>${maven-javadoc-plugin.excludePackageNames}</excludePackageNames>
-          <show>private</show>
-        </configuration>
       </plugin>
       <plugin>
         <!-- Override apache parent POM's definition of release
@@ -912,6 +934,25 @@ limitations under the License.
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
+          <!-- This is the configuration used by "mvn javadoc:javadoc". It is
+               configured strict, so that it shows errors such as broken links in
+               javadoc on private methods. The configuration for "mvn site" is
+               under "reporting", and is more lenient. -->
+          <configuration>
+            <additionalOptions>
+              <additionalOption>${maven-javadoc-html5}</additionalOption>
+            </additionalOptions>
+            <doclint>all,-missing</doclint>
+            <failOnWarnings>true</failOnWarnings>
+            <links>
+              <link>${maven-javadoc-plugin.link}</link>
+            </links>
+            <notimestamp>true</notimestamp>
+            <excludePackageNames>${maven-javadoc-plugin.excludePackageNames}</excludePackageNames>
+            <quiet>true</quiet>
+            <show>private</show>
+            <windowtitle>Apache Calcite API</windowtitle>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -971,6 +1012,44 @@ limitations under the License.
           <artifactId>git-commit-id-plugin</artifactId>
           <version>${git-commit-id-plugin.version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-maven-plugin</artifactId>
+          <version>${kotlin.version}</version>
+          <executions>
+            <!-- Kotlin is supposed to be used in test code only for now,
+                 that is why compile execution is commented. -->
+            <!--<execution>
+              <id>compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <sourceDirs>
+                  <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                  <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                </sourceDirs>
+              </configuration>
+            </execution>-->
+            <execution>
+              <id>test-compile</id>
+              <phase>test-compile</phase>
+              <goals>
+                <goal>test-compile</goal>
+              </goals>
+              <configuration>
+                <sourceDirs>
+                  <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                  <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                </sourceDirs>
+              </configuration>
+            </execution>
+          </executions>
+          <configuration>
+            <jvmTarget>1.8</jvmTarget>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -980,14 +1059,6 @@ limitations under the License.
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <links>
-            <link>${maven-javadoc-plugin.link}</link>
-          </links>
-          <excludePackageNames>${maven-javadoc-plugin.excludePackageNames}</excludePackageNames>
-          <notimestamp>true</notimestamp>
-          <windowtitle>Apache Calcite API</windowtitle>
-        </configuration>
       </plugin>
     </plugins>
   </reporting>
@@ -1194,6 +1265,16 @@ limitations under the License.
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>java8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <!-- Java 1.8 does not support -html5, so we pass another harmles option -->
+        <maven-javadoc-html5>-notimestamp</maven-javadoc-html5>
+      </properties>
     </profile>
   </profiles>
 </project>
