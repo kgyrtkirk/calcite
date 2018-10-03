@@ -2174,6 +2174,20 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify2(nullInt, "null", "null");
   }
 
+  @Test
+  public void testUsageOfConstantNull() {
+    RexLiteral constantNull = rexBuilder.constantNull();
+
+    RexNode node1 = or(constantNull, vBool());
+    assertThat(node1.getType(), is(vBool().getType()));
+
+    RexNode node2 = or(vBoolNotNull(), constantNull);
+    assertThat(node2.getType(), is(vBool().getType()));
+
+    RexNode node3 = or(constantNull, constantNull);
+    assertThat(node3.getType(), is(constantNull.getType()));
+  }
+
   /** Converts a map to a string, sorting on the string representation of its
    * keys. */
   private static String getString(ImmutableMap<RexNode, RexNode> map) {
