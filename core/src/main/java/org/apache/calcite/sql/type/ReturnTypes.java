@@ -192,14 +192,30 @@ public abstract class ReturnTypes {
         // but implemented by hand because used in AND, which is a very common
         // operator.
         final int n = opBinding.getOperandCount();
-        RelDataType type1 = null;
+        RelDataType notNullBooleanType = null;
+        RelDataType nullType = null;
         for (int i = 0; i < n; i++) {
-          type1 = opBinding.getOperandType(i);
-          if (type1.isNullable()) {
-            break;
+          RelDataType operandType = opBinding.getOperandType(i);
+          if (operandType.getSqlTypeName() == SqlTypeName.NULL) {
+            nullType = operandType;
+            continue;
+          } else {
+            if (operandType.isNullable()) {
+              return operandType;
+            } else {
+              notNullBooleanType = operandType;
+            }
           }
         }
-        return type1;
+        if (nullType == null) {
+          return notNullBooleanType;
+        } else {
+          if (notNullBooleanType == null) {
+            return nullType;
+          } else {
+            return opBinding.getTypeFactory().createTypeWithNullability(notNullBooleanType, true);
+          }
+        }
       };
 
   /**
