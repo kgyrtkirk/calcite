@@ -131,7 +131,7 @@ public class RexAnalyzer {
       switch (call.getKind()) {
       case CAST:
 //        ++unsupportedCount;
-        return null;
+        return super.visitCall(call);
       default:
         return super.visitCall(call);
       }
