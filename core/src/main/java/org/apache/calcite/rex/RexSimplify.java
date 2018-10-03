@@ -722,12 +722,12 @@ public class RexSimplify {
     
     RexSimplify branchSimplifier = this;
     for (int i = 0; i < operands.size(); i+=2) {
+      if(i+1<operands.size()) {
       RexNode cond = operands.get(i+0);
       
       RexNode newCond = branchSimplifier.withUnknownAsFalse(true).simplify_(cond);
       operands.set(i+0, newCond);
       
-      if(i+1<operands.size()) {
       RexNode value = operands.get(i+1);
       RexNode newValue = branchSimplifier.withUnknownAsFalse(false).addPredicate(cond).
           simplify_(value);
@@ -735,6 +735,12 @@ public class RexSimplify {
       
       RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true).simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
       branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
+      }else {
+        RexNode value = operands.get(i);
+        RexNode newValue = branchSimplifier.withUnknownAsFalse(false).
+            simplify_(value);
+        operands.set(i, newValue);
+        
       }
     }
     
@@ -1450,9 +1456,9 @@ public class RexSimplify {
 //      return       rexBuilder.makeCast(e.getType(), op);
 //
 //=======
-//      if (operand.getType().equals(e.getType())) {
-//        return simplify_(operand);
-//      }
+      if (operand.getType().equals(e.getType())) {
+        return simplify_(operand);
+      }
       return e;
 //>>>>>>> asf/master
     }

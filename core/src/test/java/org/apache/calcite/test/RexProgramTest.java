@@ -1104,7 +1104,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
 
     // case: remove false branches
     checkSimplify(case_(eq(bRef, cRef), dRef, falseLiteral, aRef, eRef),
-        "OR(AND(=(?0.b, ?0.c), ?0.d), AND(?0.e, NOT(=(?0.b, ?0.c))))");
+        "OR(AND(=(?0.b, ?0.c), ?0.d), AND(?0.e, <>(?0.b, ?0.c)))");
 
     // case: true branches become the last branch
     checkSimplify(
@@ -1121,7 +1121,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // case: trailing false and null, no simplification
     checkSimplify2(
         case_(aRef, trueLiteral, bRef, trueLiteral, cRef, falseLiteral, nullBool),
-        "CASE(?0.a, true, ?0.b, true, ?0.c, false, null)",
+        "OR(?0.a, AND(?0.b, NOT(?0.a)), AND(null, NOT(?0.a), NOT(?0.b), NOT(?0.c)))",
         "CAST(OR(?0.a, ?0.b)):BOOLEAN");
 
     // case: form an AND of branches that return true
@@ -1743,8 +1743,12 @@ public class RexProgramTest extends RexProgramBuilderBase {
 
     checkSimplify2(
         case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral), 
-"AND(IS NOT NULL($0), =(CAST($0):INTEGER NOT NULL, 1))",
-"=(CAST($0):INTEGER NOT NULL, 1)");
+"AND(IS NOT NULL($0), =($0, 1))",
+"=($0, 1)");
+//    checkSimplify2(
+//        case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral), 
+//"AND(IS NOT NULL($0), =(CAST($0):INTEGER NOT NULL, 1))",
+//"=(CAST($0):INTEGER NOT NULL, 1)");
 //    checkSimplify2(
 //        case_(isNotNull(vInt()), eq(vInt(),literal(BigDecimal.ONE)), falseLiteral), 
 //"CASE(IS NOT NULL(?0.int0), =(?0.int0, 1), false)",
