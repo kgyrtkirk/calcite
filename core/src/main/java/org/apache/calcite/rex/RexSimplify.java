@@ -430,20 +430,6 @@ public class RexSimplify {
       return simplify_(
           rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands));
     }
-    if (a.getKind() == SqlKind.CASE) {
-      final List<RexNode> newOperands = new ArrayList<>();
-      List<RexNode> operands = ((RexCall) a).getOperands();
-      for (int i = 0; i < operands.size(); i+=2) {
-        if(i+1 == operands.size()) {
-          newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operands.get(i+0)));
-        }else {
-          newOperands.add(operands.get(i+0));
-          newOperands.add(rexBuilder.makeCall(SqlStdOperatorTable.NOT, operands.get(i+1)));
-        }
-      }
-      return simplify_(
-            rexBuilder.makeCall(SqlStdOperatorTable.CASE, newOperands));
-    }
     return call;
   }
 
@@ -747,12 +733,12 @@ public class RexSimplify {
       RexNode value = 
       rexBuilder.makeAbstractCast(call.getType(), operands.get(i+1));
 
-      RexNode newValue = branchSimplifier.withUnknownAsFalse(false).addPredicate(newCond).
+      RexNode newValue = branchSimplifier.addPredicate(newCond).
           simplify_(value);
       operands.set(i+1, newValue);
       
       RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true).simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, newCond));
-//      branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
+      branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
       }else {
         boolean bug=false;
         RexNode value = operands.get(i);
