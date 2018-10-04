@@ -722,6 +722,7 @@ public class RexSimplify {
     
     RexSimplify branchSimplifier = this;
 
+    RelDataType branchType = call.getType();
     for (int i = 0; i < operands.size(); i+=2) {
       if(i+1<operands.size()) {
       RexNode cond = operands.get(i+0);
@@ -729,7 +730,9 @@ public class RexSimplify {
       RexNode newCond = branchSimplifier.withUnknownAsFalse(true).simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE,cond));
       operands.set(i+0, newCond);
       
-      RexNode value = operands.get(i+1);
+      RexNode value = 
+      rexBuilder.makeAbstractCast(call.getType(), operands.get(i+1));
+
       RexNode newValue = branchSimplifier.withUnknownAsFalse(false).addPredicate(cond).
           simplify_(value);
       operands.set(i+1, newValue);
