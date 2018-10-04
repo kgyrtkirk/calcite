@@ -70,3 +70,123 @@ missing is true
 
 -    LogicalFilter(condition=[CASE(=($10, 0), false, IS TRUE(>($0, $9)), true, >($10, $11), null, >($0, $9))])
 +    LogicalFilter(condition=[OR(AND(IS TRUE(>($0, $9)), <>($10, 0)), AND(>($0, $9), <>($10, 0), IS NOT TRUE(>($0, $9)), <=($10, $11)))])
+
+very bad:
+
+10 11 13
+1 -1 null 
+-1 1 null 
+
+-  LogicalFilter(condition=[NOT(CASE(=($10, 0), false, IS NOT NULL($13), true, <($11, $10), true, false))])
++  LogicalFilter(condition=[OR(IS NULL($13), IS TRUE(=($10, 0)))])
+
+
+-  LogicalFilter(condition=[NOT(CASE(=($10, 0), false, IS NOT NULL($13), true, <($11, $10), true, false))])
++  LogicalFilter(condition=[OR(IS NULL($13), IS TRUE(=($10, 0)))])
+
+
+-    LogicalFilter(condition=[
+//  NOT(
+      CASE(=($9, 0), T,
+      IS NOT NULL($12), F,
+      <($10, $9), F,
+      T)
+  //    )
+  ]
+  )
++    LogicalFilter(condition=[
+  AND(
+    OR(IS NULL($12), IS TRUE(=($9, 0))),
+    OR(IS NOT TRUE(<($10, $9)), IS TRUE(=($9, 0)))
+    )
+  
+  
+  ]
+  )
+
+
+how it worked before?
+
+   LogicalProject($f0=[1])
+-    LogicalFilter(condition=[=($7, 10)])
++    LogicalFilter(condition=[AND(=($7, 10), <>($7, 20))])
+       LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+
+-    LogicalFilter(condition=[
+//  NOT(
+    CASE(=($10, 0), T,
+    IS TRUE(<=($0, $9)), F,
+    >($10, $11), null,
+    <=($0, $9)))
+  
+  ])
++    LogicalFilter(condition=[
+  
+  AND(
+    OR(IS NOT TRUE(<=($0, $9)), =($10, 0)),
+    OR(<=($10, $11), =($10, 0), IS TRUE(<=($0, $9))),
+    OR(>($0, $9), =($10, 0), IS TRUE(<=($0, $9)), >($10, $11))
+    )
+  
+  ])
+
+
+OR(
+  AND(IS TRUE(>($0, $9)),  NOT(=($10, 0))),
+  AND(>($10, $11), null, NOT(=($10, 0)), NOT(IS TRUE(>($0, $9)))),
+  AND(>($0, $9), NOT(=($10, 0)), NOT(IS TRUE(>($0, $9))), NOT(>($10, $11)))
+  )
+
+
+  I'll will try to take a look at those memory calculations; but today is already wasted...probably tomorrow I'll be able to take a look at it.
+
+
+
+-EnumerableCalc(
+    expr#0..7=[{inputs}],
+    expr#8=[0]
+    expr#9=[=($t3, $t8)],
+    expr#10=[false],
+    expr#11=[IS NULL($t1)],
+    expr#12=[null],
+    expr#13=[IS NOT NULL($t7)],
+    expr#14=[true],
+    expr#15=[<($t4, $t3)],
+    expr#16=[CASE($t9, $t10, $t11, $t12, $t13, $t14, $t15, $t14, 
+    $t10)],
+    expr#17=[NOT($t16)], proj#0..1=[{exprs}],
+    $condition=[$t17])
+    [NOT(
+      CASE(
+        =($t3, 0), false,
+        IS NULL($t1), null,
+        IS NOT NULL($t7), true,
+        <($t4, $t3), true, 
+        false)
+        )
+    ]
+
+
++EnumerableCalc(expr#0..7=[{inputs}],
+expr#8=[IS NULL($t7)],
+expr#9=[0],
+expr#10=[=($t3, $t9)],
+expr#11=[IS TRUE($t10)],
+expr#12=[IS NULL($t1)],
+expr#13=[OR($t8, $t11, $t12)],
+expr#14=[<($t4, $t3)],
+expr#15=[IS NOT TRUE($t14)],
+expr#16=[IS NOT NULL($t7)],
+expr#17=[],
+expr#18=[AND($t13, $t17)],
+proj#0..1=[{exprs}],
+
+$condition=
+  [
+      AND(
+        OR(IS NULL($t7), IS TRUE(=($t3, 0)), IS NULL($t1)),
+        OR(IS NOT TRUE(<($t4, $t3)), IS TRUE(=($t3, 0)), IS NULL($t1), IS NOT NULL($t7))
+        )
+  ]
+
+)
