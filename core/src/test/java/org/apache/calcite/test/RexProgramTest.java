@@ -2237,33 +2237,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify2(nullInt, "null", "null");
   }
   
-  @Test
-  public void simplifyNull2() {
-    RexNode nullType = nullBool;
-   
-    RexNode node = or(rexBuilder.constantNull(), vBool());
-    assertThat(node.getType(),is(vBool().getType()));
-    
-//    checkSimplify2(
-//    or( eq(vBool(),trueLiteral), rexBuilder.constantNull()),
-//    "x","x");
-  }
-  
-
-  @Test
-  public void testUsageOfConstantNull() {
-    RexLiteral constantNull = rexBuilder.constantNull();
-
-    RexNode node1 = or(constantNull, vBool());
-    assertThat(node1.getType(), is(vBool().getType()));
-
-    RexNode node2 = or(vBoolNotNull(), constantNull);
-    assertThat(node2.getType(), is(vBool().getType()));
-
-    RexNode node3 = or(constantNull, constantNull);
-    assertThat(node3.getType(), is(constantNull.getType()));
-  }
-
   /** Converts a map to a string, sorting on the string representation of its
    * keys. */
   private static String getString(ImmutableMap<RexNode, RexNode> map) {
@@ -2402,6 +2375,18 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkIs(isNotTrue(isNotNull(isNull(vBool()))), false);
   }
 
+  @Test public void testX() {
+    // "((x IS NULL) IS NOT NULL) IS NOT TRUE" -> false
+    checkSimplify2(
+            and(
+                    eq(vBool(),trueLiteral),
+                    not(eq(vBool(2),falseLiteral))
+                )
+            ,"x","x");
+    
+  }
+
+  
   /** Checks that {@link RexNode#isAlwaysTrue()},
    * {@link RexNode#isAlwaysTrue()} and {@link RexSimplify} agree that
    * an expression reduces to true or false. */
