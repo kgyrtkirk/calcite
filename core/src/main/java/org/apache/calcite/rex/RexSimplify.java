@@ -733,7 +733,7 @@ public class RexSimplify {
       RexNode value = 
       rexBuilder.makeAbstractCast(call.getType(), operands.get(i+1));
 
-      RexNode newValue = branchSimplifier.withUnknownAsFalse(false).addPredicate(cond).
+      RexNode newValue = branchSimplifier.withUnknownAsFalse(false).addPredicate(newCond).
           simplify_(value);
       operands.set(i+1, newValue);
       
