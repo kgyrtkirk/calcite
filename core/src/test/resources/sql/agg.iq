@@ -33,3 +33,40 @@ FROM "scott".emp;
 !ok
 
 # End agg.iq
+
+
+
+CASE(
+    =($8, 0), false,
+    IS NULL($7), null,
+    IS NOT NULL($11), true,
+    <($9, $8), null,
+    false
+    )
+
+OR(
+  -- AND(=($8, 0), false),
+  ++ AND(IS NULL($7), null, NOT(=($8, 0))),
+  ++ AND(IS NOT NULL($11), NOT(=($8, 0)), NOT(IS NULL($7))),
+  AND(<($9, $8), null, NOT(=($8, 0)), NOT(IS NULL($7)), NOT(IS NOT NULL($11))),
+  -- AND(false, NOT(=($8, 0)), NOT(IS NULL($7)), NOT(IS NOT NULL($11)), NOT(<($9, $8)))
+  )
+
+
+BAD!
+
+               <![CDATA[
+-LogicalFilter(condition=[CASE(IS NULL($7), IS NULL(20), =(CAST($7):TINYINT NOT NULL, 20))])
++LogicalFilter(condition=[=(CAST($7):TINYINT NOT NULL, 20)])
+
+
+SOSO
+
+   LogicalProject($f0=[1])
+-    LogicalFilter(condition=[=($7, 10)])
++    LogicalFilter(condition=[AND(=($7, 10), <>($7, 20))])
+
+missing is true
+
+-    LogicalFilter(condition=[CASE(=($10, 0), false, IS TRUE(>($0, $9)), true, >($10, $11), null, >($0, $9))])
++    LogicalFilter(condition=[OR(AND(IS TRUE(>($0, $9)), <>($10, 0)), AND(>($0, $9), <>($10, 0), IS NOT TRUE(>($0, $9)), <=($10, $11)))])
