@@ -717,9 +717,6 @@ public class RexSimplify {
     if (false) {
       return simplifyCase0(call);
     }
-    if (true) {
-      return call;
-    }
 
     final List<RexNode> operands = new ArrayList(call.getOperands());
     
