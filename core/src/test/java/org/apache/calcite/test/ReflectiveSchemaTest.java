@@ -695,6 +695,14 @@ public class ReflectiveSchemaTest {
         .returnsUnordered("value=2", "value=6", "value=10");
   }
 
+  
+
+  @Test public void testCustomBoxedSalarCalc2() {
+    CalciteAssert.that()
+        .withSchema("s", CATCHALL)
+        .query("select (\"value\" = 3 and unknown) or ( \"value\"  = 3 ) from \"s\".\"primesCustomBoxed\"")
+        .returnsUnordered("value=2");
+  }
   /** Test case for
    * <a href="https://issues.apache.org/jira/browse/CALCITE-1569">[CALCITE-1569]
    * Date condition can generates Integer == Integer, which is always

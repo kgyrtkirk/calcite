@@ -1045,6 +1045,40 @@ public class RexProgramTest extends RexProgramBuilderBase {
   }
   
   
+  @Test public void testSimplifyXX2x() {
+  checkSimplify2(
+          case_(
+              isNull(vInt()), falseLiteral,
+              isNotNull(vInt(1)), trueLiteral,
+              falseLiteral
+          ),
+  "IS NOT NULL(?0.int0)",
+  "IS NOT NULL(?0.int0)");
+  }
+  
+  @Test public void testSimplifyNX() {
+    RelDataType bType = tBoolean(true);
+    RexNode n = rexBuilder.makeAbstractCast(bType, rexBuilder.constantNull());
+    assertThat(n.getType(), is(bType));
+    assertThat(simplify.simplify(n).getType(), is(bType));
+
+    
+    
+    
+//  checkSimplify2(
+//      not(
+//          case_(
+//              eq(vInt(0),literal(0)), falseLiteral,
+//              isNotNull(vInt(3)), trueLiteral,
+//              lt(vInt(1), vInt(0)), trueLiteral,
+//              falseLiteral
+//              )
+//          ),
+//  "NOT(CASE(=(?0.int0, 0), false, IS NOT NULL(?0.int3), true, <(?0.int1, ?0.int0), true, false))",
+//  "NOT(CASE(=(?0.int0, 0), false, IS NOT NULL(?0.int3), true, <(?0.int1, ?0.int0), true, false))");
+  }
+  
+  
   @Test public void testSimplifyXX2() {
   checkSimplify2(
           case_(
@@ -1055,6 +1089,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
   "IS NOT NULL(?0.int0)",
   "IS NOT NULL(?0.int0)");
   }
+
   
   @Test public void testSimplify() {
     final RelDataType booleanType =
