@@ -1396,22 +1396,10 @@ public class RexSimplify {
       return Objects.requireNonNull(
           Iterables.getOnlyElement(reducedValues));
     default:
-//<<<<<<< HEAD
-//      RexNode op = simplify_(operand);
-//      if(op.getKind() ==  SqlKind.CAST)
-//        return op;
-//
-//      if(op.equals(operand))
-//        return e;
-//      else
-//      return       rexBuilder.makeCast(e.getType(), op);
-//
-//=======
       if (operand.getType().equals(e.getType())) {
         return simplify_(operand);
       }
       return e;
-//>>>>>>> asf/master
     }
   }
 
