@@ -16,6 +16,11 @@
  */
 package org.apache.calcite.test;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
+
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
@@ -38,11 +43,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
 
 /**
  * This class provides helper methods to build rex expressions.
@@ -93,18 +93,22 @@ public abstract class RexProgramBuilderBase {
               Variable.CURRENT_TIMESTAMP.camelName, 1311120000000L);
     }
 
+    @Override
     public SchemaPlus getRootSchema() {
       return null;
     }
 
+    @Override
     public JavaTypeFactory getTypeFactory() {
       return null;
     }
 
+    @Override
     public QueryProvider getQueryProvider() {
       return null;
     }
 
+    @Override
     public Object get(String name) {
       return map.get(name);
     }
@@ -233,6 +237,14 @@ public abstract class RexProgramBuilderBase {
 
   protected RexNode case_(Iterable<? extends RexNode> nodes) {
     return rexBuilder.makeCall(SqlStdOperatorTable.CASE, ImmutableList.copyOf(nodes));
+  }
+
+  protected RexNode between(RexNode... nodes) {
+    return between(ImmutableList.copyOf(nodes));
+  }
+
+  protected RexNode between(Iterable<? extends RexNode> nodes) {
+    return rexBuilder.makeCall(SqlStdOperatorTable.BETWEEN, ImmutableList.copyOf(nodes));
   }
 
   /**

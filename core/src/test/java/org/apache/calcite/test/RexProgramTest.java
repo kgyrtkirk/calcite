@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.calcite.avatica.SqlType;
 import org.apache.calcite.avatica.util.ByteString;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptUtil;
@@ -67,32 +66,12 @@ import org.apache.calcite.util.TimestampString;
 import org.apache.calcite.util.TimestampWithTimeZoneString;
 import org.apache.calcite.util.Util;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertThat;
 
 /**
  * Unit tests for {@link RexProgram} and
@@ -1043,8 +1022,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
   "NOT(CASE(=(?0.int0, 0), false, IS NOT NULL(?0.int3), true, <(?0.int1, ?0.int0), true, false))",
   "NOT(CASE(=(?0.int0, 0), false, IS NOT NULL(?0.int3), true, <(?0.int1, ?0.int0), true, false))");
   }
-  
-  
+
+
   @Test public void testSimplifyXX2x() {
   checkSimplify2(
           case_(
@@ -1055,16 +1034,16 @@ public class RexProgramTest extends RexProgramBuilderBase {
   "IS NOT NULL(?0.int0)",
   "IS NOT NULL(?0.int0)");
   }
-  
+
   @Test public void testSimplifyNX() {
     RelDataType bType = tBoolean(true);
     RexNode n = rexBuilder.makeAbstractCast(bType, rexBuilder.constantNull());
     assertThat(n.getType(), is(bType));
     assertThat(simplify.simplify(n).getType(), is(bType));
 
-    
-    
-    
+
+
+
 //  checkSimplify2(
 //      not(
 //          case_(
@@ -1077,8 +1056,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
 //  "NOT(CASE(=(?0.int0, 0), false, IS NOT NULL(?0.int3), true, <(?0.int1, ?0.int0), true, false))",
 //  "NOT(CASE(=(?0.int0, 0), false, IS NOT NULL(?0.int3), true, <(?0.int1, ?0.int0), true, false))");
   }
-  
-  
+
+
   @Test public void testSimplifyXX2() {
   checkSimplify2(
           case_(
@@ -1090,7 +1069,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
   "IS NOT NULL(?0.int0)");
   }
 
-  
+
   @Test public void testSimplify() {
     final RelDataType booleanType =
         typeFactory.createSqlType(SqlTypeName.BOOLEAN);
@@ -1800,19 +1779,19 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(result.getType().getSqlTypeName(), is(SqlTypeName.CHAR));
     assertThat(result, is(caseNode));
   }
-  
+
   @Test public void testSimplifyCaseNullableInt() {
 
     checkSimplify2(
-        case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral), 
+        case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral),
 "AND(IS NOT NULL($0), =($0, 1))",
 "=($0, 1)");
 //    checkSimplify2(
-//        case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral), 
+//        case_(isNotNull(input(tInt(true), 0)), eq(input(tInt(true), 0),literal(BigDecimal.ONE)), falseLiteral),
 //"AND(IS NOT NULL($0), =(CAST($0):INTEGER NOT NULL, 1))",
 //"=(CAST($0):INTEGER NOT NULL, 1)");
 //    checkSimplify2(
-//        case_(isNotNull(vInt()), eq(vInt(),literal(BigDecimal.ONE)), falseLiteral), 
+//        case_(isNotNull(vInt()), eq(vInt(),literal(BigDecimal.ONE)), falseLiteral),
 //"CASE(IS NOT NULL(?0.int0), =(?0.int0, 1), false)",
 //"CASE(IS NOT NULL(?0.int0), =(?0.int0, 1), false)");
   }
@@ -2271,7 +2250,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // null int must not be simplified to false
     checkSimplify2(nullInt, "null", "null");
   }
-  
+
   /** Converts a map to a string, sorting on the string representation of its
    * keys. */
   private static String getString(ImmutableMap<RexNode, RexNode> map) {
@@ -2418,10 +2397,21 @@ public class RexProgramTest extends RexProgramBuilderBase {
                     not(eq(vBool(2),falseLiteral))
                 )
             ,"x","x");
-    
+
   }
 
-  
+  @Test
+  public void testX2() {
+    // "((x IS NULL) IS NOT NULL) IS NOT TRUE" -> false
+    checkSimplify2(
+        between(
+            vInt(),
+            literal(0),
+            literal(2)),
+        "x", "x");
+
+  }
+
   /** Checks that {@link RexNode#isAlwaysTrue()},
    * {@link RexNode#isAlwaysTrue()} and {@link RexSimplify} agree that
    * an expression reduces to true or false. */
