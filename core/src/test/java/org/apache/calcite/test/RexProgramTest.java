@@ -1163,7 +1163,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify2(
         case_(aRef, trueLiteral, bRef, trueLiteral, cRef, falseLiteral, nullBool),
         "OR(?0.a, AND(?0.b, NOT(?0.a)), AND(null, NOT(?0.a), NOT(?0.b), NOT(?0.c)))",
-        "CAST(OR(?0.a, ?0.b)):BOOLEAN");
+        "OR(?0.a, ?0.b)");
 
     // case: form an AND of branches that return true
     checkSimplify(

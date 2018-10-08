@@ -706,20 +706,12 @@ public class RexSimplify {
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
       final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAsFalse);
       if (result != null) {
+        if (!call.getType().equals(result.getType())) {
+          return simplify_(rexBuilder.makeCast(call.getType(), result));
+        }
         return simplify_(result);
       }
     }
-    //    if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-    //      // Optimize CASE where every branch returns constant true or constant
-    //      // false.
-    //      final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAsFalse);
-    //      if (result != null) {
-    //        if (!call.getType().equals(result.getType())) {
-    //          return simplify_(rexBuilder.makeCast(call.getType(), result));
-    //        }
-    //        return simplify_(result);
-    //      }
-    //    }
     List<RexNode> newOperands = CaseBranch.toCaseOperands(rexBuilder, branches);
     if (newOperands.equals(call.getOperands())) {
       return call;
@@ -771,14 +763,6 @@ public class RexSimplify {
       assert (lastBranch.cond.isAlwaysTrue());
       ret.add(lastBranch.value);
       return ret;
-    }
-
-    public RexNode getKey() {
-      return cond;
-    }
-
-    public RexNode getValue() {
-      return value;
     }
   }
 
@@ -851,12 +835,12 @@ public class RexSimplify {
   private static RexNode simplifyBooleanCase2(RexBuilder rexBuilder,
       List<CaseBranch> branches, boolean unknownAsFalse) {
     for (CaseBranch branch : branches) {
-      if (branch.getKey().getType().isNullable()) {
+      if (branch.cond.getType().isNullable()) {
         return null;
       }
-      if (!branch.getValue().isAlwaysTrue()
-          && !branch.getValue().isAlwaysFalse()
-          && (!unknownAsFalse || !RexUtil.isNull(branch.getValue()))) {
+      if (!branch.value.isAlwaysTrue()
+          && !branch.value.isAlwaysFalse()
+          && (!unknownAsFalse || !RexUtil.isNull(branch.value))) {
         return null;
       }
     }
@@ -875,7 +859,7 @@ public class RexSimplify {
   private static RexNode simplifyBooleanCase3(RexBuilder rexBuilder,
       List<CaseBranch> branches) {
     for (CaseBranch branch : branches) {
-      if (branch.getKey().getType().isNullable()) {
+      if (branch.cond.getType().isNullable()) {
         return null;
       }
     }
