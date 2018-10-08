@@ -118,14 +118,14 @@ public class RexSimplify {
       : new RexSimplify(rexBuilder, predicates, unknownAsFalse, predicateElimination, paranoid,
               executor);
   }
-  
+
   private RexSimplify addPredicate(RexNode predicate) {
     RelOptPredicateList newPredicates = predicates.union(rexBuilder,
         RelOptPredicateList.of(rexBuilder, ImmutableList.of(predicate)));
     return withPredicates(newPredicates);
   }
 
-  
+
 
   /** Returns a RexSimplify the same as this but which verifies that
    * the expression before and after simplification are equivalent.
@@ -465,7 +465,7 @@ public class RexSimplify {
     }
     return null;
   }
-  
+
   private void simplifyType(RexFieldAccess a) {
     for (RexNode p : predicates.pulledUpPredicates) {
       IsPredicate pred = IsPredicate.of(p);
@@ -719,25 +719,26 @@ public class RexSimplify {
     }
 
     final List<RexNode> operands = new ArrayList(call.getOperands());
-    
+
     RexSimplify branchSimplifier = this;
 
     RelDataType branchType = call.getType();
     for (int i = 0; i < operands.size(); i+=2) {
       if(i+1<operands.size()) {
       RexNode cond = operands.get(i+0);
-      
+
       RexNode newCond = branchSimplifier.withUnknownAsFalse(false).simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE,cond));
       operands.set(i+0, newCond);
-      
-      RexNode value = 
+
+      RexNode value =
       rexBuilder.makeAbstractCast(call.getType(), operands.get(i+1));
 
       RexNode newValue = branchSimplifier.addPredicate(newCond).
           simplify_(value);
       operands.set(i+1, newValue);
-      
-      RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true).simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, newCond));
+
+        RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true)
+                .simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
       branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
       }else {
         boolean bug=false;
@@ -745,10 +746,10 @@ public class RexSimplify {
         RexNode newValue = branchSimplifier.withUnknownAsFalse(bug).
             simplify_(value);
         operands.set(i, newValue);
-        
+
       }
     }
-    
+
     // simplifyList(operands);
     final List<RexNode> newOperands = new ArrayList<>();
     final Set<String> values = new HashSet<>();
@@ -1454,7 +1455,7 @@ public class RexSimplify {
 //      RexNode op = simplify_(operand);
 //      if(op.getKind() ==  SqlKind.CAST)
 //        return op;
-//      
+//
 //      if(op.equals(operand))
 //        return e;
 //      else
