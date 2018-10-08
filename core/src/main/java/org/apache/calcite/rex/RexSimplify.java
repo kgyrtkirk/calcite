@@ -676,7 +676,7 @@ public class RexSimplify {
 
       // simplify the condition
       RexNode newCond = branchSimplifier.
-          withUnknownAsFalse(false).
+          withUnknownAsFalse(true).
           simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond));
       branch.cond = newCond;
 
@@ -754,7 +754,9 @@ public class RexSimplify {
 
       // simplify the condition
       RexNode newCond =
-          branchSimplifier.withUnknownAsFalse(false).simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, cond));
+          branchSimplifier
+              .withUnknownAsFalse(true)
+              .simplify_(cond);
       branch.cond = newCond;
 
       // use the condition to simplify the branch
@@ -804,7 +806,6 @@ public class RexSimplify {
     }
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-
       final RexNode result = simplifyBooleanCase(rexBuilder, CaseBranch.toPairs(branches), unknownAsFalse);
       if (result != null) {
         return simplify_(result);
