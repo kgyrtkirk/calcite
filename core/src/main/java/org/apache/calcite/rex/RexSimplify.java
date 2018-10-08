@@ -772,7 +772,7 @@ public class RexSimplify {
       RexNode newBranchCond = branchSimplifier.
           withUnknownAsFalse(true).
           simplify_(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
-      branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
+      branchSimplifier = branchSimplifier.addPredicate(newBranchCond);
     }
 
     // remove branches with invalid conditions
