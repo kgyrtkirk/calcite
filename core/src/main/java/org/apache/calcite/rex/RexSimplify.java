@@ -730,12 +730,12 @@ public class RexSimplify {
       return firstValue;
     }
 
-    if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-      final RexNode result = simplifyBooleanCase(rexBuilder, caseElement, unknownAsFalse);
-      if (result != null) {
-        return simplify_(result);
-      }
-    }
+    //    if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
+    //      final RexNode result = simplifyBooleanCase(rexBuilder, caseElement, unknownAsFalse);
+    //      if (result != null) {
+    //        return simplify_(result);
+    //      }
+    //    }
     return call;
   }
 
