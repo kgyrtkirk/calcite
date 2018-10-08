@@ -665,18 +665,6 @@ public class RexSimplify {
       // add else branch with true
       branches.add(new CaseBranch(rexBuilder.makeLiteral(true), operands.get(operands.size() - 1)));
     }
-
-    public List<RexNode> asOperands() {
-      List<RexNode> ops = new ArrayList<>();
-      for (int i = 0; i < branches.size() - 1; i++) {
-        CaseBranch caseBranch = branches.get(i);
-        ops.add(caseBranch.cond);
-        ops.add(caseBranch.value);
-      }
-      assert (branches.get(branches.size() - 1).cond.isAlwaysTrue());
-      ops.add(branches.get(branches.size() - 1).value);
-      return ops;
-    }
   }
 
   private RexNode simplifyCase0(RexCall call) {
@@ -747,10 +735,6 @@ public class RexSimplify {
       if (result != null) {
         return simplify_(result);
       }
-    }
-    List<RexNode> newOperands = caseElement.asOperands();
-    if (newOperands.equals(call.getOperands())) {
-      return call;
     }
     return call;
   }
@@ -861,7 +845,7 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
-      CaseElement caseElement, boolean unknownAsFalse) {
+      List<Pair<RexNode, RexNode>> pairs, boolean unknownAsFalse) {
     RexNode result = null;
     // 1) Possible simplification if unknown is treated as false:
     //   CASE
@@ -871,7 +855,7 @@ public class RexSimplify {
     //   END
     // can be rewritten to: (p1 or p2)
     if (unknownAsFalse) {
-      result = simplifyBooleanCase1(rexBuilder, caseElement);
+      result = simplifyBooleanCase1(rexBuilder, pairs);
       if (result != null) {
         return result;
       }
@@ -885,50 +869,50 @@ public class RexSimplify {
     //   END
     // to: (p1 or (p3 and not(p2)))
     // if p1...pn cannot be nullable
-    result = simplifyBooleanCase2(rexBuilder, caseElement, unknownAsFalse);
+    result = simplifyBooleanCase2(rexBuilder, pairs, unknownAsFalse);
     if (result != null) {
       return result;
     }
-//    // 3) Another simplification:
-//    //  CASE
-//    //  WHEN p1 THEN x
-//    //  WHEN p2 THEN y
-//    //  ELSE z
-//    //  END
-//    // to: (p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))
-//    // if p1...pn, x, y, zRelOptRulesTest cannot be nullable
-//    result = simplifyBooleanCase3(rexBuilder, caseElement);
+    // 3) Another simplification:
+    //  CASE
+    //  WHEN p1 THEN x
+    //  WHEN p2 THEN y
+    //  ELSE z
+    //  END
+    // to: (p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))
+    // if p1...pn, x, y, zRelOptRulesTest cannot be nullable
+    result = simplifyBooleanCase3(rexBuilder, pairs);
     return result;
   }
 
   private static RexNode simplifyBooleanCase1(RexBuilder rexBuilder,
-      CaseElement caseElement) {
+      List<Pair<RexNode, RexNode>> pairs) {
     final List<RexNode> terms = new ArrayList<>();
     int pos = 0;
-    for (; pos < caseElement.branches.size(); pos++) {
+    for (; pos < pairs.size(); pos++) {
       // True block
-      CaseBranch branch = caseElement.branches.get(pos);
-      if (!branch.value.isAlwaysTrue()) {
+      Pair<RexNode, RexNode> pair = pairs.get(pos);
+      if (!pair.getValue().isAlwaysTrue()) {
         break;
       }
-      terms.add(branch.cond);
+      terms.add(pair.getKey());
     }
-    for (; pos < caseElement.branches.size(); pos++) {
+    for (; pos < pairs.size(); pos++) {
       // False block
-      CaseBranch branch = caseElement.branches.get(pos);
-      if (!(branch.value.isAlwaysFalse() || RexUtil.isNull(branch.value))) {
+      Pair<RexNode, RexNode> pair = pairs.get(pos);
+      if (!(pair.getValue().isAlwaysFalse() || RexUtil.isNull(pair.getValue()))) {
         break;
       }
     }
-    if (pos == caseElement.branches.size()) {
+    if (pos == pairs.size()) {
       return RexUtil.composeDisjunction(rexBuilder, terms);
     }
     return null;
   }
 
   private static RexNode simplifyBooleanCase2(RexBuilder rexBuilder,
-      CaseElement caseElement, boolean unknownAsFalse) {
-    for (Pair<RexNode, RexNode> pair : caseElement) {
+      List<Pair<RexNode, RexNode>> pairs, boolean unknownAsFalse) {
+    for (Pair<RexNode, RexNode> pair : pairs) {
       if (pair.getKey().getType().isNullable()) {
         return null;
       }
@@ -940,7 +924,7 @@ public class RexSimplify {
     }
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
-    for (Ord<Pair<RexNode, RexNode>> pair : Ord.zip(caseElement)) {
+    for (Ord<Pair<RexNode, RexNode>> pair : Ord.zip(pairs)) {
       if (pair.e.getValue().isAlwaysTrue()) {
         terms.add(RexUtil.andNot(rexBuilder, pair.e.getKey(), notTerms));
       } else {
@@ -954,8 +938,8 @@ public class RexSimplify {
       List<Pair<RexNode, RexNode>> pairs) {
     for (Pair<RexNode, RexNode> pair : pairs) {
       if (pair.getKey().getType().isNullable()
-      //          || pair.getValue().getType().isNullable()
-      ) {
+//          || pair.getValue().getType().isNullable()
+          ) {
         return null;
       }
     }
