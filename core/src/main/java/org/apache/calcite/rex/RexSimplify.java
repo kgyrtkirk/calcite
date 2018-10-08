@@ -654,7 +654,6 @@ public class RexSimplify {
         this.cond = cond;
         this.value = value;
       }
-
     }
 
     private List<CaseBranch> branches = new ArrayList<>();
@@ -666,15 +665,39 @@ public class RexSimplify {
       // add else branch with true
       branches.add(new CaseBranch(rexBuilder.makeLiteral(true), operands.get(operands.size() - 1)));
     }
-
   }
 
   private RexNode simplifyCase0(RexCall call) {
-    // run simplification on all operands
-    final List<RexNode> operands = new ArrayList(call.getOperands());
-    simplifyList(operands);
+    CaseElement caseElement = new CaseElement(call.getOperands());
 
-    CaseElement caseElement = new CaseElement(operands);
+    // run simplification on all operands
+    RexSimplify branchSimplifier = this;
+    for (CaseBranch branch : caseElement.branches) {
+
+      // simplify the condition
+      RexNode newCond = branchSimplifier.
+          withUnknownAsFalse(false).
+          simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond));
+      branch.cond = newCond;
+
+      RexNode value = branch.value;
+      if (value.getType().equals(call.getType())) {
+        value = rexBuilder.makeAbstractCast(call.getType(), value);
+      }
+
+      // use the condition to simplify the branch
+      RexNode newValue = branchSimplifier.
+          addPredicate(newCond).
+          simplify_(value);
+
+      branch.value=newValue;
+
+      // extend the branch simplifier; as we do know that the previous branch is not picked.
+      RexNode notBranchCond = branchSimplifier.
+          withUnknownAsFalse(true).
+          simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, newCond));
+      branchSimplifier = branchSimplifier.addPredicate(notBranchCond);
+    }
 
     // remove branches with invalid conditions
     caseElement.branches.removeIf(branch -> branch.cond.isAlwaysFalse() || RexUtil.isNull(branch.cond));
@@ -690,7 +713,7 @@ public class RexSimplify {
       }
     }
 
-    // collect cardianlity of values
+    // collect cardinality of values
     Set<String> values = caseElement.branches.stream().map(branch -> {
       if (unknownAsFalse && RexUtil.isNull(branch.value)) {
         return rexBuilder.makeLiteral(false).toString();
