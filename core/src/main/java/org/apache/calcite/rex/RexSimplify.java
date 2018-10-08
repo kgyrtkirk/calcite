@@ -802,7 +802,6 @@ public class RexSimplify {
     //  ELSE z
     //  END
     // to: (p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))
-    // if p1...pn, x, y, zRelOptRulesTest cannot be nullable
     result = simplifyBooleanCase3(rexBuilder, branches);
     return result;
   }
@@ -835,9 +834,6 @@ public class RexSimplify {
   private static RexNode simplifyBooleanCase2(RexBuilder rexBuilder,
       List<CaseBranch> branches, boolean unknownAsFalse) {
     for (CaseBranch branch : branches) {
-      if (branch.cond.getType().isNullable()) {
-        return null;
-      }
       if (!branch.value.isAlwaysTrue()
           && !branch.value.isAlwaysFalse()
           && (!unknownAsFalse || !RexUtil.isNull(branch.value))) {
@@ -847,10 +843,16 @@ public class RexSimplify {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (CaseBranch branch : branches) {
-      if (branch.value.isAlwaysTrue()) {
-        terms.add(RexUtil.andNot(rexBuilder, branch.cond, notTerms));
+      RexNode nonNullCond;
+      if (branch.cond.getType().isNullable()) {
+        nonNullCond = rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond);
       } else {
-        notTerms.add(branch.cond);
+        nonNullCond = branch.cond;
+      }
+      if (branch.value.isAlwaysTrue()) {
+        terms.add(RexUtil.andNot(rexBuilder, nonNullCond, notTerms));
+      } else {
+        notTerms.add(nonNullCond);
       }
     }
     return RexUtil.composeDisjunction(rexBuilder, terms);
@@ -858,21 +860,22 @@ public class RexSimplify {
 
   private static RexNode simplifyBooleanCase3(RexBuilder rexBuilder,
       List<CaseBranch> branches) {
-    for (CaseBranch branch : branches) {
-      if (branch.cond.getType().isNullable()) {
-        return null;
-      }
-    }
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
-    for (CaseBranch pair : branches) {
+    for (CaseBranch branch : branches) {
+      RexNode nonNullCond;
+      if (branch.cond.getType().isNullable()) {
+        nonNullCond = rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond);
+      } else {
+        nonNullCond = branch.cond;
+      }
       terms.add(
           RexUtil.andNot(rexBuilder,
               rexBuilder.makeCall(SqlStdOperatorTable.AND,
-                  pair.cond,
-                  pair.value),
+                  nonNullCond,
+                  branch.value),
               notTerms));
-      notTerms.add(pair.cond);
+      notTerms.add(nonNullCond);
     }
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
