@@ -788,39 +788,27 @@ public class RexSimplify {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (CaseBranch branch : branches) {
-      RexNode nonNullCond;
-      if (branch.cond.getType().isNullable()) {
-        nonNullCond = rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond);
-      } else {
-        nonNullCond = branch.cond;
-      }
       if (branch.value.isAlwaysTrue()) {
-        terms.add(RexUtil.andNot(rexBuilder, nonNullCond, notTerms));
+        terms.add(RexUtil.andNot(rexBuilder, branch.cond, notTerms));
       } else {
-        notTerms.add(nonNullCond);
+        notTerms.add(branch.cond);
       }
     }
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
 
   private static RexNode simplifyBooleanCase3(RexBuilder rexBuilder,
-      List<CaseBranch> branches, RelDataType outputType) {
+          List<CaseBranch> branches, RelDataType outputType) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (CaseBranch branch : branches) {
-      RexNode nonNullCond;
-      if (branch.cond.getType().isNullable()) {
-        nonNullCond = rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond);
-      } else {
-        nonNullCond = branch.cond;
-      }
       terms.add(
-          RexUtil.andNot(rexBuilder,
-              rexBuilder.makeCall(SqlStdOperatorTable.AND,
-                  nonNullCond,
+              RexUtil.andNot(rexBuilder,
+                      rexBuilder.makeCall(SqlStdOperatorTable.AND,
+                              branch.cond,
                               rexBuilder.makeAbstractCast(outputType, branch.value)),
-              notTerms));
-      notTerms.add(nonNullCond);
+                      notTerms));
+      notTerms.add(branch.cond);
     }
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
