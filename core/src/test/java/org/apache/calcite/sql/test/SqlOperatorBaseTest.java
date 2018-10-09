@@ -2064,15 +2064,12 @@ public abstract class SqlOperatorBaseTest {
   }
 
   @Test public void testAndOperator2() {
-//    tester.checkBoolean(
-//        "case when false then unknown else true end and true",
-//        Boolean.TRUE);
-//    tester.checkBoolean(
-//        "case when false then cast(null as boolean) else true end and true",
-//        Boolean.TRUE);
-//    tester.checkBoolean(
-//        "case when false then null else true end and true",
-//        Boolean.TRUE);
+    tester.checkBoolean(
+        "case when false then unknown else true end and true",
+        Boolean.TRUE);
+    tester.checkBoolean(
+        "case when false then cast(null as boolean) else true end and true",
+        Boolean.TRUE);
     tester.checkBoolean(
         "case when false then null else true end and true",
         Boolean.TRUE);
