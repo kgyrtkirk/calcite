@@ -669,7 +669,7 @@ public class RexSimplify {
     }
 
     @Override public String toString() {
-      return String.format("%s => %s", cond, value);
+      return new StringBuilder(cond.toString()).append(" => ").append(value).toString();
     }
 
     /** Given "CASE WHEN p1 THEN v1 ... ELSE e END"
