@@ -117,16 +117,6 @@ public class RexSimplify {
               executor);
   }
 
-  private RexSimplify addPredicate(RexNode predicate) {
-    List<RexNode> newPredicateList = new ArrayList<>();
-    RelOptUtil.decomposeConjunction(predicate, newPredicateList);
-    RelOptPredicateList newPredicates = predicates.union(rexBuilder,
-        RelOptPredicateList.of(rexBuilder, newPredicateList));
-    return withPredicates(newPredicates);
-  }
-
-
-
   /** Returns a RexSimplify the same as this but which verifies that
    * the expression before and after simplification are equivalent.
    *
