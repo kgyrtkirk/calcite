@@ -692,8 +692,28 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
-          List<CaseBranch> branches, boolean unknownAsFalse, RelDataType t) {
+          List<CaseBranch> inputBranches, boolean unknownAsFalse, RelDataType t) {
     RexNode result = null;
+
+    // prepare all condition/branches for boolean interpretation
+    // It's done here make these interpretation changes available to case2or simplifications
+    // but not interfere with the normal simplifcation recursion
+    List<CaseBranch> branches = new ArrayList<>();
+    for (CaseBranch branch : inputBranches) {
+      RexNode cond, value;
+      if (branch.cond.getType().isNullable()) {
+        cond = rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond);
+      } else {
+        cond = branch.cond;
+      }
+      if (!t.equals(branch.value.getType())) {
+        value = rexBuilder.makeAbstractCast(t, branch.value);
+      } else {
+        value = branch.value;
+      }
+      branches.add(new CaseBranch(cond, value));
+    }
+
     // 1) Possible simplification if unknown is treated as false:
     //   CASE
     //   WHEN p1 THEN TRUE
