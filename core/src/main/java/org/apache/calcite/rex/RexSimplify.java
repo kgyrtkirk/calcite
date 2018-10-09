@@ -730,16 +730,16 @@ public class RexSimplify {
       RexNode newCond = branchSimplifier.withUnknownAsFalse(false).simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE,cond));
       operands.set(i+0, newCond);
 
-      RexNode value =
-      rexBuilder.makeAbstractCast(call.getType(), operands.get(i+1));
+        RexNode value =
+                rexBuilder.makeAbstractCast(call.getType(), operands.get(i + 1));
 
       RexNode newValue = branchSimplifier.addPredicate(newCond).
           simplify_(value);
       operands.set(i+1, newValue);
 
-        RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true)
-                .simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
-      branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
+        //        RexNode newBranchCond = branchSimplifier.withUnknownAsFalse(true)
+        //                .simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cond));
+        //      branchSimplifier=branchSimplifier.addPredicate(newBranchCond);
       }else {
         boolean bug=false;
         RexNode value = operands.get(i);
