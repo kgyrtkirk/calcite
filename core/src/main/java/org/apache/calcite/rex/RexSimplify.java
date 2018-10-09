@@ -591,7 +591,6 @@ public class RexSimplify {
     RelDataType branchType = call.getType();
 
     for (CaseBranch branch : branches) {
-
       // simplify the condition
       RexNode newCond =
           branchSimplifier
@@ -601,15 +600,8 @@ public class RexSimplify {
 
       // use the condition to simplify the branch
       RexNode value = branch.value;
-      RexNode newValue = branchSimplifier.addPredicate(newCond).
-          simplify_(value);
+      RexNode newValue = branchSimplifier.simplify_(value);
       branch.value = newValue;
-
-      // extend the branch simplifier; as we do know that the previous branch is not picked.
-      RexNode newBranchCond = branchSimplifier.
-          withUnknownAsFalse(true).
-            simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, branch.cond));
-      branchSimplifier = branchSimplifier.addPredicate(newBranchCond);
     }
 
     // remove branches with invalid conditions
