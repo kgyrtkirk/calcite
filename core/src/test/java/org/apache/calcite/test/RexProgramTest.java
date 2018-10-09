@@ -1692,11 +1692,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     RexCall result = (RexCall) simplify.simplify(caseNode);
     assertThat(result.getType().isNullable(), is(false));
     assertThat(result.getType().getSqlTypeName(), is(SqlTypeName.BOOLEAN));
-    assertThat(result.getOperator(), is((SqlOperator) SqlStdOperatorTable.CASE));
-    assertThat(result.getOperands().size(), is((Object) 3));
+    assertThat(result.getOperator(), is((SqlOperator) SqlStdOperatorTable.IS_TRUE));
     assertThat(result.getOperands().get(0), is(condition));
-    assertThat(result.getOperands().get(1), is((RexNode) trueLiteral));
-    assertThat(result.getOperands().get(2), is((RexNode) falseLiteral));
   }
 
   @Test public void testSimplifyCaseNullableBoolean() {
