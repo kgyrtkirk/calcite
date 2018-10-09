@@ -601,9 +601,6 @@ public class RexSimplify {
 
       // use the condition to simplify the branch
       RexNode value = branch.value;
-      if (value.getType().equals(call.getType())) {
-        value = rexBuilder.makeAbstractCast(call.getType(), branch.value);
-      }
       RexNode newValue = branchSimplifier.addPredicate(newCond).
           simplify_(value);
       branch.value = newValue;
@@ -611,7 +608,7 @@ public class RexSimplify {
       // extend the branch simplifier; as we do know that the previous branch is not picked.
       RexNode newBranchCond = branchSimplifier.
           withUnknownAsFalse(true).
-          simplify_(rexBuilder.makeCall(SqlStdOperatorTable.NOT, branch.cond));
+            simplify_(rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, branch.cond));
       branchSimplifier = branchSimplifier.addPredicate(newBranchCond);
     }
 
@@ -646,7 +643,7 @@ public class RexSimplify {
     }
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-      final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAsFalse);
+      final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAsFalse, branchType);
       if (result != null) {
         if (!call.getType().equals(result.getType())) {
           return simplify_(rexBuilder.makeCast(call.getType(), result));
@@ -669,6 +666,10 @@ public class RexSimplify {
     public CaseBranch(RexNode cond, RexNode value) {
       this.cond = cond;
       this.value = value;
+    }
+
+    @Override public String toString() {
+      return String.format("%s => %s", cond, value);
     }
 
     /** Given "CASE WHEN p1 THEN v1 ... ELSE e END"
@@ -699,7 +700,7 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
-      List<CaseBranch> branches, boolean unknownAsFalse) {
+          List<CaseBranch> branches, boolean unknownAsFalse, RelDataType t) {
     RexNode result = null;
     // 1) Possible simplification if unknown is treated as false:
     //   CASE
@@ -734,7 +735,7 @@ public class RexSimplify {
     //  ELSE z
     //  END
     // to: (p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))
-    result = simplifyBooleanCase3(rexBuilder, branches);
+    result = simplifyBooleanCase3(rexBuilder, branches, t);
     return result;
   }
 
@@ -791,7 +792,7 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase3(RexBuilder rexBuilder,
-      List<CaseBranch> branches) {
+      List<CaseBranch> branches, RelDataType outputType) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (CaseBranch branch : branches) {
@@ -805,7 +806,7 @@ public class RexSimplify {
           RexUtil.andNot(rexBuilder,
               rexBuilder.makeCall(SqlStdOperatorTable.AND,
                   nonNullCond,
-                  branch.value),
+                              rexBuilder.makeAbstractCast(outputType, branch.value)),
               notTerms));
       notTerms.add(nonNullCond);
     }
@@ -1338,8 +1339,8 @@ public class RexSimplify {
       return Objects.requireNonNull(
           Iterables.getOnlyElement(reducedValues));
     default:
-      if (operand.getType().equals(e.getType())) {
-        return simplify_(operand);
+        if (operand.getType().equals(e.getType())) {
+          return simplify_(operand);
       }
       return e;
     }
