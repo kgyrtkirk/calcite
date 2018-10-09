@@ -16,18 +16,6 @@
  */
 package org.apache.calcite.test;
 
-import static org.apache.calcite.plan.RelOptRule.none;
-import static org.apache.calcite.plan.RelOptRule.operand;
-import static org.apache.calcite.plan.RelOptRule.operandJ;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.function.Predicate;
-
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.plan.Context;
 import org.apache.calcite.plan.Contexts;
@@ -130,10 +118,24 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.test.catalog.MockCatalogReader;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.ImmutableBitSet;
+
+import com.google.common.collect.ImmutableList;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.function.Predicate;
+
+import static org.apache.calcite.plan.RelOptRule.none;
+import static org.apache.calcite.plan.RelOptRule.operand;
+import static org.apache.calcite.plan.RelOptRule.operandJ;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
 /**
  * Unit test for rules in {@code org.apache.calcite.rel} and subpackages.
@@ -182,7 +184,6 @@ public class RelOptRulesTest extends RelOptTestBase {
       expr instanceof RexCall
           && "item".equalsIgnoreCase(((RexCall) expr).getOperator().getName());
 
-  @Override
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(RelOptRulesTest.class);
   }
@@ -2189,19 +2190,6 @@ public class RelOptRulesTest extends RelOptTestBase {
     checkPlanning(program, sql);
   }
 
-  @Test
-  public void testCasePushBetween() throws Exception {
-    HepProgram program = new HepProgramBuilder()
-        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
-        .addRuleInstance(ReduceExpressionsRule.CALC_INSTANCE)
-        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
-        .build();
-
-    final String sql = "select empno from emp"
-        + " where case when sal < 1000 then  sal/(sal*sal) else null end between 0 and 3";
-    checkPlanning(program, sql);
-  }
-
   @Ignore // Calcite does not support INSERT yet
   @Test public void testReduceValuesNull() throws Exception {
     // The NULL literal presents pitfalls for value-reduction. Only
@@ -2801,7 +2789,6 @@ public class RelOptRulesTest extends RelOptTestBase {
                     new Predicate<Project>() {
                       int matchCount = 0;
 
-                      @Override
                       public boolean test(Project project) {
                         return matchCount++ == 0;
                       }

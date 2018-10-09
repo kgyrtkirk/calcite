@@ -455,18 +455,6 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testCasePushBetween">
-        <Resource name="sql">
-            <![CDATA[select empno from emp where case when sal < 1000 then  sal/(sal*sal) else null end between 0 and 3]]>
-        </Resource>
-        <Resource name="planBefore">
-            <![CDATA[
-LogicalProject(EMPNO=[$0])
-  LogicalFilter(condition=[AND(>=(CASE(<($5, 1000), CAST(/($5, *($5, $5))):INTEGER, null), 0), <=(CASE(<($5, 1000), CAST(/($5, *($5, $5))):INTEGER, null), 3))])
-    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-]]>
-        </Resource>
-    </TestCase>
     <TestCase name="testCasePushIsAlwaysWorking">
         <Resource name="sql">
             <![CDATA[select empno from emp where case when sal > 1000 then empno else sal end = 1]]>
