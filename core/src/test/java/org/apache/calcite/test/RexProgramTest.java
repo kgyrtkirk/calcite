@@ -2240,29 +2240,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "AND(NOT(?0.bool0), NOT(?0.bool1))");
   }
 
-  @Test public void testCase1() {
-    checkSimplify(
-            case_(
-                    eq(vBoolNotNull(0), and(nullBool, trueLiteral)),
-
-                    coalesce(
-                            sub(mul(nullInt, nullInt), case_(vBoolNotNull(0), nullInt, vInt(0))),
-                            coalesce(
-                                    case_(eq(trueLiteral, vBoolNotNull(1)), literal(100500),
-                                            vInt(1)),
-                                    sub(nullInt, vInt(0))),
-                            case_(eq(falseLiteral, vBoolNotNull(0)),
-                                    case_(vBool(0),
-                                            (literal(-1761611587)),
-                                            vInt(0)),
-                                    eq(falseLiteral, falseLiteral),
-                                    case_(eq(trueLiteral, falseLiteral), nullInt, vInt(1)),
-                                    case_(eq(vInt(1), nullInt), vIntNotNull(0), nullInt)))
-,            literal(-1))
-,"asd");
-  }
-
-
   private RexNode simplify(RexNode e) {
     final RexSimplify simplify =
         new RexSimplify(rexBuilder, RelOptPredicateList.EMPTY, false,
