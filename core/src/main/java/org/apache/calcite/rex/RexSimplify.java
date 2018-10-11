@@ -675,7 +675,8 @@ public class RexSimplify {
   }
 
   private RexNode simplifyCase(RexCall call, RexUnknownAs unknownAs) {
-    List<CaseBranch> branches = CaseBranch.fromCaseOperands(rexBuilder, new ArrayList(call.getOperands()));
+    List<CaseBranch> branches =
+            CaseBranch.fromCaseOperands(rexBuilder, new ArrayList(call.getOperands()));
 
     // run simplification on all operands
     RexSimplify branchSimplifier = this;
@@ -683,14 +684,12 @@ public class RexSimplify {
 
     for (CaseBranch branch : branches) {
       // simplify the condition
-      RexNode newCond =
-          branchSimplifier
-              .simplify(branch.cond,RexUnknownAs.FALSE);
+      RexNode newCond = branchSimplifier.simplify(branch.cond, RexUnknownAs.FALSE);
       branch.cond = newCond;
 
       // use the condition to simplify the branch
       RexNode value = branch.value;
-      RexNode newValue = branchSimplifier.simplify(value,unknownAs);
+      RexNode newValue = branchSimplifier.simplify(value, unknownAs);
       branch.value = newValue;
     }
 
@@ -740,12 +739,13 @@ public class RexSimplify {
     return call.clone(call.getType(), newOperands);
   }
 
+  /** Object to describe a Case branch */
   static class CaseBranch {
 
     private RexNode cond;
     private RexNode value;
 
-    public CaseBranch(RexNode cond, RexNode value) {
+    CaseBranch(RexNode cond, RexNode value) {
       this.cond = cond;
       this.value = value;
     }
@@ -775,7 +775,7 @@ public class RexSimplify {
         ret.add(branch.value);
       }
       CaseBranch lastBranch = Util.last(branches);
-      assert (lastBranch.cond.isAlwaysTrue());
+      assert lastBranch.cond.isAlwaysTrue();
       ret.add(lastBranch.value);
       return ret;
     }
@@ -790,7 +790,8 @@ public class RexSimplify {
     // but not interfere with the normal simplifcation recursion
     List<CaseBranch> branches = new ArrayList<>();
     for (CaseBranch branch : inputBranches) {
-      RexNode cond, value;
+      RexNode cond;
+      RexNode value;
       if (branch.cond.getType().isNullable()) {
         cond = rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, branch.cond);
       } else {
