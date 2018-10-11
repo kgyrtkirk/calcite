@@ -1,6 +1,3 @@
-
-simplifyCast #@!$#
-remove Case3 / cast
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -688,13 +685,12 @@ public class RexSimplify {
       // simplify the condition
       RexNode newCond =
           branchSimplifier
-              .withUnknownAsFalse(true)
-              .simplify_(branch.cond);
+              .simplify(branch.cond,RexUnknownAs.FALSE);
       branch.cond = newCond;
 
       // use the condition to simplify the branch
       RexNode value = branch.value;
-      RexNode newValue = branchSimplifier.simplify_(value);
+      RexNode newValue = branchSimplifier.simplify(value,unknownAs);
       branch.value = newValue;
     }
 
@@ -713,7 +709,7 @@ public class RexSimplify {
 
     // collect cardinality of values
     Set<String> values = branches.stream().map(branch -> {
-      if (unknownAsFalse && RexUtil.isNull(branch.value)) {
+      if (unknownAs == FALSE && RexUtil.isNull(branch.value)) {
         return rexBuilder.makeLiteral(false).toString();
       } else {
         return branch.value.toString();
@@ -729,12 +725,12 @@ public class RexSimplify {
     }
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-      final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAsFalse, branchType);
+      final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAs, branchType);
       if (result != null) {
         if (!call.getType().equals(result.getType())) {
-          return simplify_(rexBuilder.makeCast(call.getType(), result));
+          return simplify(rexBuilder.makeCast(call.getType(), result), unknownAs);
         }
-        return simplify_(result);
+        return simplify(result, unknownAs);
       }
     }
     List<RexNode> newOperands = CaseBranch.toCaseOperands(rexBuilder, branches);
@@ -786,7 +782,7 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
-          List<CaseBranch> inputBranches, boolean unknownAsFalse, RelDataType t) {
+          List<CaseBranch> inputBranches, RexUnknownAs unknownAs, RelDataType t) {
     RexNode result = null;
 
     // prepare all condition/branches for boolean interpretation
@@ -815,7 +811,7 @@ public class RexSimplify {
     //   ELSE FALSE
     //   END
     // can be rewritten to: (p1 or p2)
-    if (unknownAsFalse) {
+    if (unknownAs == FALSE) {
       result = simplifyBooleanCase1(rexBuilder, branches);
       if (result != null) {
         return result;
@@ -830,7 +826,7 @@ public class RexSimplify {
     //   END
     // to: (p1 or (p3 and not(p2)))
     // if p1...pn cannot be nullable
-    result = simplifyBooleanCase2(rexBuilder, branches, unknownAsFalse);
+    result = simplifyBooleanCase2(rexBuilder, branches, unknownAs);
     if (result != null) {
       return result;
     }
@@ -871,11 +867,11 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase2(RexBuilder rexBuilder,
-      List<CaseBranch> branches, boolean unknownAsFalse) {
+          List<CaseBranch> branches, RexUnknownAs unknownAs) {
     for (CaseBranch branch : branches) {
       if (!branch.value.isAlwaysTrue()
           && !branch.value.isAlwaysFalse()
-          && (!unknownAsFalse || !RexUtil.isNull(branch.value))) {
+          && (unknownAs == UNKNOWN || !RexUtil.isNull(branch.value))) {
         return null;
       }
     }
@@ -900,7 +896,7 @@ public class RexSimplify {
               RexUtil.andNot(rexBuilder,
                       rexBuilder.makeCall(SqlStdOperatorTable.AND,
                               branch.cond,
-                              rexBuilder.makeAbstractCast(outputType, branch.value)),
+                              branch.value),
                       notTerms));
       notTerms.add(branch.cond);
     }
@@ -1449,8 +1445,8 @@ public class RexSimplify {
       return Objects.requireNonNull(
           Iterables.getOnlyElement(reducedValues));
     default:
-        if (operand.getType().equals(e.getType())) {
-          return simplify_(operand);
+      if (operand.getType().equals(e.getType())) {
+        return simplify(operand, UNKNOWN);
       }
       return e;
     }
