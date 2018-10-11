@@ -700,7 +700,6 @@ public class RexSimplify {
     for (int i = 0; i < branches.size(); i++) {
       CaseBranch branch = branches.get(i);
       if (branch.cond.isAlwaysTrue()) {
-        //branch.cond = rexBuilder.makeLiteral(true);
         branches.subList(i + 1, branches.size()).clear();
         break;
       }
