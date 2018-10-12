@@ -1742,6 +1742,15 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(result, is(caseNode));
   }
 
+  @Test public void testSimplifyCaseCasting() {
+    RexNode condition = eq(vIntNotNull(), literal(3));
+    RexNode caseNode = case_(condition, nullBool, falseLiteral);
+
+    checkSimplify3(caseNode, "AND(=(?0.notNullInt0, 3), null)",
+        "CAST(false):BOOLEAN",
+        "CAST(=(?0.notNullInt0, 3)):BOOLEAN");
+  }
+
   @Test public void testSimplifyAnd() {
     RelDataType booleanNotNullableType =
         typeFactory.createTypeWithNullability(
