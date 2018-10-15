@@ -813,8 +813,9 @@ public class RexSimplify {
       safeOps.add(SqlKind.NOT_IN);
       safeOps.add(SqlKind.OR);
       safeOps.add(SqlKind.AND);
-      safeOps.add(SqlKind.LIKE);
       safeOps.add(SqlKind.NOT);
+      safeOps.add(SqlKind.CASE);
+      safeOps.add(SqlKind.LIKE);
     }
 
     @Override public Boolean visitInputRef(RexInputRef inputRef) {
