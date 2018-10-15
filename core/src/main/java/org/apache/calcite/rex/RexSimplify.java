@@ -778,13 +778,88 @@ public class RexSimplify {
     }
   }
 
-  /** Analyzes a given rexnode - and decides whenever its casesafe to unwind.
-   *
-   * CaseSafe means that it only contains a combination of known good oeprators.
-   *
-   * The divison is an unsafe operator; consider: case when a>0 then 1/a else null end
-   */
-  boolean isSafeExpression(RexNode r) {
+  static class SafeRexVisitor implements RexVisitor<Boolean> {
+
+    @Override public Boolean visitInputRef(RexInputRef inputRef) {
+      return true;
+    }
+
+    @Override public Boolean visitLocalRef(RexLocalRef localRef) {
+      return true;
+    }
+
+    @Override public Boolean visitLiteral(RexLiteral literal) {
+      return true;
+    }
+
+    public static final Set<SqlKind> COMPARISON =
+        EnumSet.of(
+            IN, EQUALS, NOT_EQUALS,
+            LESS_THAN, GREATER_THAN,
+            GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL);
+
+    @Override public Boolean visitCall(RexCall call) {
+
+      Set<SqlKind> safeOps = EnumSet.of(
+
+      );
+      //          new HashSet<>();
+      safeOps.addAll(SqlKind.COMPARISON);
+      safeOps.add(SqlKind.PLUS);
+      safeOps.add(SqlKind.MINUS);
+      safeOps.add(SqlKind.TIMES);
+      safeOps.add(SqlKind.IS_FALSE);
+      safeOps.add(SqlKind.IS_NOT_FALSE);
+      safeOps.add(SqlKind.IS_TRUE);
+      safeOps.add(SqlKind.IS_NOT_TRUE);
+      safeOps.add(SqlKind.IS_NULL);
+      safeOps.add(SqlKind.IS_NOT_NULL);
+      safeOps.add(SqlKind.IN);
+      safeOps.add(SqlKind.IN);
+      safeOps.contains(call.getKind());
+      for (RexNode o : call.getOperands()) {
+        if (!o.accept(this)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    @Override public Boolean visitOver(RexOver over) {
+      return false;
+    }
+
+    @Override public Boolean visitCorrelVariable(RexCorrelVariable correlVariable) {
+      return false;
+    }
+
+    @Override public Boolean visitDynamicParam(RexDynamicParam dynamicParam) {
+      return false;
+    }
+
+    @Override public Boolean visitRangeRef(RexRangeRef rangeRef) {
+      return false;
+    }
+
+    @Override public Boolean visitFieldAccess(RexFieldAccess fieldAccess) {
+      return false;
+    }
+
+    @Override public Boolean visitSubQuery(RexSubQuery subQuery) {
+      return false;
+    }
+
+    @Override public Boolean visitTableInputRef(RexTableInputRef fieldRef) {
+      return false;
+    }
+
+    @Override public Boolean visitPatternFieldRef(RexPatternFieldRef fieldRef) {
+      return false;
+    }
+
+  }
+
+  boolean safeExpression(RexNode r) {
     r.accept(new SafeRexVisitor());
   }
 
@@ -797,7 +872,7 @@ public class RexSimplify {
     // but not interfere with the normal simplifcation recursion
     List<CaseBranch> branches = new ArrayList<>();
     for (CaseBranch branch : inputBranches) {
-      if (!isSafeExpression(branch.cond) || !isSafeExpression(branch.value)) {
+      if (!safeExpression(branch.cond) || !safeExpression(branch.value)) {
 
       }
       RexNode cond;
