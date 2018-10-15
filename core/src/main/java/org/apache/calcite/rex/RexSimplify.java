@@ -675,22 +675,23 @@ public class RexSimplify {
   }
 
   private RexNode simplifyCase(RexCall call, RexUnknownAs unknownAs) {
-    List<CaseBranch> branches =
-            CaseBranch.fromCaseOperands(rexBuilder, new ArrayList(call.getOperands()));
+    List<CaseBranch> inputBranches =
+        CaseBranch.fromCaseOperands(rexBuilder, new ArrayList(call.getOperands()));
 
     // run simplification on all operands
     RexSimplify branchSimplifier = this;
     RelDataType branchType = call.getType();
 
-    for (CaseBranch branch : branches) {
+    List<CaseBranch> branches = new ArrayList<>();
+    for (CaseBranch branch : inputBranches) {
       // simplify the condition
       RexNode newCond = branchSimplifier.simplify(branch.cond, RexUnknownAs.FALSE);
-      branch.cond = newCond;
 
       // use the condition to simplify the branch
       RexNode value = branch.value;
       RexNode newValue = branchSimplifier.simplify(value, unknownAs);
-      branch.value = newValue;
+
+      branches.add(new CaseBranch(newCond, newValue));
     }
 
     // remove branches with invalid conditions
@@ -754,8 +755,8 @@ public class RexSimplify {
   /** Object to describe a Case branch */
   static final class CaseBranch {
 
-    private RexNode cond;
-    private RexNode value;
+    final private RexNode cond;
+    final private RexNode value;
 
     CaseBranch(RexNode cond, RexNode value) {
       this.cond = cond;
