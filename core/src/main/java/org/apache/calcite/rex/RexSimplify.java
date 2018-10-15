@@ -725,7 +725,8 @@ public class RexSimplify {
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
       final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAs, branchType);
       if (result != null) {
-        if (!call.getType().equals(result.getType())) {
+        // If the simplification would widen the nullability
+        if (!branchType.equals(result.getType()) && !branchType.isNullable()) {
           return rexBuilder.makeCast(call.getType(), simplify(result, UNKNOWN));
         }
         return simplify(result, unknownAs);

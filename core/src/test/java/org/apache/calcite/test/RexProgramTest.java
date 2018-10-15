@@ -270,8 +270,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
         is("(expr#0..1=[{inputs}], expr#2=[+($t0, $t1)], expr#3=[1], "
             + "expr#4=[+($t0, $t3)], expr#5=[+($t2, $t4)], "
             + "expr#6=[+($t0, $t4)], expr#7=[5], expr#8=[>($t4, $t7)], "
-            + "expr#9=[CAST($t8):BOOLEAN], expr#10=[IS FALSE($t9)], "
-            + "a=[$t5], b=[$t6], $condition=[$t10])"));
+            + "expr#9=[NOT($t8)], "
+            + "a=[$t5], b=[$t6], $condition=[$t9])"));
   }
 
   /**
@@ -292,8 +292,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
         is("(expr#0..1=[{inputs}], expr#2=[+($t0, $t1)], expr#3=[1], "
             + "expr#4=[+($t0, $t3)], expr#5=[+($t2, $t4)], "
             + "expr#6=[+($t0, $t4)], expr#7=[5], expr#8=[>($t4, $t7)], "
-            + "expr#9=[CAST($t8):BOOLEAN], expr#10=[IS FALSE($t9)], "
-            + "a=[$t5], b=[$t6], $condition=[$t10])"));
+            + "expr#9=[NOT($t8)], "
+            + "a=[$t5], b=[$t6], $condition=[$t9])"));
   }
 
   /**
@@ -1118,8 +1118,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify3(
         case_(aRef, trueLiteral, bRef, trueLiteral, cRef, falseLiteral, nullBool),
         "OR(?0.a, AND(?0.b, NOT(?0.a)), AND(null, NOT(?0.a), NOT(?0.b), NOT(?0.c)))",
-        "CAST(OR(?0.a, ?0.b)):BOOLEAN",
-        "CAST(OR(?0.a, ?0.b, NOT(?0.c))):BOOLEAN");
+        "OR(?0.a, ?0.b)",
+        "OR(?0.a, ?0.b, NOT(?0.c))");
 
     // case: form an AND of branches that return true
     checkSimplify(
@@ -1341,7 +1341,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // case: trailing false and null, remove
     checkSimplifyFilter(
         case_(cRef, trueLiteral, dRef, trueLiteral, eRef, falseLiteral, fRef,
-            falseLiteral, nullBool), "CAST(OR(?0.c, ?0.d)):BOOLEAN");
+            falseLiteral, nullBool),
+        "OR(?0.c, ?0.d)");
 
     // condition with null value for range
     checkSimplifyFilter(and(gt(aRef, nullBool), ge(bRef, literal1)), "false");
@@ -1752,7 +1753,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
 
     checkSimplify3(caseNode, "AND(=(?0.notNullInt0, 3), null)",
         "CAST(false):BOOLEAN",
-        "CAST(=(?0.notNullInt0, 3)):BOOLEAN");
+        "=(?0.notNullInt0, 3)");
   }
 
   /* case value branch contains division */
