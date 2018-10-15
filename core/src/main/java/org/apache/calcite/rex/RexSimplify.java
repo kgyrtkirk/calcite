@@ -43,6 +43,7 @@ import com.google.common.collect.Range;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -777,6 +778,91 @@ public class RexSimplify {
     }
   }
 
+  static class SafeRexVisitor implements RexVisitor<Boolean> {
+
+    @Override public Boolean visitInputRef(RexInputRef inputRef) {
+      return true;
+    }
+
+    @Override public Boolean visitLocalRef(RexLocalRef localRef) {
+      return true;
+    }
+
+    @Override public Boolean visitLiteral(RexLiteral literal) {
+      return true;
+    }
+
+    public static final Set<SqlKind> COMPARISON =
+        EnumSet.of(
+            IN, EQUALS, NOT_EQUALS,
+            LESS_THAN, GREATER_THAN,
+            GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL);
+
+    @Override public Boolean visitCall(RexCall call) {
+
+      Set<SqlKind> safeOps = EnumSet.of(
+
+      );
+      //          new HashSet<>();
+      safeOps.addAll(SqlKind.COMPARISON);
+      safeOps.add(SqlKind.PLUS);
+      safeOps.add(SqlKind.MINUS);
+      safeOps.add(SqlKind.TIMES);
+      safeOps.add(SqlKind.IS_FALSE);
+      safeOps.add(SqlKind.IS_NOT_FALSE);
+      safeOps.add(SqlKind.IS_TRUE);
+      safeOps.add(SqlKind.IS_NOT_TRUE);
+      safeOps.add(SqlKind.IS_NULL);
+      safeOps.add(SqlKind.IS_NOT_NULL);
+      safeOps.add(SqlKind.IN);
+      safeOps.add(SqlKind.IN);
+      safeOps.contains(call.getKind());
+      for (RexNode o : call.getOperands()) {
+        if (!o.accept(this)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    @Override public Boolean visitOver(RexOver over) {
+      return false;
+    }
+
+    @Override public Boolean visitCorrelVariable(RexCorrelVariable correlVariable) {
+      return false;
+    }
+
+    @Override public Boolean visitDynamicParam(RexDynamicParam dynamicParam) {
+      return false;
+    }
+
+    @Override public Boolean visitRangeRef(RexRangeRef rangeRef) {
+      return false;
+    }
+
+    @Override public Boolean visitFieldAccess(RexFieldAccess fieldAccess) {
+      return false;
+    }
+
+    @Override public Boolean visitSubQuery(RexSubQuery subQuery) {
+      return false;
+    }
+
+    @Override public Boolean visitTableInputRef(RexTableInputRef fieldRef) {
+      return false;
+    }
+
+    @Override public Boolean visitPatternFieldRef(RexPatternFieldRef fieldRef) {
+      return false;
+    }
+
+  }
+
+  boolean safeExpression(RexNode r) {
+    r.accept(new SafeRexVisitor());
+  }
+
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
           List<CaseBranch> inputBranches, RexUnknownAs unknownAs, RelDataType t) {
     RexNode result = null;
@@ -786,6 +872,9 @@ public class RexSimplify {
     // but not interfere with the normal simplifcation recursion
     List<CaseBranch> branches = new ArrayList<>();
     for (CaseBranch branch : inputBranches) {
+      if (!safeExpression(branch.cond) || !safeExpression(branch.value)) {
+
+      }
       RexNode cond;
       RexNode value;
       if (branch.cond.getType().isNullable()) {
