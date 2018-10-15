@@ -37,6 +37,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 
@@ -1002,16 +1003,27 @@ public class RexSimplify {
       List<CaseBranch> branches, RelDataType outputType) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
-    for (CaseBranch branch : branches) {
-      terms.add(
-          RexUtil.andNot(rexBuilder,
-              rexBuilder.makeCall(SqlStdOperatorTable.AND,
-                  branch.cond,
-                  branch.value),
-              notTerms));
-      notTerms.add(branch.cond);
+
+    RexNode tree = null;
+    for (CaseBranch branch : Lists.reverse(branches)) {
+      RexNode nodeA = rexBuilder.makeCall(SqlStdOperatorTable.AND,
+          branch.cond,
+          branch.value);
+
+      if (tree == null) {
+        tree = nodeA;
+      } else {
+        RexNode nodeB = rexBuilder.makeCall(SqlStdOperatorTable.AND,
+            rexBuilder.makeCall(SqlStdOperatorTable.NOT, branch.cond),
+            tree);
+
+        tree = rexBuilder.makeCall(SqlStdOperatorTable.OR,
+            nodeA,
+            nodeB);
+
+      }
     }
-    return RexUtil.composeDisjunction(rexBuilder, terms);
+    return tree;
   }
 
   @Deprecated // to be removed before 2.0
