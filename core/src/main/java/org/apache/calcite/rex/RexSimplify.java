@@ -848,7 +848,7 @@ public class RexSimplify {
     }
 
     @Override public Boolean visitFieldAccess(RexFieldAccess fieldAccess) {
-      return false;
+      return true;
     }
 
     @Override public Boolean visitSubQuery(RexSubQuery subQuery) {
@@ -872,7 +872,7 @@ public class RexSimplify {
   * The divison is an unsafe operator; consider: case when a>0 then 1/a else null end
   */
   static boolean isSafeExpression(RexNode r) {
-    return true || r.accept(new CaseSafeRexVisitor());
+    return r.accept(new CaseSafeRexVisitor());
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
