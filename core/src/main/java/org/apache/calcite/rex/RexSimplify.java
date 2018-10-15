@@ -43,7 +43,6 @@ import com.google.common.collect.Range;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -778,7 +777,30 @@ public class RexSimplify {
     }
   }
 
-  static class SafeRexVisitor implements RexVisitor<Boolean> {
+  static class CaseSafeRexVisitor implements RexVisitor<Boolean> {
+
+    private Set<SqlKind> safeOps;
+
+    public CaseSafeRexVisitor() {
+      safeOps = new HashSet<>();
+
+      safeOps.addAll(SqlKind.COMPARISON);
+      safeOps.add(SqlKind.PLUS);
+      safeOps.add(SqlKind.MINUS);
+      safeOps.add(SqlKind.TIMES);
+      safeOps.add(SqlKind.IS_FALSE);
+      safeOps.add(SqlKind.IS_NOT_FALSE);
+      safeOps.add(SqlKind.IS_TRUE);
+      safeOps.add(SqlKind.IS_NOT_TRUE);
+      safeOps.add(SqlKind.IS_NULL);
+      safeOps.add(SqlKind.IS_NOT_NULL);
+      safeOps.add(SqlKind.IN);
+      safeOps.add(SqlKind.NOT_IN);
+      safeOps.add(SqlKind.OR);
+      safeOps.add(SqlKind.AND);
+      safeOps.add(SqlKind.LIKE);
+      safeOps.add(SqlKind.NOT);
+    }
 
     @Override public Boolean visitInputRef(RexInputRef inputRef) {
       return true;
@@ -792,31 +814,12 @@ public class RexSimplify {
       return true;
     }
 
-    public static final Set<SqlKind> COMPARISON =
-        EnumSet.of(
-            IN, EQUALS, NOT_EQUALS,
-            LESS_THAN, GREATER_THAN,
-            GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL);
 
     @Override public Boolean visitCall(RexCall call) {
 
-      Set<SqlKind> safeOps = EnumSet.of(
-
-      );
-      //          new HashSet<>();
-      safeOps.addAll(SqlKind.COMPARISON);
-      safeOps.add(SqlKind.PLUS);
-      safeOps.add(SqlKind.MINUS);
-      safeOps.add(SqlKind.TIMES);
-      safeOps.add(SqlKind.IS_FALSE);
-      safeOps.add(SqlKind.IS_NOT_FALSE);
-      safeOps.add(SqlKind.IS_TRUE);
-      safeOps.add(SqlKind.IS_NOT_TRUE);
-      safeOps.add(SqlKind.IS_NULL);
-      safeOps.add(SqlKind.IS_NOT_NULL);
-      safeOps.add(SqlKind.IN);
-      safeOps.add(SqlKind.IN);
-      safeOps.contains(call.getKind());
+      if (!safeOps.contains(call.getKind())) {
+        return false;
+      }
       for (RexNode o : call.getOperands()) {
         if (!o.accept(this)) {
           return false;
@@ -859,12 +862,18 @@ public class RexSimplify {
 
   }
 
-  boolean safeExpression(RexNode r) {
-    r.accept(new SafeRexVisitor());
+  /** Analyzes a given rexnode - and decides whenever its casesafe to unwind.
+  *
+  * CaseSafe means that it only contains a combination of known good oeprators.
+  *
+  * The divison is an unsafe operator; consider: case when a>0 then 1/a else null end
+  */
+  static boolean isSafeExpression(RexNode r) {
+    return true || r.accept(new CaseSafeRexVisitor());
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
-          List<CaseBranch> inputBranches, RexUnknownAs unknownAs, RelDataType t) {
+      List<CaseBranch> inputBranches, RexUnknownAs unknownAs, RelDataType t) {
     RexNode result = null;
 
     // prepare all condition/branches for boolean interpretation
@@ -872,8 +881,8 @@ public class RexSimplify {
     // but not interfere with the normal simplifcation recursion
     List<CaseBranch> branches = new ArrayList<>();
     for (CaseBranch branch : inputBranches) {
-      if (!safeExpression(branch.cond) || !safeExpression(branch.value)) {
-
+      if (!isSafeExpression(branch.cond) || !isSafeExpression(branch.value)) {
+        return null;
       }
       RexNode cond;
       RexNode value;
