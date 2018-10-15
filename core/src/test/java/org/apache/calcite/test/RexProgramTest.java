@@ -1744,15 +1744,11 @@ public class RexProgramTest extends RexProgramBuilderBase {
   }
 
   @Test public void testSimplifyCaseCasting() {
-    // Currently a cast is inserted on top of simplified case ;
-    // to ensure the same nullability as earlier.
-    // TODO: check that this cast is really needed - or probably use it on the root node.
-    // CALCITE-1289 seems related
     RexNode condition = eq(vIntNotNull(), literal(3));
     RexNode caseNode = case_(condition, nullBool, falseLiteral);
 
     checkSimplify3(caseNode, "AND(=(?0.notNullInt0, 3), null)",
-        "CAST(false):BOOLEAN",
+        "false",
         "=(?0.notNullInt0, 3)");
   }
 

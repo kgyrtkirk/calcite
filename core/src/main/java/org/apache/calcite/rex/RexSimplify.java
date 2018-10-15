@@ -716,10 +716,16 @@ public class RexSimplify {
 
     if (values.size() == 1) {
       final RexNode firstValue = branches.get(0).value;
-      if (!call.getType().equals(firstValue.getType())) {
+
+      if (call.getType().equals(firstValue.getType()) ||
+          (SqlTypeUtil.equalSansNullability(rexBuilder.typeFactory, call.getType(),
+              firstValue.getType())
+              && call.getType().isNullable()) &&
+              !firstValue.getType().isNullable()) {
+        return firstValue;
+      } else {
         return rexBuilder.makeAbstractCast(call.getType(), firstValue);
       }
-      return firstValue;
     }
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
@@ -727,7 +733,12 @@ public class RexSimplify {
       if (result != null) {
         // If the simplification would widen the nullability
         if (!branchType.equals(result.getType()) && !branchType.isNullable()) {
-          return rexBuilder.makeCast(call.getType(), simplify(result, UNKNOWN));
+          RexNode simplified = simplify(result, UNKNOWN);
+          if (!simplified.getType().isNullable()) {
+            return simplified;
+          } else {
+            return rexBuilder.makeCast(call.getType(), result);
+          }
         }
         return simplify(result, unknownAs);
       }
