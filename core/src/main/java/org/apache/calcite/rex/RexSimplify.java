@@ -726,7 +726,7 @@ public class RexSimplify {
       final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAs, branchType);
       if (result != null) {
         if (!call.getType().equals(result.getType())) {
-          return simplify(rexBuilder.makeCast(call.getType(), result), unknownAs);
+          return rexBuilder.makeCast(call.getType(), simplify(result, UNKNOWN));
         }
         return simplify(result, unknownAs);
       }
