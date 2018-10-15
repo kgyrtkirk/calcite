@@ -755,8 +755,8 @@ public class RexSimplify {
   /** Object to describe a Case branch */
   static final class CaseBranch {
 
-    final private RexNode cond;
-    final private RexNode value;
+    private final RexNode cond;
+    private final RexNode value;
 
     CaseBranch(RexNode cond, RexNode value) {
       this.cond = cond;
@@ -794,11 +794,14 @@ public class RexSimplify {
     }
   }
 
-  static class CaseSafeRexVisitor implements RexVisitor<Boolean> {
+  /**
+   * Decides whether it is safe to flatten the given case part into AND/ORs
+   */
+  static class SafeRexVisitor implements RexVisitor<Boolean> {
 
     private Set<SqlKind> safeOps;
 
-    public CaseSafeRexVisitor() {
+    SafeRexVisitor() {
       safeOps = new HashSet<>();
 
       safeOps.addAll(SqlKind.COMPARISON);
@@ -886,7 +889,7 @@ public class RexSimplify {
   * The divison is an unsafe operator; consider: case when a>0 then 1/a else null end
   */
   static boolean isSafeExpression(RexNode r) {
-    return r.accept(new CaseSafeRexVisitor());
+    return r.accept(new SafeRexVisitor());
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
