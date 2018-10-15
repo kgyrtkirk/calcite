@@ -752,7 +752,7 @@ public class RexSimplify {
   }
 
   /** Object to describe a Case branch */
-  static class CaseBranch {
+  static final class CaseBranch {
 
     private RexNode cond;
     private RexNode value;
@@ -999,16 +999,16 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase3(RexBuilder rexBuilder,
-          List<CaseBranch> branches, RelDataType outputType) {
+      List<CaseBranch> branches, RelDataType outputType) {
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
     for (CaseBranch branch : branches) {
       terms.add(
-              RexUtil.andNot(rexBuilder,
-                      rexBuilder.makeCall(SqlStdOperatorTable.AND,
-                              branch.cond,
-                              branch.value),
-                      notTerms));
+          RexUtil.andNot(rexBuilder,
+              rexBuilder.makeCall(SqlStdOperatorTable.AND,
+                  branch.cond,
+                  branch.value),
+              notTerms));
       notTerms.add(branch.cond);
     }
     return RexUtil.composeDisjunction(rexBuilder, terms);
