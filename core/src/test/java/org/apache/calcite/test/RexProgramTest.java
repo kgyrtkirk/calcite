@@ -1755,6 +1755,28 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "CAST(=(?0.notNullInt0, 3)):BOOLEAN");
   }
 
+  /* case value branch contains division */
+  @Test public void testSimplifyCaseDiv1() {
+    RexNode caseNode = case_(
+        ne(vIntNotNull(), literal(0)),
+        eq(div(literal(3), vIntNotNull()), literal(11)),
+        falseLiteral);
+
+    checkSimplify(caseNode,
+        "CASE(<>(?0.notNullInt0, 0), =(/(3, ?0.notNullInt0), 11), false)");
+  }
+
+  /* case condition contains division */
+  @Test public void testSimplifyCaseDiv2() {
+    RexNode caseNode = case_(
+        eq(vIntNotNull(), literal(0)), trueLiteral,
+        gt(div(literal(3), vIntNotNull()), literal(1)), trueLiteral,
+        falseLiteral);
+
+    checkSimplify(caseNode,
+        "CASE(=(?0.notNullInt0, 0), true, >(/(3, ?0.notNullInt0), 1), true, false)");
+  }
+
   @Test public void testSimplifyAnd() {
     RelDataType booleanNotNullableType =
         typeFactory.createTypeWithNullability(

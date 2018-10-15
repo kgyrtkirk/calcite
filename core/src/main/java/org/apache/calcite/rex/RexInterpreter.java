@@ -23,15 +23,17 @@ import org.apache.calcite.rel.metadata.NullSentinel;
 import org.apache.calcite.util.NlsString;
 import org.apache.calcite.util.Util;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.function.IntPredicate;
+import java.util.stream.Stream;
 
 /**
  * Evaluates {@link RexNode} expressions.
@@ -123,11 +125,40 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     throw unbound(fieldRef);
   }
 
-  public Comparable visitCall(RexCall call) {
-    final List<Comparable> values = new ArrayList<>(call.operands.size());
-    for (RexNode operand : call.operands) {
-      values.add(operand.accept(this));
+  class List1 {
+
+    private ImmutableList<RexNode> inputOperands;
+    private ArrayList<Comparable> values;
+
+    public List1(ImmutableList<RexNode> operands) {
+      inputOperands = operands;
+      values = new ArrayList<>(Collections.nCopies(inputOperands.size(), null));
     }
+
+    Comparable get(int index) {
+      Comparable val = values.get(index);
+      if (val == null) {
+        val = inputOperands.get(index).accept(RexInterpreter.this);
+        values.set(index, val);
+      }
+      return val;
+    }
+
+    int size() {
+      return inputOperands.size();
+    }
+
+    Stream<Comparable> stream() {
+      for (int i = 0; i < size(); i++) {
+        get(i);
+      }
+      return values.stream();
+    }
+
+  }
+
+  public Comparable visitCall(RexCall call) {
+    final List1 values = new List1(call.operands);
     switch (call.getKind()) {
     case IS_NOT_DISTINCT_FROM:
       if (containsNull(values)) {
@@ -204,7 +235,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     }
   }
 
-  private Comparable extract(RexCall call, List<Comparable> values) {
+  private Comparable extract(RexCall call, List1 values) {
     final Comparable v = values.get(1);
     if (v == N) {
       return N;
@@ -221,8 +252,9 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     return DateTimeUtils.unixDateExtract(timeUnitRange, v2);
   }
 
-  private Comparable coalesce(RexCall call, List<Comparable> values) {
-    for (Comparable value : values) {
+  private Comparable coalesce(RexCall call, List1 values) {
+    for (int i = 0; i < values.size(); i++) {
+      Comparable value = values.get(i);
       if (value != N) {
         return value;
       }
@@ -230,7 +262,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     return N;
   }
 
-  private Comparable ceil(RexCall call, List<Comparable> values) {
+  private Comparable ceil(RexCall call, List1 values) {
     if (values.get(0) == N) {
       return N;
     }
@@ -265,7 +297,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     }
   }
 
-  private Comparable cast(RexCall call, List<Comparable> values) {
+  private Comparable cast(RexCall call, List1 values) {
     if (values.get(0) == N) {
       return N;
     }
@@ -282,7 +314,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     }
   }
 
-  private Comparable case_(List<Comparable> values) {
+  private Comparable case_(List1 values) {
     final int size;
     final Comparable elseValue;
     if (values.size() % 2 == 0) {
@@ -290,7 +322,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
       elseValue = N;
     } else {
       size = values.size() - 1;
-      elseValue = Util.last(values);
+      elseValue = values.get(size);
     }
     for (int i = 0; i < size; i += 2) {
       if (values.get(i).equals(true)) {
@@ -312,7 +344,7 @@ public class RexInterpreter implements RexVisitor<Comparable> {
         : new BigDecimal(((Number) comparable).doubleValue());
   }
 
-  private Comparable compare(List<Comparable> values, IntPredicate p) {
+  private Comparable compare(List1 values, IntPredicate p) {
     if (containsNull(values)) {
       return N;
     }
@@ -344,8 +376,9 @@ public class RexInterpreter implements RexVisitor<Comparable> {
     return p.test(c);
   }
 
-  private boolean containsNull(List<Comparable> values) {
-    for (Comparable value : values) {
+  private boolean containsNull(List1 values) {
+    for (int i = 0; i < values.size(); i++) {
+      Comparable value = values.get(i);
       if (value == N) {
         return true;
       }
