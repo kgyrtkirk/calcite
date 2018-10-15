@@ -982,8 +982,7 @@ public class RexSimplify {
           List<CaseBranch> branches, RexUnknownAs unknownAs) {
     for (CaseBranch branch : branches) {
       if (!branch.value.isAlwaysTrue()
-          && !branch.value.isAlwaysFalse()
-          && (unknownAs == UNKNOWN || !RexUtil.isNull(branch.value))) {
+          && !branch.value.isAlwaysFalse()) {
         return null;
       }
     }
