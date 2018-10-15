@@ -712,28 +712,27 @@ public class RexSimplify {
     if (values.size() == 1) {
       final RexNode firstValue = branches.get(0).value;
 
-      if (call.getType().equals(firstValue.getType()) ||
-          (SqlTypeUtil.equalSansNullability(rexBuilder.typeFactory, call.getType(),
-              firstValue.getType()) && call.getType().isNullable())) {
+      if (sameTypeOrNarrowsNullability(branchType, firstValue.getType())) {
         return firstValue;
       } else {
-        return rexBuilder.makeAbstractCast(call.getType(), firstValue);
+        return rexBuilder.makeAbstractCast(branchType, firstValue);
       }
     }
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
       final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAs, branchType);
       if (result != null) {
-        // If the simplification would widen the nullability
-        if (!branchType.equals(result.getType()) && !branchType.isNullable()) {
+        if (sameTypeOrNarrowsNullability(branchType, result.getType())) {
+          return simplify(result, unknownAs);
+        } else {
+          // If the simplification would widen the nullability
           RexNode simplified = simplify(result, UNKNOWN);
           if (!simplified.getType().isNullable()) {
             return simplified;
           } else {
-            return rexBuilder.makeCast(call.getType(), result);
+            return rexBuilder.makeCast(call.getType(), simplified);
           }
         }
-        return simplify(result, unknownAs);
       }
     }
     List<RexNode> newOperands = CaseBranch.toCaseOperands(rexBuilder, branches);
@@ -741,6 +740,15 @@ public class RexSimplify {
       return call;
     }
     return call.clone(call.getType(), newOperands);
+  }
+
+  /**
+   * Return if the new type is the same and at most narrows the nullability.
+   */
+  private boolean sameTypeOrNarrowsNullability(RelDataType oldType, RelDataType newType) {
+    return oldType.equals(newType)
+        || (SqlTypeUtil.equalSansNullability(rexBuilder.typeFactory, oldType, newType)
+            && oldType.isNullable());
   }
 
   /** Object to describe a Case branch */
