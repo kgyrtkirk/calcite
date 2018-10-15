@@ -831,7 +831,6 @@ public class RexSimplify {
       return true;
     }
 
-
     @Override public Boolean visitCall(RexCall call) {
 
       if (!safeOps.contains(call.getKind())) {
@@ -979,7 +978,7 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase2(RexBuilder rexBuilder,
-          List<CaseBranch> branches, RexUnknownAs unknownAs) {
+      List<CaseBranch> branches, RexUnknownAs unknownAs) {
     for (CaseBranch branch : branches) {
       if (!branch.value.isAlwaysTrue()
           && !branch.value.isAlwaysFalse()) {
