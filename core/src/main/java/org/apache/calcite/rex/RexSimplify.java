@@ -714,9 +714,7 @@ public class RexSimplify {
 
       if (call.getType().equals(firstValue.getType()) ||
           (SqlTypeUtil.equalSansNullability(rexBuilder.typeFactory, call.getType(),
-              firstValue.getType())
-              && call.getType().isNullable()) &&
-              !firstValue.getType().isNullable()) {
+              firstValue.getType()) && call.getType().isNullable())) {
         return firstValue;
       } else {
         return rexBuilder.makeAbstractCast(call.getType(), firstValue);
