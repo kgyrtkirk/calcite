@@ -694,7 +694,7 @@ public class RexSimplify {
     }
 
     // remove branches with invalid conditions
-    branches.removeIf(branch -> branch.cond.isAlwaysFalse() || RexUtil.isNull(branch.cond));
+    branches.removeIf(branch -> branch.cond.isAlwaysFalse());
 
     // delete all branches after the first AlwaysTrue
     for (int i = 0; i < branches.size(); i++) {
@@ -706,13 +706,8 @@ public class RexSimplify {
     }
 
     // collect cardinality of values
-    Set<String> values = branches.stream().map(branch -> {
-      if (unknownAs == FALSE && RexUtil.isNull(branch.value)) {
-        return rexBuilder.makeLiteral(false).toString();
-      } else {
-        return branch.value.toString();
-      }
-    }).collect(Collectors.toSet());
+    Set<String> values =
+        branches.stream().map(branch -> branch.value.toString()).collect(Collectors.toSet());
 
     if (values.size() == 1) {
       final RexNode firstValue = branches.get(0).value;
