@@ -919,29 +919,29 @@ public class RexSimplify {
       branches.add(new CaseBranch(cond, value));
     }
 
-    // Boolean valued branches
-    //   CASE
-    //   WHEN p1 THEN TRUE
-    //   WHEN p2 THEN FALSE
-    //   WHEN p3 THEN TRUE
-    //   ELSE FALSE
-    //   END
-    // to: (p1 or (p3 and not(p2)))
     result = simplifyBooleanCaseBooleanBranches(rexBuilder, branches);
     if (result != null) {
       return result;
     }
-    // Generic simplification:
-    //  CASE
-    //  WHEN p1 THEN x
-    //  WHEN p2 THEN y
-    //  ELSE z
-    //  END
-    // to: (p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))
     result = simplifyBooleanCaseGeneric(rexBuilder, branches, t);
     return result;
   }
 
+  /**
+   * Boolean valued branches.
+   *
+   * Rewrites:
+   * <pre>
+   * CASE
+   *   WHEN p0 THEN TRUE
+   *   WHEN p1 THEN TRUE
+   *   WHEN p2 THEN FALSE
+   *   WHEN p3 THEN TRUE
+   *   ELSE FALSE
+   * END
+   * </pre>
+   * to: <pre>(p0 or p1 or (p3 and not(p2)))</pre>
+   */
   private static RexNode simplifyBooleanCaseBooleanBranches(RexBuilder rexBuilder,
       List<CaseBranch> branches) {
     for (CaseBranch branch : branches) {
@@ -962,6 +962,20 @@ public class RexSimplify {
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
 
+  /**
+   * Generic boolean case simplification.
+   *
+   * Rewrites:
+   * <pre>
+   * CASE
+   *   WHEN p1 THEN x
+   *   WHEN p2 THEN y
+   *   ELSE z
+   * END
+   * </pre>
+   * to
+   * <pre>(p1 and x) or (p2 and y and not(p1)) or (true and z and not(p1) and not(p2))</pre>
+   */
   private static RexNode simplifyBooleanCaseGeneric(RexBuilder rexBuilder,
       List<CaseBranch> branches, RelDataType outputType) {
     final List<RexNode> terms = new ArrayList<>();
