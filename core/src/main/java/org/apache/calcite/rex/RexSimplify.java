@@ -742,7 +742,7 @@ public class RexSimplify {
     if (newOperands.equals(call.getOperands())) {
       return call;
     }
-    return call.clone(call.getType(), newOperands);
+    return rexBuilder.makeCall(SqlStdOperatorTable.CASE, newOperands);
   }
 
   private List<CaseBranch> compactBranchesWithTheSameConclusion(List<CaseBranch> branches) {
