@@ -51,8 +51,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import static org.apache.calcite.rex.RexUnknownAs.FALSE;
 import static org.apache.calcite.rex.RexUnknownAs.UNKNOWN;
 
@@ -708,11 +706,7 @@ public class RexSimplify {
 
     branches = compactBranchesWithTheSameConclusion(branches);
 
-    // collect cardinality of values
-    Set<String> values =
-        branches.stream().map(branch -> branch.value.toString()).collect(Collectors.toSet());
-
-    if (values.size() == 1) {
+    if (branches.size() == 1) {
       final RexNode firstValue = branches.get(0).value;
 
       if (sameTypeOrNarrowsNullability(branchType, firstValue.getType())) {
