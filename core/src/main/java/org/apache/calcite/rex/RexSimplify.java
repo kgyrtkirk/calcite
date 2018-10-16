@@ -919,20 +919,7 @@ public class RexSimplify {
       branches.add(new CaseBranch(cond, value));
     }
 
-    // 1) Possible simplification if unknown is treated as false:
-    //   CASE
-    //   WHEN p1 THEN TRUE
-    //   WHEN p2 THEN TRUE
-    //   ELSE FALSE
-    //   END
-    // can be rewritten to: (p1 or p2)
-    if (unknownAs == FALSE) {
-      result = simplifyBooleanCase1(rexBuilder, branches);
-      if (result != null) {
-        return result;
-      }
-    }
-    // 2) Another simplification:
+    // 1) Boolean valued branches
     //   CASE
     //   WHEN p1 THEN TRUE
     //   WHEN p2 THEN FALSE
@@ -941,11 +928,11 @@ public class RexSimplify {
     //   END
     // to: (p1 or (p3 and not(p2)))
     // if p1...pn cannot be nullable
-    result = simplifyBooleanCase2(rexBuilder, branches, unknownAs);
+    result = simplifyBooleanCase2(rexBuilder, branches);
     if (result != null) {
       return result;
     }
-    // 3) Another simplification:
+    // 2) Another simplification:
     //  CASE
     //  WHEN p1 THEN x
     //  WHEN p2 THEN y
@@ -956,33 +943,8 @@ public class RexSimplify {
     return result;
   }
 
-  private static RexNode simplifyBooleanCase1(RexBuilder rexBuilder,
-      List<CaseBranch> branches) {
-    final List<RexNode> terms = new ArrayList<>();
-    int pos = 0;
-    for (; pos < branches.size(); pos++) {
-      // True block
-      CaseBranch branch = branches.get(pos);
-      if (!branch.value.isAlwaysTrue()) {
-        break;
-      }
-      terms.add(branch.cond);
-    }
-    for (; pos < branches.size(); pos++) {
-      // False block
-      CaseBranch branch = branches.get(pos);
-      if (!(branch.value.isAlwaysFalse() || RexUtil.isNull(branch.value))) {
-        break;
-      }
-    }
-    if (pos == branches.size()) {
-      return RexUtil.composeDisjunction(rexBuilder, terms);
-    }
-    return null;
-  }
-
   private static RexNode simplifyBooleanCase2(RexBuilder rexBuilder,
-      List<CaseBranch> branches, RexUnknownAs unknownAs) {
+      List<CaseBranch> branches) {
     for (CaseBranch branch : branches) {
       if (!branch.value.isAlwaysTrue()
           && !branch.value.isAlwaysFalse()) {
