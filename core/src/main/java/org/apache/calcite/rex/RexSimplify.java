@@ -882,7 +882,7 @@ public class RexSimplify {
 
   }
 
-  /** Analyzes a given ReexNode - and decides whenever its safe to unwind.
+  /** Analyzes a given {@link RexNode} and decides whenever its safe to unwind.
   *
   * CaseSafe means that it only contains a combination of known good operators.
   *
