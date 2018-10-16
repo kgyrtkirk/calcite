@@ -943,9 +943,9 @@ public class RexSimplify {
       branches.add(new CaseBranch(cond, value));
     }
 
-    //    result = simplifyBooleanCaseBooleanBranches(rexBuilder, branches);
+    result = simplifyBooleanCaseBooleanBranches(rexBuilder, branches);
     if (result != null) {
-      return result;
+      //      return result;
     }
     result = simplifyBooleanCaseGeneric(rexBuilder, branches, t);
     return result;
@@ -1010,12 +1010,13 @@ public class RexSimplify {
     for (CaseBranch branch : branches) {
       boolean useBranch = !branch.value.isAlwaysFalse();
       if (useBranch) {
-        terms.add(
-            RexUtil.andNot(rexBuilder,
-                rexBuilder.makeCall(SqlStdOperatorTable.AND,
-                    branch.cond,
-                    branch.value),
-                notTerms));
+        final RexNode branchTerm;
+        if (branch.value.isAlwaysTrue()) {
+          branchTerm = branch.cond;
+        } else {
+          branchTerm = rexBuilder.makeCall(SqlStdOperatorTable.AND, branch.cond, branch.value);
+        }
+        terms.add(RexUtil.andNot(rexBuilder, branchTerm, notTerms));
       }
       if (booleanBranches && useBranch) {
         // we are safe to ignore the
