@@ -948,41 +948,6 @@ public class RexSimplify {
   }
 
   /**
-   * Boolean valued branches.
-   *
-   * Rewrites:
-   * <pre>
-   * CASE
-   *   WHEN p0 THEN TRUE
-   *   WHEN p1 THEN TRUE
-   *   WHEN p2 THEN FALSE
-   *   WHEN p3 THEN TRUE
-   *   ELSE FALSE
-   * END
-   * </pre>
-   * to: <pre>(p0 or p1 or (p3 and not(p2)))</pre>
-   */
-  private static RexNode simplifyBooleanCaseBooleanBranches(RexBuilder rexBuilder,
-      List<CaseBranch> branches) {
-    for (CaseBranch branch : branches) {
-      if (!branch.value.isAlwaysTrue()
-          && !branch.value.isAlwaysFalse()) {
-        return null;
-      }
-    }
-    final List<RexNode> terms = new ArrayList<>();
-    final List<RexNode> notTerms = new ArrayList<>();
-    for (CaseBranch branch : branches) {
-      if (branch.value.isAlwaysTrue()) {
-        terms.add(RexUtil.andNot(rexBuilder, branch.cond, notTerms));
-      } else {
-        notTerms.add(branch.cond);
-      }
-    }
-    return RexUtil.composeDisjunction(rexBuilder, terms);
-  }
-
-  /**
    * Generic boolean case simplification.
    *
    * Rewrites:
