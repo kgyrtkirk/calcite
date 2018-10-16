@@ -706,6 +706,8 @@ public class RexSimplify {
       }
     }
 
+    branches = compactBranchesWithTheSameConclusion(branches);
+
     // collect cardinality of values
     Set<String> values =
         branches.stream().map(branch -> branch.value.toString()).collect(Collectors.toSet());
@@ -741,6 +743,27 @@ public class RexSimplify {
       return call;
     }
     return call.clone(call.getType(), newOperands);
+  }
+
+  private List<CaseBranch> compactBranchesWithTheSameConclusion(List<CaseBranch> branches) {
+    ArrayList newBranches = new ArrayList<>();
+    CaseBranch last = null;
+    for (CaseBranch b : branches) {
+      if (last == null) {
+        last=b;
+      } else {
+        if (last.value.equals(b.value) && isSafeExpression(b.cond)) {
+          RexNode newCond = rexBuilder.makeCall(SqlStdOperatorTable.OR, last.cond, b.cond);
+          // last and b are 2 consequent branches with the same conclusion
+          last = new CaseBranch(newCond, last.value);
+        } else {
+          newBranches.add(last);
+          last = b;
+        }
+      }
+    }
+    newBranches.add(last);
+    return newBranches;
   }
 
   /**
