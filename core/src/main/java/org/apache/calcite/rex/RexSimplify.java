@@ -750,7 +750,7 @@ public class RexSimplify {
     CaseBranch last = null;
     for (CaseBranch b : branches) {
       if (last == null) {
-        last=b;
+        last = b;
       } else {
         if (last.value.equals(b.value) && isSafeExpression(b.cond)) {
           RexNode newCond = rexBuilder.makeCall(SqlStdOperatorTable.OR, last.cond, b.cond);
@@ -917,7 +917,7 @@ public class RexSimplify {
   }
 
   private static RexNode simplifyBooleanCase(RexBuilder rexBuilder,
-      List<CaseBranch> inputBranches, RexUnknownAs unknownAs, RelDataType t) {
+      List<CaseBranch> inputBranches, RexUnknownAs unknownAs, RelDataType branchType) {
     RexNode result = null;
 
     // prepare all condition/branches for boolean interpretation
@@ -935,19 +935,15 @@ public class RexSimplify {
       } else {
         cond = branch.cond;
       }
-      if (!t.equals(branch.value.getType())) {
-        value = rexBuilder.makeAbstractCast(t, branch.value);
+      if (!branchType.equals(branch.value.getType())) {
+        value = rexBuilder.makeAbstractCast(branchType, branch.value);
       } else {
         value = branch.value;
       }
       branches.add(new CaseBranch(cond, value));
     }
 
-    result = simplifyBooleanCaseBooleanBranches(rexBuilder, branches);
-    if (result != null) {
-      //      return result;
-    }
-    result = simplifyBooleanCaseGeneric(rexBuilder, branches, t);
+    result = simplifyBooleanCaseGeneric(rexBuilder, branches, branchType);
     return result;
   }
 
@@ -1019,7 +1015,8 @@ public class RexSimplify {
         terms.add(RexUtil.andNot(rexBuilder, branchTerm, notTerms));
       }
       if (booleanBranches && useBranch) {
-        // we are safe to ignore the
+        // we are safe to ignore this branch because for boolean true branches:
+        // a || (b && !a) === a || b
       } else {
         notTerms.add(branch.cond);
       }
