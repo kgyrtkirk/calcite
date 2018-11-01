@@ -186,7 +186,7 @@ public abstract class SqlImplementor {
     if (node.isAlwaysFalse()) {
       return SqlLiteral.createBoolean(false, POS);
     }
-    if(node instanceof RexInputRef) {
+    if (node instanceof RexInputRef) {
       Context joinContext = leftContext.implementor().joinContext(leftContext, rightContext);
       return joinContext.toSql(null, node);
     }
