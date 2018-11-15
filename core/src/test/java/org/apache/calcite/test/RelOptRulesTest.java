@@ -16,14 +16,6 @@
  */
 package org.apache.calcite.test;
 
-import static org.apache.calcite.plan.RelOptRule.none;
-import static org.apache.calcite.plan.RelOptRule.operand;
-import static org.apache.calcite.plan.RelOptRule.operandJ;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-
-import com.google.common.collect.ImmutableList;
-
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.plan.Context;
 import org.apache.calcite.plan.Contexts;
@@ -131,6 +123,9 @@ import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.test.catalog.MockCatalogReader;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.ImmutableBitSet;
+
+import com.google.common.collect.ImmutableList;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -139,6 +134,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Predicate;
+
+import static org.apache.calcite.plan.RelOptRule.none;
+import static org.apache.calcite.plan.RelOptRule.operand;
+import static org.apache.calcite.plan.RelOptRule.operandJ;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
 /**
  * Unit test for rules in {@code org.apache.calcite.rel} and subpackages.
@@ -2581,7 +2583,7 @@ public class RelOptRulesTest extends RelOptTestBase {
         "select * from emp "
             + "where cast((empno + (10/2)) as int) = 13");
   }
-  
+
   @Test public <T> void testReduceCaseNullabilityChange() throws Exception {
     HepProgram program = new HepProgramBuilder()
         .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
@@ -2590,19 +2592,8 @@ public class RelOptRulesTest extends RelOptTestBase {
 
     try (Hook.Closeable a = Hook.REL_BUILDER_SIMPLIFY.add(Hook.propertyJ(false))) {
       checkPlanning(program,
-          "select case  when empno = 3 then 7 when 12 IS NOT NULL then 12 else null end as qx from emp  ");
-      //              + "where case when empno = 1 then true when true then false else empno = 7 or cast(null as boolean) end");
-    }
-  }
-
-  @Test
-  public <T> void testReduceCaseNullabilityChange2() throws Exception {
-    HepProgram program = new HepProgramBuilder().addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
-        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE).build();
-
-    try (Hook.Closeable a = Hook.REL_BUILDER_SIMPLIFY.add(Hook.propertyJ(false))) {
-      checkPlanning(program, "select 12 IS NOT NULL and (empno=1 or cast(NULL  as boolean)) from emp  ");
-      //              + "where case when empno = 1 then true when true then false else empno = 7 or cast(null as boolean) end");
+          "select case when empno = 1 then 1 when 1 IS NOT NULL then 2 else null end as qx "
+              + "from emp");
     }
   }
 
