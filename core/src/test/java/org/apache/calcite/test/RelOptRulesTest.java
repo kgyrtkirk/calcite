@@ -2585,12 +2585,24 @@ public class RelOptRulesTest extends RelOptTestBase {
   @Test public <T> void testReduceCaseNullabilityChange() throws Exception {
     HepProgram program = new HepProgramBuilder()
         .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
         .build();
 
     try (Hook.Closeable a = Hook.REL_BUILDER_SIMPLIFY.add(Hook.propertyJ(false))) {
       checkPlanning(program,
-          "select case when empno = 12 then true when true then false else empno = 17 or cast(null as boolean) end as qx from emp  "
-              + "where case when empno = 1 then true when true then false else empno = 7 or cast(null as boolean) end");
+          "select case  when empno = 3 then 7 when 12 IS NOT NULL then 12 else null end as qx from emp  ");
+      //              + "where case when empno = 1 then true when true then false else empno = 7 or cast(null as boolean) end");
+    }
+  }
+
+  @Test
+  public <T> void testReduceCaseNullabilityChange2() throws Exception {
+    HepProgram program = new HepProgramBuilder().addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE).build();
+
+    try (Hook.Closeable a = Hook.REL_BUILDER_SIMPLIFY.add(Hook.propertyJ(false))) {
+      checkPlanning(program, "select 12 IS NOT NULL and (empno=1 or cast(NULL  as boolean)) from emp  ");
+      //              + "where case when empno = 1 then true when true then false else empno = 7 or cast(null as boolean) end");
     }
   }
 

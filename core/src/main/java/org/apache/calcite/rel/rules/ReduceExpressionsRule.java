@@ -16,6 +16,9 @@
  */
 package org.apache.calcite.rel.rules;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptRule;
@@ -66,9 +69,6 @@ import org.apache.calcite.tools.RelBuilderFactory;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -790,9 +790,6 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         return node;
       }
       node = super.visitCall(call);
-      if (node != call) {
-        node = simplify.simplifyUnknownAs(node, unknownAs);
-      }
       return node;
     }
 
