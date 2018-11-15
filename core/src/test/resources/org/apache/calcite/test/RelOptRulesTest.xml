@@ -6183,6 +6183,25 @@ LogicalProject(EXPR$0=[CASE(=($1, 0), null, $0)])
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testReduceCaseNullabilityChange">
+        <Resource name="sql">
+            <![CDATA[select case when empno = 12 then true when true then false else empno = 17 or cast(null as boolean) end as qx from emp  where case when empno = 1 then true when true then false else empno = 7 or cast(null as boolean) end]]>
+        </Resource>
+        <Resource name="planBefore">
+            <![CDATA[
+LogicalProject(QX=[CASE(=($0, 12), true, true, false, OR(=($0, 17), null))])
+  LogicalFilter(condition=[CASE(=($0, 1), true, true, false, OR(=($0, 7), null))])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+        <Resource name="planAfter">
+            <![CDATA[
+LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8])
+  LogicalFilter(condition=[=($0, 1)])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testReduceConstantsDynamicFunction">
         <Resource name="sql">
             <![CDATA[select sal, t

@@ -16,10 +16,10 @@
  */
 package org.apache.calcite.runtime;
 
-import org.apache.calcite.util.ImmutableNullableList;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import org.apache.calcite.util.ImmutableNullableList;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -140,7 +140,7 @@ public class FlatLists {
    * @param t Array of members of list
    * @return List containing the given members
    */
-  private static <T extends Object & Comparable> ComparableList<T> flatList_(
+  private static <T extends Comparable> ComparableList<T> flatList_(
       T[] t, boolean copy) {
     switch (t.length) {
     case 0:
