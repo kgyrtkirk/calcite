@@ -748,6 +748,11 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplifyUnchanged(cast(cast(vVarchar(), tInt()), tVarchar()));
   }
 
+  @Test public void checkVarcharAndInt() {
+    checkSimplify(coalesce(vVarchar(1), vInt(2)), "x");
+    //    checkSimplify(case_(vBool(0), vVarchar(1), vInt(2)), "x");
+  }
+
   /** Unit test for {@link org.apache.calcite.rex.RexUtil#toCnf}. */
   @Test public void testCnf() {
     final RelDataType booleanType =
