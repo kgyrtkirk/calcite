@@ -467,7 +467,12 @@ public abstract class SqlOperator {
   public RelDataType inferReturnType(
       SqlOperatorBinding opBinding) {
     if (returnTypeInference != null) {
-      return returnTypeInference.inferReturnType(opBinding);
+      RelDataType returnType = returnTypeInference.inferReturnType(opBinding);
+      if (returnType == null) {
+        throw new IllegalArgumentException("Unable to infer common type for "
+            + opBinding.collectOperandTypes());
+      }
+      return returnType;
     }
 
     // Derived type should have overridden this method, since it didn't
