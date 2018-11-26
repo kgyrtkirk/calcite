@@ -18,26 +18,45 @@
 !use post
 !set outputformat mysql
 
+# WTF
+select * from emp;
++-------+--------+--------+
+| ENAME | DEPTNO | GENDER |
++-------+--------+--------+
+| Adam  |     50 | M      |
+| Alice |     30 | F      |
+| Bob   |     10 | M      |
+| Eric  |     20 | M      |
+| Eve   |     50 | F      |
+| Grace |     60 | F      |
+| Jane  |     10 | F      |
+| Susan |     30 | F      |
+| Wilma |        | F      |
++-------+--------+--------+
+(9 rows)
+
+!ok
+
 # Multiple window functions sharing a single window
-select count(*) over(partition by gender order by ename) as count1,
-  count(*) over(partition by deptno order by ename) as count2,
-  sum(deptno) over(partition by gender order by ename) as sum1,
-  sum(deptno) over(partition by deptno order by ename) as sum2
+select ename,deptno,gender,count(*) over(partition by gender order by ename) as sum_row_by_gender,
+  count(*) over(partition by deptno order by ename) as sum_row_by_deptno,
+  sum(deptno) over(partition by gender order by ename) as sum_deptno_by_gender,
+  sum(deptno) over(partition by deptno order by ename) as sum_deptno_by_deptno
 from emp
-order by sum1, sum2;
-+--------+--------+------+------+
-| COUNT1 | COUNT2 | SUM1 | SUM2 |
-+--------+--------+------+------+
-|      1 |      1 |   30 |   30 |
-|      1 |      1 |   50 |   50 |
-|      2 |      1 |   60 |   10 |
-|      3 |      1 |   80 |   20 |
-|      2 |      2 |   80 |  100 |
-|      3 |      1 |  140 |   60 |
-|      4 |      2 |  150 |   20 |
-|      5 |      2 |  180 |   60 |
-|      6 |      1 |  180 |      |
-+--------+--------+------+------+
+order by sum_deptno_by_gender, sum_deptno_by_deptno;
++-------+--------+--------+-------------------+-------------------+----------------------+----------------------+
+| ENAME | DEPTNO | GENDER | SUM_ROW_BY_GENDER | SUM_ROW_BY_DEPTNO | SUM_DEPTNO_BY_GENDER | SUM_DEPTNO_BY_DEPTNO |
++-------+--------+--------+-------------------+-------------------+----------------------+----------------------+
+| Alice |     30 | F      |                 1 |                 1 |                   30 |                   30 |
+| Adam  |     50 | M      |                 1 |                 1 |                   50 |                   50 |
+| Bob   |     10 | M      |                 2 |                 1 |                   60 |                   10 |
+| Eric  |     20 | M      |                 3 |                 1 |                   80 |                   20 |
+| Eve   |     50 | F      |                 2 |                 2 |                   80 |                  100 |
+| Grace |     60 | F      |                 3 |                 1 |                  140 |                   60 |
+| Jane  |     10 | F      |                 4 |                 2 |                  150 |                   20 |
+| Susan |     30 | F      |                 5 |                 2 |                  180 |                   60 |
+| Wilma |        | F      |                 6 |                 1 |                  180 |                      |
++-------+--------+--------+-------------------+-------------------+----------------------+----------------------+
 (9 rows)
 
 !ok
@@ -324,13 +343,13 @@ window w1 as (),
 +--------+--------+---+---+
 |     10 | F      | F | F |
 |     10 | M      | F | F |
-|     20 | M      | F | M |
 |     30 | F      | F | F |
 |     30 | F      | F | F |
 |     50 | F      | F | F |
 |     50 | M      | F | F |
 |     60 | F      | F | F |
 |        | F      | F | F |
+|     20 | M      | F | M |
 +--------+--------+---+---+
 (9 rows)
 
