@@ -20,6 +20,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Row expression.
@@ -80,6 +81,18 @@ public abstract class RexNode {
 
   public String toString() {
     return digest;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (obj == null)
+      return false;
+    if (obj instanceof RexNode)
+      return Objects.equals(toString(), obj.toString());
+    return false;
+  }
+
+  @Override public int hashCode() {
+    return toString().hashCode();
   }
 
   /**
