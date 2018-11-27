@@ -173,6 +173,23 @@ public class RexCall extends RexNode {
   public RexCall clone(RelDataType type, List<RexNode> operands) {
     return new RexCall(type, op, operands);
   }
+
+  @Override public boolean equals(Object obj) {
+    if (obj == null)
+      return false;
+    if (obj == this)
+      return true;
+    if (obj instanceof RexNode) {
+      boolean res = Objects.equals(toString(), obj.toString());
+      if (res)
+        return true;
+    }
+    return false;
+  }
+
+  @Override public int hashCode() {
+    return toString().hashCode();
+  }
 }
 
 // End RexCall.java

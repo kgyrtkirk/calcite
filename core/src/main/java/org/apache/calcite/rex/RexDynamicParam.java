@@ -16,6 +16,8 @@
  */
 package org.apache.calcite.rex;
 
+import java.util.Objects;
+
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
@@ -59,6 +61,19 @@ public class RexDynamicParam extends RexVariable {
   public <R, P> R accept(RexBiVisitor<R, P> visitor, P arg) {
     return visitor.visitDynamicParam(this, arg);
   }
-}
 
+  @Override public boolean equals(Object obj) {
+    if (!(obj instanceof RexDynamicParam)) {
+      return false;
+    }
+    RexDynamicParam o = (RexDynamicParam) obj;
+    return Objects.equals(digest, o.digest) &&
+        Objects.equals(type, o.type) &&
+        Objects.equals(index, o.index);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(digest, type, index);
+  }
+}
 // End RexDynamicParam.java

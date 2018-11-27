@@ -83,22 +83,9 @@ public abstract class RexNode {
     return digest;
   }
 
-  @Override public boolean equals(Object obj) {
-    if (obj == null)
-      return false;
-    if (obj == this)
-      return true;
-    if (obj instanceof RexNode) {
-      boolean res = Objects.equals(toString(), obj.toString());
-      if (res)
-        return true;
-    }
-    return false;
-  }
+  @Override public abstract boolean equals(Object obj);
 
-  @Override public int hashCode() {
-    return toString().hashCode();
-  }
+  @Override public abstract int hashCode();
 
   /**
    * Accepts a visitor, dispatching to the right overloaded

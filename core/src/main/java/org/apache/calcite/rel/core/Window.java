@@ -367,7 +367,7 @@ public abstract class Window extends SingleRel {
     }
 
     @Override public int hashCode() {
-      return super.hashCode();
+      return Objects.hash(digest, ordinal, distinct);
     }
 
     @Override public RexCall clone(RelDataType type, List<RexNode> operands) {
