@@ -175,16 +175,10 @@ public class RexCall extends RexNode {
   }
 
   @Override public boolean equals(Object obj) {
-    if (obj == null)
+    if (!(obj instanceof RexNode)) {
       return false;
-    if (obj == this)
-      return true;
-    if (obj instanceof RexNode) {
-      boolean res = Objects.equals(toString(), obj.toString());
-      if (res)
-        return true;
     }
-    return false;
+    return obj == this || Objects.equals(toString(), obj.toString());
   }
 
   @Override public int hashCode() {
