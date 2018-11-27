@@ -83,7 +83,6 @@ public abstract class RexNode {
     return digest;
   }
 
-  /*
   @Override public boolean equals(Object obj) {
     if (obj == null)
       return false;
@@ -96,11 +95,11 @@ public abstract class RexNode {
     }
     return false;
   }
-  
+
   @Override public int hashCode() {
     return toString().hashCode();
   }
-  */
+
   /**
    * Accepts a visitor, dispatching to the right overloaded
    * {@link RexVisitor#visitInputRef visitXxx} method.
