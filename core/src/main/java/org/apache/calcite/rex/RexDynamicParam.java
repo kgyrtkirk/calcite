@@ -63,11 +63,11 @@ public class RexDynamicParam extends RexVariable {
   }
 
   @Override public boolean equals(Object obj) {
-    if (!(obj instanceof RexDynamicParam)) {
+    if (obj == null || obj.getClass() != this.getClass()) {
       return false;
     }
     RexDynamicParam o = (RexDynamicParam) obj;
-    return Objects.equals(digest, o.digest) &&
+    return o == this || Objects.equals(digest, o.digest) &&
         Objects.equals(type, o.type) &&
         Objects.equals(index, o.index);
   }

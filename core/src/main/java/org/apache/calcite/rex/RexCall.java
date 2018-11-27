@@ -175,7 +175,7 @@ public class RexCall extends RexNode {
   }
 
   @Override public boolean equals(Object obj) {
-    if (!(obj instanceof RexNode)) {
+    if (!(obj instanceof RexCall)) {
       return false;
     }
     return obj == this || Objects.equals(toString(), obj.toString());

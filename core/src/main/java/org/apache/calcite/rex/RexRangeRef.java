@@ -78,11 +78,11 @@ public class RexRangeRef extends RexNode {
   }
 
   @Override public boolean equals(Object obj) {
-    if (!(obj instanceof RexRangeRef)) {
+    if (obj == null || obj.getClass() != this.getClass()) {
       return false;
     }
     RexRangeRef o = (RexRangeRef) obj;
-    return Objects.equals(type, o.type) &&
+    return o == this || Objects.equals(type, o.type) &&
         Objects.equals(offset, o.offset);
   }
 
