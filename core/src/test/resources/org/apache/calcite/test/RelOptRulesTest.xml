@@ -208,7 +208,7 @@ from emp]]>
         </Resource>
         <Resource name="planAfter">
             <![CDATA[
-LogicalProject($0=[$9], $1=[$9], $2=[$10], $3=[$10])
+LogicalProject($0=[$9], $1=[$11], $2=[$10], $3=[$12])
   LogicalWindow(window#0=[window(partition {0} order by [5] range between UNBOUNDED PRECEDING and CURRENT ROW aggs [COUNT(), SUM($7)])], window#1=[window(partition {7} order by [5] range between UNBOUNDED PRECEDING and CURRENT ROW aggs [COUNT(), SUM($7)])])
     LogicalTableScan(table=[[CATALOG, SALES, EMP]])
 ]]>
