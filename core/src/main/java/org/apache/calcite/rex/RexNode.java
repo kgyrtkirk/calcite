@@ -87,8 +87,13 @@ public abstract class RexNode {
   @Override public boolean equals(Object obj) {
     if (obj == null)
       return false;
-    if (obj instanceof RexNode)
-      return Objects.equals(toString(), obj.toString());
+    if (obj == this)
+      return true;
+    if (obj instanceof RexNode) {
+      boolean res = Objects.equals(toString(), obj.toString());
+      if (res)
+        return true;
+    }
     return false;
   }
   
