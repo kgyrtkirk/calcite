@@ -283,4 +283,17 @@ select case when s=0 then false else 100/s > 0 end from ax;
 (2 rows)
 
 !ok
+
+with ax(s) as (values true,false,cast(null as boolean))
+select SUM(case when coalesce(s, true) = true then 1 else 0 end) from ax;
+
++--------+
+| EXPR$0 |
++--------+
+| false  |
+| true   |
++--------+
+(2 rows)
+
+!ok
 # End conditions.iq
