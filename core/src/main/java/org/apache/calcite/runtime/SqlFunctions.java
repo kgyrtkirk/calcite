@@ -1454,7 +1454,7 @@ public class SqlFunctions {
 
   @NonDeterministic
   private static Object cannotConvert(Object o, Class toType) {
-    throw RESOURCE.cannotConvert(o.toString(), toType.toString()).ex();
+    throw RESOURCE.cannotConvert(o + "x", toType.toString()).ex();
   }
 
   /** CAST(VARCHAR AS BOOLEAN). */
