@@ -284,19 +284,17 @@ select case when s=0 then false else 100/s > 0 end from ax;
 
 !ok
 
-# =(OR($0, IS NULL($0)), true)
-# select coalesce(s, true) = true from ax;
-# select ( s or s is null ) = true from ax;
+# Test case for CALCITE-2783
 with ax(s) as (values (true),(false),(cast(null as boolean)))
 select s, (s or s is null), (s and s is not null) from ax;
 
-+--------+
-| EXPR$0 |
-+--------+
-| false  |
-| false  |
-|        |
-+--------+
++-------+--------+--------+
+| S     | EXPR$1 | EXPR$2 |
++-------+--------+--------+
+| false | false  | false  |
+| true  | true   | true   |
+|       | true   | false  |
++-------+--------+--------+
 (3 rows)
 
 !ok
