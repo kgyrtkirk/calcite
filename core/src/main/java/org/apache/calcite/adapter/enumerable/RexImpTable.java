@@ -2537,6 +2537,11 @@ public class RexImpTable {
         RexToLixTranslator translator, RexCall call, NullAs nullAs) {
       List<RexNode> operands = call.getOperands();
       assert operands.size() == 1;
+      switch (nullAs) {
+      case IS_NOT_NULL:
+      case IS_NULL:
+        return BOXED_FALSE_EXPR;
+      }
       if (seek == null) {
         return translator.translate(operands.get(0),
             negate ? NullAs.IS_NOT_NULL : NullAs.IS_NULL);
