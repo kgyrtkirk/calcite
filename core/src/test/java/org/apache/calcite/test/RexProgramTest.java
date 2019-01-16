@@ -2528,18 +2528,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
   private Comparable eval(RexNode e) {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
-
-  @Test public void aa() {
-    asdsa();
-  }
-
-  private Boolean asdsa() {
-    Boolean current = null;
-    return (org.apache.calcite.runtime.SqlFunctions.isTrue(current) ||
-        current == null ? Boolean.TRUE : current == null ? (Boolean) null : Boolean.FALSE) == null
-          ? (Boolean) null : Boolean.valueOf(current == null ||
-              org.apache.calcite.runtime.SqlFunctions.toBoolean(current));
-  }
 }
 
 // End RexProgramTest.java
