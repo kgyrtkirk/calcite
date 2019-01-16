@@ -20,6 +20,7 @@
 
 # =(OR($0, IS NULL($0)), true)
 # select coalesce(s, true) = true from ax;
+# select ( s or s is null ) = true from ax;
 with ax(s) as (values true,false,cast(null as boolean))
 select ( s or s is null ) = true from ax;
 
@@ -28,8 +29,28 @@ select ( s or s is null ) = true from ax;
 +--------+
 | false  |
 | true   |
+| true   |
 +--------+
-(2 rows)
+(3 rows)
 
 !ok
+
+
+# =(OR($0, IS NULL($0)), true)
+# select coalesce(s, true) = true from ax;
+# select ( s or s is null ) = true from ax;
+with ax(s) as (values (true),(false),(cast(null as boolean)))
+select ( s and s is not null ) = true from ax;
+
++--------+
+| EXPR$0 |
++--------+
+| false  |
+| false  |
+|        |
++--------+
+(3 rows)
+
+!ok
+
 # End conditions.iq
