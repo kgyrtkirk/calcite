@@ -18,12 +18,277 @@
 !use catchall
 !set outputformat mysql
 
+# OR test
+
+with tmp(a, b) as (
+  values (1, 1), (1, 0), (1, cast(null as int))
+       , (0, 1), (0, 0), (0, cast(null as int))
+       , (cast(null as int), 1), (cast(null as int), 0), (cast(null as int), cast(null as int)))
+select *
+  from tmp
+ where a = 1 or b = 1
+ order by 1, 2;
+
++---+---+
+| A | B |
++---+---+
+| 0 | 1 |
+| 1 | 0 |
+| 1 | 1 |
+| 1 |   |
+|   | 1 |
++---+---+
+(5 rows)
+
+!ok
+
+with tmp(a, b) as (
+  values (1, 1), (1, 0), (1, cast(null as int))
+       , (0, 1), (0, 0), (0, cast(null as int))
+       , (cast(null as int), 1), (cast(null as int), 0), (cast(null as int), cast(null as int)))
+select *
+  from tmp
+ where not (a = 1 or b = 1)
+ order by 1, 2;
+
++---+---+
+| A | B |
++---+---+
+| 0 | 0 |
++---+---+
+(1 row)
+
+!ok
+
+# AND test
+
+with tmp(a, b) as (
+  values (1, 1), (1, 0), (1, cast(null as int))
+       , (0, 1), (0, 0), (0, cast(null as int))
+       , (cast(null as int), 1), (cast(null as int), 0), (cast(null as int), cast(null as int)))
+select *
+  from tmp
+ where a = 1 AND b = 1
+ order by 1, 2;
+
++---+---+
+| A | B |
++---+---+
+| 1 | 1 |
++---+---+
+(1 row)
+
+!ok
+
+with tmp(a, b) as (
+  values (1, 1), (1, 0), (1, cast(null as int))
+       , (0, 1), (0, 0), (0, cast(null as int))
+       , (cast(null as int), 1), (cast(null as int), 0), (cast(null as int), cast(null as int)))
+select *
+  from tmp
+ where not (a = 1 AND b = 1)
+ order by 1, 2;
+
++---+---+
+| A | B |
++---+---+
+| 0 | 0 |
+| 0 | 1 |
+| 0 |   |
+| 1 | 0 |
+|   | 0 |
++---+---+
+(5 rows)
+
+!ok
+
+# Test cases for CALCITE-980
+
+select "value" from "nullables" a where "value" = 'A' or "value" = 'B' order by 1;
+
++-------+
+| value |
++-------+
+| A     |
+| B     |
++-------+
+(2 rows)
+
+!ok
+
+select "value" from "nullables" a where not ("value" = 'A' or "value" = 'B') order by 1;
+
++-------+
+| value |
++-------+
+| C     |
++-------+
+(1 row)
+
+!ok
+
+select "value" from "nullables" a where not (not ("value" = 'A' or "value" = 'B')) order by 1;
+
++-------+
+| value |
++-------+
+| A     |
+| B     |
++-------+
+(2 rows)
+
+!ok
+
+select "value" from "nullables" a where "value" = 'A' and "value" = 'B' order by 1;
+
++-------+
+| value |
++-------+
++-------+
+(0 rows)
+
+!ok
+
+select "value" from "nullables" a where not ("value" = 'A' and "value" = 'B') order by 1;
+
++-------+
+| value |
++-------+
+| A     |
+| B     |
+| C     |
++-------+
+(3 rows)
+
+!ok
+
+select "value" from "nullables" a where not (not ("value" = 'A' and "value" = 'B')) order by 1;
+
++-------+
+| value |
++-------+
++-------+
+(0 rows)
+
+!ok
+
+select "value" from "nullables" a
+ where case when not ("value" = 'A' or "value" = 'B') then 1 else 0 end = 1
+ order by 1;
+
++-------+
+| value |
++-------+
+| C     |
++-------+
+(1 row)
+
+!ok
+
+select "value" from "nullables" a
+ where
+   case when not ("value"='A' or "value"='B')
+     then
+       case when ("value"='A' or "value"='B') then 1 else 2 end
+     else 0
+   end = 2
+ order by 1;
+
++-------+
+| value |
++-------+
+| C     |
++-------+
+(1 row)
+
+!ok
+
+select "value" from "nullables" a
+ where
+   case when not ("value"='A' or "value"='B')
+     then
+       case when not /* <--diff from above */ ("value"='A' or "value"='B') then 1 else 2 end
+     else 0
+   end = 1 /* <- diff from above*/
+ order by 1;
+
++-------+
+| value |
++-------+
+| C     |
++-------+
+(1 row)
+
+!ok
+
+select "value" from "nullables" a
+ where
+   case when not ("value"='A' or "value"='B')
+     then
+       case when not ("value"='A' or "value"='B') then 1 else 2 end
+     else 0
+   end = 0 /* <- diff from above*/
+ order by 1;
+
++-------+
+| value |
++-------+
+| A     |
+| B     |
+|       |
++-------+
+(3 rows)
+
+!ok
+
+select "value" from "nullables" a
+ where
+   case when not ("value"='A' or "value"='B')
+     then
+       case when not ("value"='A' or "value"='B') then 1 else 2 end
+     else 0
+   end = 2 /* <- diff from above*/
+ order by 1;
+
++-------+
+| value |
++-------+
++-------+
+(0 rows)
+
+!ok
+
+# Test case for [CALCITE-2726] based on [HIVE-20617]
+with ax(s, t) as (values ('a','a'),('a','a '),('b','bb'))
+select 'expected 1' as e,count(*) as c
+from ax where ((s,t) in (('a','a'),(null, 'bb'))) is null;
++------------+---+
+| E          | C |
++------------+---+
+| expected 1 | 1 |
++------------+---+
+(1 row)
+
+!ok
+
+with ax(s) as (values (1),(0))
+select case when s=0 then false else 100/s > 0 end from ax;
+
++--------+
+| EXPR$0 |
++--------+
+| false  |
+| true   |
++--------+
+(2 rows)
+
+!ok
 
 # =(OR($0, IS NULL($0)), true)
 # select coalesce(s, true) = true from ax;
 # select ( s or s is null ) = true from ax;
 with ax(s) as (values (true),(false),(cast(null as boolean)))
-select  s ,s is not null, cast(null as boolean)   and false,(s and s is not null) from ax;
+select s, (s or s is null), (s and s is not null) from ax;
 
 +--------+
 | EXPR$0 |
@@ -35,5 +300,6 @@ select  s ,s is not null, cast(null as boolean)   and false,(s and s is not null
 (3 rows)
 
 !ok
+
 
 # End conditions.iq
