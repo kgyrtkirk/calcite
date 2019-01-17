@@ -691,6 +691,10 @@ public class RexImpTable {
 
         private NullAs negate(NullAs nullAs) {
           switch (nullAs) {
+          case IS_NOT_NULL:
+            return NullAs.IS_NULL;
+          case IS_NULL:
+            return NullAs.IS_NOT_NULL;
           case FALSE:
             return NullAs.TRUE;
           case TRUE:
