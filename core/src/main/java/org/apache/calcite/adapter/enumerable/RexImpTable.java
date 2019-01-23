@@ -695,10 +695,6 @@ public class RexImpTable {
 
         private NullAs negate(NullAs nullAs) {
           switch (nullAs) {
-          case IS_NOT_NULL:
-            return NullAs.IS_NULL;
-          case IS_NULL:
-            return NullAs.IS_NOT_NULL;
           case FALSE:
             return NullAs.TRUE;
           case TRUE:
@@ -2547,6 +2543,7 @@ public class RexImpTable {
       assert operands.size() == 1;
       switch (nullAs) {
       case IS_NOT_NULL:
+        return BOXED_TRUE_EXPR;
       case IS_NULL:
         return BOXED_FALSE_EXPR;
       }
