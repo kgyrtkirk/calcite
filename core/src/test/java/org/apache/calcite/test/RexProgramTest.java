@@ -2566,6 +2566,14 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "false");
   }
 
+  @Test public void testIsXRecursion2() {
+    checkSimplify2(
+        isTrue(vBool()),
+        "IS TRUE(?0.bool0)",
+        "?0.bool0"
+    );
+  }
+
 }
 
 

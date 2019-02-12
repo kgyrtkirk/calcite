@@ -496,6 +496,14 @@ public class RexSimplify {
 
   private RexNode simplifyIs(RexCall call, RexUnknownAs unknownAs) {
     final SqlKind kind = call.getKind();
+    final RexNode argument = call.getOperands().get(0);
+    if (kind == SqlKind.IS_TRUE && unknownAs == RexUnknownAs.FALSE) {
+      return simplify(argument, unknownAs);
+    }
+    if (kind == SqlKind.IS_NOT_FALSE && unknownAs == RexUnknownAs.TRUE) {
+      return simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, argument));
+    }
+    
     final RexNode a = simplify(call.getOperands().get(0), RexUnknownAs.UNKNOWN);
 
 
