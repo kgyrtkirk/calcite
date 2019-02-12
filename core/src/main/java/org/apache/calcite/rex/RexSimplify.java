@@ -395,14 +395,14 @@ public class RexSimplify {
     }
   }
 
-  private void simplifyAndTerms(List<RexNode> terms) {
+  private void simplifyAndTerms(List<RexNode> terms, RexUnknownAs unknownAs) {
     RexSimplify simplify = this;
     for (int i = 0; i < terms.size(); i++) {
       RexNode t = terms.get(i);
       if (Predicate.of(t) == null) {
         continue;
       }
-      terms.set(i, simplify.simplify(t, UNKNOWN));
+      terms.set(i, simplify.simplify(t, unknownAs));
       RelOptPredicateList newPredicates = simplify.predicates.union(rexBuilder,
           RelOptPredicateList.of(rexBuilder, terms.subList(i, i + 1)));
       simplify = simplify.withPredicates(newPredicates);
@@ -412,7 +412,7 @@ public class RexSimplify {
       if (Predicate.of(t) != null) {
         continue;
       }
-      terms.set(i, simplify.simplify(t, UNKNOWN));
+      terms.set(i, simplify.simplify(t, unknownAs));
     }
   }
 
@@ -1027,7 +1027,7 @@ public class RexSimplify {
     RelOptUtil.decomposeConjunction(e, terms, notTerms);
 
     if (unknownAs == FALSE && predicateElimination) {
-      simplifyAndTerms(terms);
+      simplifyAndTerms(terms, FALSE);
     } else {
       simplifyList(terms, unknownAs);
     }
