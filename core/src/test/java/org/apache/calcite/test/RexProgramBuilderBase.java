@@ -235,6 +235,11 @@ public abstract class RexProgramBuilderBase {
     return rexBuilder.makeCall(SqlStdOperatorTable.CASE, ImmutableList.copyOf(nodes));
   }
 
+  protected RexNode in(Iterable<? extends RexNode> nodes) {
+    return rexBuilder.makeCall(SqlStdOperatorTable.IN,
+        ImmutableList.copyOf(nodes));
+  }
+
   /**
    * Creates a call to the CAST operator.
    *

@@ -275,7 +275,7 @@ public class RexSimplify {
     case IS_FALSE:
     case IS_NOT_FALSE:
       assert e instanceof RexCall;
-      return simplifyIs((RexCall) e);
+      return simplifyIs((RexCall) e, unknownAs);
     case EQUALS:
     case GREATER_THAN:
     case GREATER_THAN_OR_EQUAL:
@@ -494,9 +494,10 @@ public class RexSimplify {
     return call;
   }
 
-  private RexNode simplifyIs(RexCall call) {
+  private RexNode simplifyIs(RexCall call, RexUnknownAs unknownAs) {
     final SqlKind kind = call.getKind();
-    final RexNode a = call.getOperands().get(0);
+    final RexNode a = simplify(call.getOperands().get(0), RexUnknownAs.UNKNOWN);
+
 
     final RexNode pred = simplifyIsPredicate(kind, a);
     if (pred != null) {
@@ -1088,7 +1089,7 @@ public class RexSimplify {
       for (RexNode notSatisfiableNullable : notSatisfiableNullables) {
         terms.add(
             simplifyIs((RexCall)
-                rexBuilder.makeCall(SqlStdOperatorTable.IS_NULL, notSatisfiableNullable)));
+            rexBuilder.makeCall(SqlStdOperatorTable.IS_NULL, notSatisfiableNullable), UNKNOWN));
       }
     }
     // Add the NOT disjunctions back in.

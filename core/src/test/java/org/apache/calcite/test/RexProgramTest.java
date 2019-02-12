@@ -2539,6 +2539,34 @@ public class RexProgramTest extends RexProgramBuilderBase {
   private Comparable eval(RexNode e) {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
+
+  @Test public void testInDigest() {
+    RexNode e = in(vInt(), literal(1), literal(2));
+    assertThat(e.toString(), is("IN(?0.int0, 1, 2)"));
+  }
+
+  @Test public void testNotIntoCase() {
+    checkSimplify(
+        not(
+            case_(
+                isTrue(vBool()), vBool(1),
+                vBool(2))),
+        "CASE(IS TRUE(?0.bool0), NOT(?0.bool1), NOT(?0.bool2))");
+  }
+
+  @Test public void testNotRecursion() {
+    checkSimplify(
+        not(coalesce(nullBool, trueLiteral)),
+        "false");
+  }
+
+  @Test public void testIsXRecursion() {
+    checkSimplify(
+        isFalse(coalesce(nullBool, trueLiteral)),
+        "false");
+  }
+
 }
+
 
 // End RexProgramTest.java
