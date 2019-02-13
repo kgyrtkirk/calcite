@@ -1719,20 +1719,24 @@ public class RexProgramTest extends RexProgramBuilderBase {
   }
 
   @Test public void testSimplifyAnd3() {
-    final RelDataType boolType = typeFactory.createSqlType(SqlTypeName.BOOLEAN);
-    final RelDataType rowType = typeFactory.builder()
-        .add("a", boolType).nullable(true)
-        .build();
-
-    final RexDynamicParam range = rexBuilder.makeDynamicParam(rowType, 0);
-    final RexNode aRef = rexBuilder.makeFieldAccess(range, 0);
-
     // in the case of 3-valued logic, the result must be unknown if a is unknown
     checkSimplify2(
-        and(aRef,
-            not(aRef)),
-        "AND(null, IS NULL(?0.a))",
+        and(vBool(), not(vBool())),
+        "AND(null, IS NULL(?0.bool0))",
         "false");
+  }
+
+  @Test public void testSimplifyAnd4() {
+    checkSimplify2(
+        and(
+            ge(vIntNotNull(), literal(1)),
+            le(vIntNotNull(), literal(1))
+        ),
+        "AND(>=(?0.notNullInt0, 1), <=(?0.notNullInt0, 1))",
+        "=(?0.notNullInt0, 1)"
+
+    );
+
   }
 
   @Test public void fieldAccessEqualsHashCode() {
@@ -2539,6 +2543,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
   private Comparable eval(RexNode e) {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
+
 }
 
 // End RexProgramTest.java
