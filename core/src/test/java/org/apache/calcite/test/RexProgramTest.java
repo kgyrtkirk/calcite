@@ -1729,15 +1729,20 @@ public class RexProgramTest extends RexProgramBuilderBase {
   @Test public void testSimplifyAnd4() {
     checkSimplify2(
         and(
-            ge(vIntNotNull(), literal(1)),
-            le(vIntNotNull(), literal(1))
-        ),
-        "AND(>=(?0.notNullInt0, 1), <=(?0.notNullInt0, 1))",
-        "=(?0.notNullInt0, 1)"
+            eq(vInt(2), literal(2)),
+            or(
+                eq(vInt(3), literal(3)),
+                and(
+                ge(vInt(), literal(1)),
+                    le(vInt(), literal(1))))),
+        "AND(=(?0.int2, 2), OR(=(?0.int3, 3), AND(>=(?0.int0, 1), <=(?0.int0, 1))))",
+        "AND(=(?0.int2, 2), OR(=(?0.int3, 3), =(?0.int0, 1)))"
 
     );
 
   }
+
+
 
   @Test public void fieldAccessEqualsHashCode() {
     assertEquals("vBool() instances should be equal", vBool(), vBool());
