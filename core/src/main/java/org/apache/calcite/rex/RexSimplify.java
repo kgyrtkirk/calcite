@@ -502,7 +502,7 @@ public class RexSimplify {
       return simplify(argument, unknownAs);
     }
     if (kind == SqlKind.IS_NOT_FALSE && unknownAs == RexUnknownAs.TRUE) {
-      return simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, argument));
+      return simplify(argument, unknownAs);
     }
 
     final RexNode a = simplify(call.getOperands().get(0), RexUnknownAs.UNKNOWN);

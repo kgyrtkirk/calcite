@@ -1780,7 +1780,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
             isTrue(vBool()), literal(1),
             isNotTrue(vBool()), literal(1),
             literal(2)),
-        "CASE(OR(IS TRUE(?0.bool0), IS NOT TRUE(?0.bool0)), 1, 2)");
+        "CASE(OR(?0.bool0, IS NOT TRUE(?0.bool0)), 1, 2)");
   }
 
   @Test public void testSimplifyCaseBranchesCollapse2() {
@@ -2390,7 +2390,10 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // "NOT(false)" => "true"
     checkSimplify(not(falseLiteral), "true");
     // "NOT(IS FALSE(x))" => "IS NOT FALSE(x)"
-    checkSimplify(not(isFalse(vBool())), "IS NOT FALSE(?0.bool0)");
+    checkSimplify3(not(isFalse(vBool()))
+        , "IS NOT FALSE(?0.bool0)"
+        , "IS NOT FALSE(?0.bool0)"
+        , "?0.bool0");
     // "NOT(IS TRUE(x))" => "IS NOT TRUE(x)"
     checkSimplify(not(isTrue(vBool())), "IS NOT TRUE(?0.bool0)");
     // "NOT(IS NULL(x))" => "IS NOT NULL(x)"
@@ -2553,14 +2556,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "IS TRUE(?0.bool0)",
         "?0.bool0"
     );
-  }
-
-  /** Unit test for
-   * <a href="https://issues.apache.org/jira/browse/CALCITE-2842">[CALCITE-2842]
-   * Computing digest of IN expressions leads to Exceptions</a>. */
-  @Test public void testInDigest() {
-    RexNode e = in(vInt(), literal(1), literal(2));
-    assertThat(e.toString(), is("IN(?0.int0, 1, 2)"));
   }
 
 }
