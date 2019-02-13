@@ -1730,7 +1730,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
    * <a href="https://issues.apache.org/jira/browse/CALCITE-2840">[CALCITE-2840]
    * Simplification should use more specific UnknownAs modes during simplification</a>. */
   @Test public void testNestedAndSimplification() {
-    // to have the correct mode for the AND at the bottom; both the OR and AND parent should retain the UnknownAs mode
+    // to have the correct mode for the AND at the bottom,
+    // both the OR and AND parent should retain the UnknownAs mode
     checkSimplify2(
         and(
             eq(vInt(2), literal(2)),
