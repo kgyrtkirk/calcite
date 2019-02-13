@@ -1726,23 +1726,24 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "false");
   }
 
-  @Test public void testSimplifyAnd4() {
+  /** Unit test for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-2840">[CALCITE-2840]
+   * Simplification should use more specific UnknownAs modes during simplification</a>. */
+  @Test public void testNestedAndSimplification() {
+    // to have the correct mode for the AND at the bottom; both the OR and AND parent should retain the UnknownAs mode
     checkSimplify2(
         and(
             eq(vInt(2), literal(2)),
             or(
                 eq(vInt(3), literal(3)),
                 and(
-                ge(vInt(), literal(1)),
+                    ge(vInt(), literal(1)),
                     le(vInt(), literal(1))))),
         "AND(=(?0.int2, 2), OR(=(?0.int3, 3), AND(>=(?0.int0, 1), <=(?0.int0, 1))))",
         "AND(=(?0.int2, 2), OR(=(?0.int3, 3), =(?0.int0, 1)))"
 
     );
-
   }
-
-
 
   @Test public void fieldAccessEqualsHashCode() {
     assertEquals("vBool() instances should be equal", vBool(), vBool());
