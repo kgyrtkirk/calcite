@@ -2540,28 +2540,14 @@ public class RexProgramTest extends RexProgramBuilderBase {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
 
-  @Test public void testNotIntoCase() {
+  @Test public void testIsNullRecursion() {
+    // make sure that simplifcation is visiting below isX expressions
     checkSimplify(
-        not(
-            case_(
-                isTrue(vBool()), vBool(1),
-                vBool(2))),
-        "CASE(IS TRUE(?0.bool0), NOT(?0.bool1), NOT(?0.bool2))");
-  }
-
-  @Test public void testNotRecursion() {
-    checkSimplify(
-        not(coalesce(nullBool, trueLiteral)),
+        isNull(coalesce(nullBool, trueLiteral)),
         "false");
   }
 
-  @Test public void testIsXRecursion() {
-    checkSimplify(
-        isFalse(coalesce(nullBool, trueLiteral)),
-        "false");
-  }
-
-  @Test public void testIsXRecursion2() {
+  @Test public void testIsTrueRelaxation() {
     checkSimplify2(
         isTrue(vBool()),
         "IS TRUE(?0.bool0)",
