@@ -2390,10 +2390,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // "NOT(false)" => "true"
     checkSimplify(not(falseLiteral), "true");
     // "NOT(IS FALSE(x))" => "IS NOT FALSE(x)"
-    checkSimplify3(not(isFalse(vBool()))
-        , "IS NOT FALSE(?0.bool0)"
-        , "IS NOT FALSE(?0.bool0)"
-        , "?0.bool0");
+    checkSimplify3(not(isFalse(vBool())),
+        "IS NOT FALSE(?0.bool0)", "IS NOT FALSE(?0.bool0)", "?0.bool0");
     // "NOT(IS TRUE(x))" => "IS NOT TRUE(x)"
     checkSimplify(not(isTrue(vBool())), "IS NOT TRUE(?0.bool0)");
     // "NOT(IS NULL(x))" => "IS NOT NULL(x)"
