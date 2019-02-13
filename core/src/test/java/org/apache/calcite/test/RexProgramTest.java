@@ -2550,7 +2550,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "false");
   }
 
-  @Test public void testIsTrueRelaxation() {
+  @Test public void testRedundantIsTrue() {
     checkSimplify2(
         isTrue(vBool()),
         "IS TRUE(?0.bool0)",

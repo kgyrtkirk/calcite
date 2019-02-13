@@ -496,7 +496,6 @@ public class RexSimplify {
 
   private RexNode simplifyIs(RexCall call, RexUnknownAs unknownAs) {
     final SqlKind kind = call.getKind();
-    
     final RexNode argument = call.getOperands().get(0);
     if (kind == SqlKind.IS_TRUE && unknownAs == RexUnknownAs.FALSE) {
       return simplify(argument, unknownAs);
@@ -504,10 +503,7 @@ public class RexSimplify {
     if (kind == SqlKind.IS_NOT_FALSE && unknownAs == RexUnknownAs.TRUE) {
       return simplify(argument, unknownAs);
     }
-
     final RexNode a = simplify(call.getOperands().get(0), RexUnknownAs.UNKNOWN);
-
-
     final RexNode pred = simplifyIsPredicate(kind, a);
     if (pred != null) {
       return pred;
