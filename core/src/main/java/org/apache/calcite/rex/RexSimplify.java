@@ -320,6 +320,57 @@ public class RexSimplify {
       }
     }
 
+    if (o0.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
+      Comparison cmp = Comparison.of(e, true);
+      if (cmp != null) {
+        if (cmp.literal.isAlwaysTrue()) {
+          switch (cmp.kind) {
+          case GREATER_THAN_OR_EQUAL:
+          case EQUALS: // x=true
+            return cmp.ref;
+          case LESS_THAN:
+          case NOT_EQUALS: // x!=true
+            return rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref);
+          case GREATER_THAN:
+            /* this is false, but could be null if x is null */
+            if (!cmp.ref.getType().isNullable()) {
+              return rexBuilder.makeLiteral(false);
+            }
+            break;
+          case LESS_THAN_OR_EQUAL:
+            /* this is true, but could be null if x is null */
+            if (!cmp.ref.getType().isNullable()) {
+              return rexBuilder.makeLiteral(true);
+            }
+            break;
+          }
+        }
+        if (cmp.literal.isAlwaysFalse()) {
+          switch (cmp.kind) {
+          case EQUALS:
+          case LESS_THAN_OR_EQUAL:
+            return rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref);
+          case NOT_EQUALS:
+          case GREATER_THAN:
+            return cmp.ref;
+          case GREATER_THAN_OR_EQUAL:
+            /* this is true, but could be null if x is null */
+            if (!cmp.ref.getType().isNullable()) {
+              return rexBuilder.makeLiteral(true);
+            }
+            break;
+          case LESS_THAN:
+            /* this is false, but could be null if x is null */
+            if (!cmp.ref.getType().isNullable()) {
+              return rexBuilder.makeLiteral(false);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+
     // Simplify "<literal1> <op> <literal2>"
     // For example, "1 = 2" becomes FALSE;
     // "1 != 1" becomes FALSE;
@@ -1919,8 +1970,15 @@ public class RexSimplify {
       this.literal = Objects.requireNonNull(literal);
     }
 
-    /** Creates a comparison, or returns null. */
+    /** Creates a comparison, or returns null. 
+     * @param b */
     static Comparison of(RexNode e) {
+      return of(e, false);
+    }
+
+    /** Creates a comparison, or returns null. 
+     * @param b */
+    static Comparison of(RexNode e, boolean nonstrict) {
       switch (e.getKind()) {
       case EQUALS:
       case NOT_EQUALS:
@@ -1933,13 +1991,13 @@ public class RexSimplify {
         final RexNode right = call.getOperands().get(1);
         switch (right.getKind()) {
         case LITERAL:
-          if (RexUtil.isReferenceOrAccess(left, true)) {
+          if (nonstrict || RexUtil.isReferenceOrAccess(left, true)) {
             return new Comparison(left, e.getKind(), (RexLiteral) right);
           }
         }
         switch (left.getKind()) {
         case LITERAL:
-          if (RexUtil.isReferenceOrAccess(right, true)) {
+          if (nonstrict || RexUtil.isReferenceOrAccess(right, true)) {
             return new Comparison(right, e.getKind().reverse(),
                 (RexLiteral) left);
           }
