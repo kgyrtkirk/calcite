@@ -2540,11 +2540,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
 
-  @Test public void testInDigest() {
-    RexNode e = in(vInt(), literal(1), literal(2));
-    assertThat(e.toString(), is("IN(?0.int0, 1, 2)"));
-  }
-
   @Test public void testNotIntoCase() {
     checkSimplify(
         not(
@@ -2574,7 +2569,13 @@ public class RexProgramTest extends RexProgramBuilderBase {
     );
   }
 
+  /** Unit test for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-2842">[CALCITE-2842]
+   * Computing digest of IN expressions leads to Exceptions</a>. */
+  @Test public void testInDigest() {
+    RexNode e = in(vInt(), literal(1), literal(2));
+    assertThat(e.toString(), is("IN(?0.int0, 1, 2)"));
+  }
+
 }
-
-
 // End RexProgramTest.java
