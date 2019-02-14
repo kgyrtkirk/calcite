@@ -299,9 +299,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(program.normalize(rexBuilder, simplify).toString(),
         is("(expr#0..1=[{inputs}], expr#2=[+($t0, $t1)], expr#3=[1], "
             + "expr#4=[+($t0, $t3)], expr#5=[+($t2, $t4)], "
-            + "expr#6=[+($t0, $t4)], expr#7=[5], expr#8=[>($t4, $t7)], "
-            + "expr#9=[NOT($t8)], "
-            + "a=[$t5], b=[$t6], $condition=[$t9])"));
+            + "expr#6=[+($t0, $t4)], expr#7=[5], expr#8=[<=($t4, $t7)], "
+            + "a=[$t5], b=[$t6], $condition=[$t8])"));
   }
 
   /**
@@ -321,9 +320,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(program.normalize(rexBuilder, simplify).toString(),
         is("(expr#0..1=[{inputs}], expr#2=[+($t0, $t1)], expr#3=[1], "
             + "expr#4=[+($t0, $t3)], expr#5=[+($t2, $t4)], "
-            + "expr#6=[+($t0, $t4)], expr#7=[5], expr#8=[>($t4, $t7)], "
-            + "expr#9=[NOT($t8)], "
-            + "a=[$t5], b=[$t6], $condition=[$t9])"));
+            + "expr#6=[+($t0, $t4)], expr#7=[5], expr#8=[<=($t4, $t7)], "
+            + "a=[$t5], b=[$t6], $condition=[$t8])"));
   }
 
   /**
@@ -1791,7 +1789,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
             isTrue(vBool()), literal(1),
             isNotTrue(vBool()), literal(1),
             literal(2)),
-        "CASE(OR(IS TRUE(?0.bool0), IS NOT TRUE(?0.bool0)), 1, 2)");
+        "CASE(OR(?0.bool0, IS NOT TRUE(?0.bool0)), 1, 2)");
   }
 
   @Test public void testSimplifyCaseBranchesCollapse2() {
@@ -2401,7 +2399,8 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // "NOT(false)" => "true"
     checkSimplify(not(falseLiteral), "true");
     // "NOT(IS FALSE(x))" => "IS NOT FALSE(x)"
-    checkSimplify(not(isFalse(vBool())), "IS NOT FALSE(?0.bool0)");
+    checkSimplify3(not(isFalse(vBool())),
+        "IS NOT FALSE(?0.bool0)", "IS NOT FALSE(?0.bool0)", "?0.bool0");
     // "NOT(IS TRUE(x))" => "IS NOT TRUE(x)"
     checkSimplify(not(isTrue(vBool())), "IS NOT TRUE(?0.bool0)");
     // "NOT(IS NULL(x))" => "IS NOT NULL(x)"
@@ -2557,6 +2556,22 @@ public class RexProgramTest extends RexProgramBuilderBase {
   @Test public void testInDigest() {
     RexNode e = in(vInt(), literal(1), literal(2));
     assertThat(e.toString(), is("IN(?0.int0, 1, 2)"));
+  }
+  
+  
+  @Test public void testIsNullRecursion() {
+    // make sure that simplifcation is visiting below isX expressions
+    checkSimplify(
+        isNull(coalesce(nullBool, trueLiteral)),
+        "false");
+  }
+
+  @Test public void testRedundantIsTrue() {
+    checkSimplify2(
+        isTrue(vBool()),
+        "IS TRUE(?0.bool0)",
+        "?0.bool0"
+    );
   }
 
 }
