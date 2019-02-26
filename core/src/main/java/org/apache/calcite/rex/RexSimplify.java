@@ -435,6 +435,7 @@ public class RexSimplify {
   /**
    * Simplifies a conjunction of boolean expressions.
    */
+  @Deprecated // to be removed before 2.0
   public RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
     return simplifyAnds(nodes, defaultUnknownAs);
   }
@@ -1538,6 +1539,7 @@ public class RexSimplify {
 
   /** Simplifies OR(x, x) into x, and similar.
    * The simplified expression returns UNKNOWN values as is (not as FALSE). */
+  @Deprecated // to be removed before 2.0
   public RexNode simplifyOr(RexCall call) {
     return simplifyOr(call, UNKNOWN);
   }
@@ -1554,6 +1556,7 @@ public class RexSimplify {
   /** Simplifies a list of terms and combines them into an OR.
    * Modifies the list in place.
    * The simplified expression returns UNKNOWN values as is (not as FALSE). */
+  @Deprecated // to be removed before 2.0
   public RexNode simplifyOrs(List<RexNode> terms) {
     return simplifyOrs(terms, UNKNOWN);
   }
@@ -2175,6 +2178,7 @@ public class RexSimplify {
     list.set(index, newVal);
     return true;
   }
+
 }
 
 // End RexSimplify.java

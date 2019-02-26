@@ -576,7 +576,9 @@ public class RelBuilder {
    * {@code e AND TRUE} becomes {@code e};
    * {@code e AND e2 AND NOT e} becomes {@code e2}. */
   public RexNode and(Iterable<? extends RexNode> operands) {
-    return simplifier.simplifyAnds(operands);
+    RexNode expr =
+        getRexBuilder().makeCall(SqlStdOperatorTable.AND, ImmutableList.copyOf(operands));
+    return simplifier.simplify(expr);
   }
 
   /** Creates an OR. */
