@@ -228,8 +228,11 @@ public class RexSimplify {
    * yield UNKNOWN. (If the simplified expression has type BOOLEAN NOT NULL,
    * then of course it can only return FALSE.) */
   public RexNode simplifyUnknownAs(RexNode e, RexUnknownAs unknownAs) {
-    return verify(e, unknownAs,
-        simplifier -> simplifier.simplify(e, unknownAs));
+    final RexNode simplified = withParanoid(false).simplify(e, unknownAs);
+    if (paranoid) {
+      verify(e, simplified, unknownAs);
+    }
+    return simplified;
   }
 
   /** Internal method to simplify an expression.
@@ -1599,12 +1602,7 @@ public class RexSimplify {
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
 
-  private RexNode verify(RexNode before, RexUnknownAs unknownAs,
-      Function<RexSimplify, RexNode> simplifier) {
-    final RexNode simplified = simplifier.apply(withParanoid(false));
-    if (!paranoid) {
-      return simplified;
-    }
+  private void verify(RexNode before, RexNode simplified, RexUnknownAs unknownAs) {
     if (simplified.isAlwaysFalse()
         && before.isAlwaysTrue()) {
       throw new AssertionError("always true [" + before
@@ -1619,7 +1617,7 @@ public class RexSimplify {
     final RexAnalyzer foo1 = new RexAnalyzer(simplified, predicates);
     if (foo0.unsupportedCount > 0 || foo1.unsupportedCount > 0) {
       // Analyzer cannot handle this expression currently
-      return simplified;
+      return;
     }
     if (!foo0.variables.containsAll(foo1.variables)) {
       throw new AssertionError("variable mismatch: "
@@ -1660,7 +1658,7 @@ public class RexSimplify {
             + ", and " + simplified + " yielded " + v1);
       }
     }
-    return simplified;
+    return;
   }
 
   private RexNode simplifyCast(RexCall e) {
