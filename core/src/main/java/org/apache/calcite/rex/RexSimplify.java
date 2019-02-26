@@ -1573,7 +1573,7 @@ public class RexSimplify {
 
   private void ensureParanoidOff() {
     if (paranoid) {
-      throw new UnsupportedOperationException("Paranoid is not supported for deprecated methods");
+      throw new UnsupportedOperationException("Paranoid is not supported for this method");
     }
   }
 
