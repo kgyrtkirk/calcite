@@ -437,6 +437,7 @@ public class RexSimplify {
    */
   @Deprecated // to be removed before 2.0
   public RexNode simplifyAnds(Iterable<? extends RexNode> nodes) {
+    ensureParanoidOff();
     return simplifyAnds(nodes, defaultUnknownAs);
   }
 
@@ -1135,6 +1136,7 @@ public class RexSimplify {
 
   @Deprecated // to be removed before 2.0
   public RexNode simplifyAnd(RexCall e) {
+    ensureParanoidOff();
     return simplifyAnd(e, defaultUnknownAs);
   }
 
@@ -1541,6 +1543,7 @@ public class RexSimplify {
    * The simplified expression returns UNKNOWN values as is (not as FALSE). */
   @Deprecated // to be removed before 2.0
   public RexNode simplifyOr(RexCall call) {
+    ensureParanoidOff();
     return simplifyOr(call, UNKNOWN);
   }
 
