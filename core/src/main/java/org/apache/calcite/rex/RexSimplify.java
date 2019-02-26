@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 
 import static org.apache.calcite.rex.RexUnknownAs.FALSE;
 import static org.apache.calcite.rex.RexUnknownAs.UNKNOWN;
@@ -239,7 +238,7 @@ public class RexSimplify {
    *
    * <p>Unlike the public {@link #simplify(RexNode)}
    * and {@link #simplifyUnknownAsFalse(RexNode)} methods,
-   * never calls {@link #verify(RexNode, RexUnknownAs, Function)}.
+   * never calls {@link #verify(RexNode, RexNode, RexUnknownAs)}.
    * Verify adds an overhead that is only acceptable for a top-level call.
    */
   RexNode simplify(RexNode e, RexUnknownAs unknownAs) {
@@ -317,6 +316,7 @@ public class RexSimplify {
   private <C extends Comparable<C>> RexNode simplifyComparison(RexCall e,
       RexUnknownAs unknownAs, Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
+    // UNKNOWN mode is warranted: false = null
     simplifyList(operands, UNKNOWN);
 
     // Simplify "x <op> x"
@@ -1570,7 +1570,7 @@ public class RexSimplify {
 
   private void ensureParanoidOff() {
     if (paranoid) {
-      throw new UnsupportedOperationException("Paranoid is not supported for deprecated methods");
+      throw new UnsupportedOperationException("Paranoid is not supported for this method");
     }
   }
 
@@ -1658,7 +1658,6 @@ public class RexSimplify {
             + ", and " + simplified + " yielded " + v1);
       }
     }
-    return;
   }
 
   private RexNode simplifyCast(RexCall e) {
