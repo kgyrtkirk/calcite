@@ -1558,17 +1558,19 @@ public class RexSimplify {
    * The simplified expression returns UNKNOWN values as is (not as FALSE). */
   @Deprecated // to be removed before 2.0
   public RexNode simplifyOrs(List<RexNode> terms) {
+    ensureParanoidOff();
     return simplifyOrs(terms, UNKNOWN);
+  }
+
+  private void ensureParanoidOff() {
+    if (paranoid) {
+      throw new UnsupportedOperationException("Paranoid is not supported for deprecated methods");
+    }
   }
 
   /** Simplifies a list of terms and combines them into an OR.
    * Modifies the list in place. */
   private RexNode simplifyOrs(List<RexNode> terms, RexUnknownAs unknownAs) {
-    if (paranoid) {
-      final RexNode before = RexUtil.composeDisjunction(rexBuilder, terms);
-      return verify(before, unknownAs,
-          simplifier -> simplifier.simplifyOrs(terms, unknownAs));
-    }
     for (int i = 0; i < terms.size(); i++) {
       final RexNode term = simplify(terms.get(i), unknownAs);
       switch (term.getKind()) {
