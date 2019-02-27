@@ -339,6 +339,7 @@ public class RexSimplify {
   private <C extends Comparable<C>> RexNode simplifyComparison(RexCall e,
       RexUnknownAs unknownAs, Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
+    // UNKNOWN mode is warranted: false = null
     simplifyList(operands, UNKNOWN);
 
     // Simplify "x <op> x"
