@@ -1689,13 +1689,43 @@ public class RexProgramTest extends RexProgramBuilderBase {
     final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
 
 
-
+    checkSimplify2(
+        and(eq(aRef, literal1),
+            nullInt),
+        "AND(=(?0.a, 1), null:INTEGER)",
+        "false");
     checkSimplify2(
         and(trueLiteral,
             nullBool),
         "null:BOOLEAN",
         "false");
+    checkSimplify(
+        and(falseLiteral,
+            nullBool),
+        "false");
 
+    checkSimplify2(
+        and(nullBool,
+            eq(aRef, literal1)),
+        "AND(null, =(?0.a, 1))",
+        "false");
+
+    checkSimplify3(
+        or(eq(aRef, literal1),
+            nullBool),
+        "OR(=(?0.a, 1), null)",
+        "=(?0.a, 1)",
+        "true");
+    checkSimplify(
+        or(trueLiteral,
+            nullBool),
+        "true");
+    checkSimplify3(
+        or(falseLiteral,
+            nullBool),
+        "null:BOOLEAN",
+        "false",
+        "true");
   }
 
   @Test public void testSimplifyAnd3() {
