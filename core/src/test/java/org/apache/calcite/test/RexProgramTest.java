@@ -1679,6 +1679,18 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify(e, "OR(<=(?0.bool1, true), ?0.bool1)");
   }
 
+  @Test public void testSimplifyXUnknown() {
+
+    checkSimplify3(
+        gt(case_(trueLiteral, trueLiteral, falseLiteral),
+            case_(vBool(), trueLiteral, falseLiteral)),
+        "IS NOT TRUE(?0.bool0)",
+        "IS NOT TRUE(?0.bool0)",
+        "NOT(?0.bool0)"
+
+    );
+  }
+
   @Test public void testSimplifyUnknown() {
     final RelDataType intType = typeFactory.createSqlType(SqlTypeName.INTEGER);
     final RelDataType rowType = typeFactory.builder()

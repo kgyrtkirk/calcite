@@ -339,11 +339,7 @@ public class RexSimplify {
   private <C extends Comparable<C>> RexNode simplifyComparison(RexCall e,
       RexUnknownAs unknownAs, Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
-    if (operands.get(0).getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-      simplifyList(operands, unknownAs);
-    } else {
-      simplifyList(operands, UNKNOWN);
-    }
+    simplifyList(operands, UNKNOWN);
 
     // Simplify "x <op> x"
     final RexNode o0 = operands.get(0);
