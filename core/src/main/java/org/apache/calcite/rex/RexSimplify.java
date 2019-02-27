@@ -339,7 +339,11 @@ public class RexSimplify {
   private <C extends Comparable<C>> RexNode simplifyComparison(RexCall e,
       RexUnknownAs unknownAs, Class<C> clazz) {
     final List<RexNode> operands = new ArrayList<>(e.operands);
-    simplifyList(operands, UNKNOWN);
+    if (operands.get(0).getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
+      simplifyList(operands, unknownAs);
+    } else {
+      simplifyList(operands, UNKNOWN);
+    }
 
     // Simplify "x <op> x"
     final RexNode o0 = operands.get(0);
@@ -362,7 +366,7 @@ public class RexSimplify {
     }
 
     if (o0.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-      Comparison cmp = Comparison.of(e, node -> true);
+      Comparison cmp = Comparison.of(rexBuilder.makeCall(e.getOperator(), o0, o1), node -> true);
       if (cmp != null) {
         if (cmp.literal.isAlwaysTrue()) {
           switch (cmp.kind) {
@@ -371,7 +375,7 @@ public class RexSimplify {
             return cmp.ref;
           case LESS_THAN:
           case NOT_EQUALS: // x!=true
-            return rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref);
+            return simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref), unknownAs);
           case GREATER_THAN:
             /* this is false, but could be null if x is null */
             if (!cmp.ref.getType().isNullable()) {
@@ -390,7 +394,7 @@ public class RexSimplify {
           switch (cmp.kind) {
           case EQUALS:
           case LESS_THAN_OR_EQUAL:
-            return rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref);
+            return simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref), unknownAs);
           case NOT_EQUALS:
           case GREATER_THAN:
             return cmp.ref;

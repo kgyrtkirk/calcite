@@ -1557,11 +1557,12 @@ public class RexProgramTest extends RexProgramBuilderBase {
         ">(?0.a, 10)");
 
     // "null AND NOT(null OR x)" => "null AND NOT(x)"
-    checkSimplify2(
+    checkSimplify3(
         and(nullBool,
             not(or(nullBool, vBool()))),
         "AND(null, NOT(?0.bool0))",
-        "false");
+        "false",
+        "NOT(?0.bool0)");
 
     // "x1 AND x2 AND x3 AND NOT(x1) AND NOT(x2) AND NOT(x0)" =>
     // "x3 AND null AND x1 IS NULL AND x2 IS NULL AND NOT(x0)"
@@ -1694,21 +1695,23 @@ public class RexProgramTest extends RexProgramBuilderBase {
             nullInt),
         "AND(=(?0.a, 1), null:INTEGER)",
         "false");
-    checkSimplify2(
+    checkSimplify3(
         and(trueLiteral,
             nullBool),
         "null:BOOLEAN",
-        "false");
+        "false",
+        "true");
     checkSimplify(
         and(falseLiteral,
             nullBool),
         "false");
 
-    checkSimplify2(
+    checkSimplify3(
         and(nullBool,
             eq(aRef, literal1)),
         "AND(null, =(?0.a, 1))",
-        "false");
+        "false",
+        "=(?0.a, 1)");
 
     checkSimplify3(
         or(eq(aRef, literal1),
@@ -2493,9 +2496,10 @@ public class RexProgramTest extends RexProgramBuilderBase {
     // "x = x AND NOT (y >= y)"
     //    -> "x = x AND y < y" (treating unknown as unknown)
     //    -> false (treating unknown as false)
-    checkSimplify2(and(eq(vInt(1), vInt(1)), not(ge(vInt(2), vInt(2)))),
+    checkSimplify3(and(eq(vInt(1), vInt(1)), not(ge(vInt(2), vInt(2)))),
         "AND(=(?0.int1, ?0.int1), <(?0.int2, ?0.int2))",
-        "false");
+        "false",
+        "AND(=(?0.int1, ?0.int1), IS NULL(?0.int2))");
 
     // "NOT(x = x AND NOT (y = y))"
     //   -> "OR(x <> x, y >= y)" (treating unknown as unknown)
