@@ -41,6 +41,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 
+import java.nio.channels.IllegalSelectorException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +52,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.apache.calcite.rex.RexUnknownAs.FALSE;
@@ -69,6 +71,7 @@ public class RexSimplify {
   final boolean predicateElimination;
   private final RexExecutor executor;
   private final Strong strong;
+  private Optional<IRexNodeTracker> tracker;
 
   /**
    * Creates a RexSimplify.
@@ -79,13 +82,13 @@ public class RexSimplify {
    */
   public RexSimplify(RexBuilder rexBuilder, RelOptPredicateList predicates,
       RexExecutor executor) {
-    this(rexBuilder, predicates, UNKNOWN, true, false, executor);
+    this(rexBuilder, predicates, UNKNOWN, true, false, executor, RexNodeTracker.NOTRACKER);
   }
 
   /** Internal constructor. */
   private RexSimplify(RexBuilder rexBuilder, RelOptPredicateList predicates,
       RexUnknownAs defaultUnknownAs, boolean predicateElimination,
-      boolean paranoid, RexExecutor executor) {
+      boolean paranoid, RexExecutor executor, Optional<IRexNodeTracker> tracker) {
     this.rexBuilder = Objects.requireNonNull(rexBuilder);
     this.predicates = Objects.requireNonNull(predicates);
     this.defaultUnknownAs = Objects.requireNonNull(defaultUnknownAs);
@@ -93,20 +96,21 @@ public class RexSimplify {
     this.paranoid = paranoid;
     this.executor = Objects.requireNonNull(executor);
     this.strong = new Strong();
+    this.tracker = tracker;
   }
 
   @Deprecated // to be removed before 2.0
   public RexSimplify(RexBuilder rexBuilder, boolean unknownAsFalse,
       RexExecutor executor) {
     this(rexBuilder, RelOptPredicateList.EMPTY,
-        RexUnknownAs.falseIf(unknownAsFalse), true, false, executor);
+        RexUnknownAs.falseIf(unknownAsFalse), true, false, executor, RexNodeTracker.NOTRACKER);
   }
 
   @Deprecated // to be removed before 2.0
   public RexSimplify(RexBuilder rexBuilder, RelOptPredicateList predicates,
       boolean unknownAsFalse, RexExecutor executor) {
     this(rexBuilder, predicates, RexUnknownAs.falseIf(unknownAsFalse), true,
-        false, executor);
+        false, executor, RexNodeTracker.NOTRACKER);
   }
 
   //~ Methods ----------------------------------------------------------------
@@ -122,7 +126,7 @@ public class RexSimplify {
     return defaultUnknownAs == this.defaultUnknownAs
         ? this
         : new RexSimplify(rexBuilder, predicates, defaultUnknownAs,
-            predicateElimination, paranoid, executor);
+          predicateElimination, paranoid, executor, tracker);
   }
 
   /** Returns a RexSimplify the same as this but with a specified
@@ -131,7 +135,7 @@ public class RexSimplify {
     return predicates == this.predicates
         ? this
         : new RexSimplify(rexBuilder, predicates, defaultUnknownAs,
-            predicateElimination, paranoid, executor);
+          predicateElimination, paranoid, executor, tracker);
   }
 
   /** Returns a RexSimplify the same as this but which verifies that
@@ -143,7 +147,18 @@ public class RexSimplify {
     return paranoid == this.paranoid
         ? this
         : new RexSimplify(rexBuilder, predicates, defaultUnknownAs,
-            predicateElimination, paranoid, executor);
+          predicateElimination, paranoid, executor, tracker);
+  }
+
+  private RexSimplify withTracker(Optional<IRexNodeTracker> tracker) {
+    if (!tracker.isPresent()) {
+      return this;
+    }
+    if (this.tracker.isPresent()) {
+      throw new IllegalStateException("2 trackers at the same time is not supported");
+    }
+    return new RexSimplify(rexBuilder, predicates, defaultUnknownAs,
+        predicateElimination, paranoid, executor, tracker);
   }
 
   /** Returns a RexSimplify the same as this but with a specified
@@ -156,7 +171,7 @@ public class RexSimplify {
     return predicateElimination == this.predicateElimination
         ? this
         : new RexSimplify(rexBuilder, predicates, defaultUnknownAs,
-            predicateElimination, paranoid, executor);
+          predicateElimination, paranoid, executor, tracker);
   }
 
   /** Simplifies a boolean expression, always preserving its type and its
@@ -227,7 +242,11 @@ public class RexSimplify {
    * yield UNKNOWN. (If the simplified expression has type BOOLEAN NOT NULL,
    * then of course it can only return FALSE.) */
   public RexNode simplifyUnknownAs(RexNode e, RexUnknownAs unknownAs) {
-    final RexNode simplified = withParanoid(false).simplify(e, unknownAs);
+    RexSimplify simplifier = withParanoid(false);
+    if(paranoid && !tracker.isPresent()) {
+      simplifier.withTracker(Optional.of(RexNodeTracker.newVisitationTracker()));
+    }
+    final RexNode simplified = simplifier.simplify(e, unknownAs);
     if (paranoid) {
       verify(e, simplified, unknownAs);
     }
@@ -242,6 +261,9 @@ public class RexSimplify {
    * Verify adds an overhead that is only acceptable for a top-level call.
    */
   RexNode simplify(RexNode e, RexUnknownAs unknownAs) {
+    if (tracker.isPresent()) {
+      tracker.get().nodeVisited(e);
+    }
     if (strong.isNull(e)) {
       // Only boolean NULL (aka UNKNOWN) can be converted to FALSE. Even in
       // unknownAs=FALSE mode, we must not convert a NULL integer (say) to FALSE
@@ -875,6 +897,8 @@ public class RexSimplify {
 
     if (call.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
       final RexNode result = simplifyBooleanCase(rexBuilder, branches, unknownAs, caseType);
+      if (tracker.isPresent())
+        tracker.get().allowRevisitSubTree(result);
       if (result != null) {
         if (sameTypeOrNarrowsNullability(caseType, result.getType())) {
           return simplify(result, unknownAs);
@@ -1605,7 +1629,53 @@ public class RexSimplify {
     return RexUtil.composeDisjunction(rexBuilder, terms);
   }
 
+  static interface IRexNodeTracker {
+
+    void nodeVisited(RexNode e);
+
+    void allowRevisitSubTree(RexNode result);
+
+  }
+
+  static class RexNodeTracker implements IRexNodeTracker {
+
+    public static final Optional<IRexNodeTracker> NOTRACKER = Optional.empty();
+
+    public static IRexNodeTracker newVisitationTracker() {
+      return new RexNodeTracker();
+    }
+
+    Map<RexNode, Exception> visited = new HashMap<>();
+
+    @Override public void nodeVisited(RexNode e) {
+      if (visited.containsKey(e)) {
+        Exception o = visited.get(e);
+
+        o.printStackTrace();
+        IllegalStateException illegalStateException = new IllegalStateException("re-visit");
+        illegalStateException.addSuppressed(o);
+        throw illegalStateException;
+      }
+
+      visited.put(e, new Exception("First-visit location"));
+    }
+
+    @Override public void allowRevisitSubTree(RexNode result) {
+      visited.remove(result);
+      if (result instanceof RexCall) {
+        RexCall rexCall = (RexCall) result;
+        for (RexNode iterable_element : rexCall.getOperands()) {
+          allowRevisitSubTree(iterable_element);
+        }
+      }
+    }
+  }
+
   private void verify(RexNode before, RexNode simplified, RexUnknownAs unknownAs) {
+    Optional<IRexNodeTracker> tracker = Optional.empty();
+    if (paranoid) {
+      tracker = Optional.of(RexNodeTracker.newVisitationTracker());
+    }
     if (simplified.isAlwaysFalse()
         && before.isAlwaysTrue()) {
       throw new AssertionError("always true [" + before
