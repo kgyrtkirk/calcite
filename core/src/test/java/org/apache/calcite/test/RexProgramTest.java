@@ -61,6 +61,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.nio.channels.IllegalSelectorException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -179,16 +180,16 @@ public class RexProgramTest extends RexProgramBuilderBase {
   private void checkSimplify3_(RexNode node, String expected,
       String expectedFalse, String expectedTrue) {
     final RexNode simplified =
-        simplify.simplifyUnknownAs(node, RexUnknownAs.UNKNOWN);
+        simplifysimplifyUnknownAs(node, RexUnknownAs.UNKNOWN);
     assertThat("simplify(unknown as unknown): " + node,
         simplified.toString(), equalTo(expected));
     if (node.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
       final RexNode simplified2 =
-          simplify.simplifyUnknownAs(node, RexUnknownAs.FALSE);
+          simplifysimplifyUnknownAs(node, RexUnknownAs.FALSE);
       assertThat("simplify(unknown as false): " + node,
           simplified2.toString(), equalTo(expectedFalse));
       final RexNode simplified3 =
-          simplify.simplifyUnknownAs(node, RexUnknownAs.TRUE);
+          simplifysimplifyUnknownAs(node, RexUnknownAs.TRUE);
       assertThat("simplify(unknown as true): " + node,
           simplified3.toString(), equalTo(expectedTrue));
     } else {
@@ -197,6 +198,16 @@ public class RexProgramTest extends RexProgramBuilderBase {
       assertThat("node type is not BOOLEAN, so <<expectedTrue>> should match <<expected>>",
           expectedTrue, is(expected));
     }
+  }
+
+  private RexNode simplifysimplifyUnknownAs(RexNode node, RexUnknownAs unknownAs) {
+    RexNode result = simplify.simplifyUnknownAs(node, unknownAs);
+    RexNode result2 = simplify.simplifyUnknownAs(result, unknownAs);
+    assertThat(result, is(result2));
+    if (result != result2) {
+      throw new IllegalSelectorException();
+    }
+    return result;
   }
 
   private void checkSimplifyFilter(RexNode node, String expected) {
@@ -1678,43 +1689,13 @@ public class RexProgramTest extends RexProgramBuilderBase {
     final RexLiteral literal1 = rexBuilder.makeExactLiteral(BigDecimal.ONE);
 
 
-    checkSimplify2(
-        and(eq(aRef, literal1),
-            nullInt),
-        "AND(=(?0.a, 1), null:INTEGER)",
-        "false");
+
     checkSimplify2(
         and(trueLiteral,
             nullBool),
         "null:BOOLEAN",
         "false");
-    checkSimplify(
-        and(falseLiteral,
-            nullBool),
-        "false");
 
-    checkSimplify2(
-        and(nullBool,
-            eq(aRef, literal1)),
-        "AND(null, =(?0.a, 1))",
-        "false");
-
-    checkSimplify3(
-        or(eq(aRef, literal1),
-            nullBool),
-        "OR(=(?0.a, 1), null)",
-        "=(?0.a, 1)",
-        "true");
-    checkSimplify(
-        or(trueLiteral,
-            nullBool),
-        "true");
-    checkSimplify3(
-        or(falseLiteral,
-            nullBool),
-        "null:BOOLEAN",
-        "false",
-        "true");
   }
 
   @Test public void testSimplifyAnd3() {
