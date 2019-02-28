@@ -1168,17 +1168,18 @@ public class RexSimplify {
   }
 
   RexNode simplifyAnd(RexCall e, RexUnknownAs unknownAs) {
-    final List<RexNode> terms = new ArrayList<>();
-    final List<RexNode> notTerms = new ArrayList<>();
-    RelOptUtil.decomposeConjunction(e, terms, notTerms);
+    List<RexNode> operands = RelOptUtil.conjunctions(e);
 
     if (unknownAs == FALSE && predicateElimination) {
-      simplifyAndTerms(terms, FALSE);
+      simplifyAndTerms(operands, FALSE);
     } else {
-      simplifyList(terms, unknownAs);
+      simplifyList(operands, unknownAs);
     }
 
-    simplifyList(notTerms, unknownAs.negate());
+    final List<RexNode> terms = new ArrayList<>();
+    final List<RexNode> notTerms = new ArrayList<>();
+
+    RelOptUtil.decomposeConjunction(e, terms, notTerms);
 
     switch (unknownAs) {
     case FALSE:
