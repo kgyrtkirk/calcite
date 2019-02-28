@@ -347,7 +347,7 @@ public class RexSimplify {
     }
 
     if (o0.getType().getSqlTypeName() == SqlTypeName.BOOLEAN) {
-      Comparison cmp = Comparison.of(e, node -> true);
+      Comparison cmp = Comparison.of(rexBuilder.makeCall(e.getOperator(), o0, o1), node -> true);
       if (cmp != null) {
         if (cmp.literal.isAlwaysTrue()) {
           switch (cmp.kind) {
@@ -356,7 +356,7 @@ public class RexSimplify {
             return cmp.ref;
           case LESS_THAN:
           case NOT_EQUALS: // x!=true
-            return rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref);
+            return simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref), unknownAs);
           case GREATER_THAN:
             /* this is false, but could be null if x is null */
             if (!cmp.ref.getType().isNullable()) {
@@ -375,7 +375,7 @@ public class RexSimplify {
           switch (cmp.kind) {
           case EQUALS:
           case LESS_THAN_OR_EQUAL:
-            return rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref);
+            return simplify(rexBuilder.makeCall(SqlStdOperatorTable.NOT, cmp.ref), unknownAs);
           case NOT_EQUALS:
           case GREATER_THAN:
             return cmp.ref;
@@ -468,7 +468,6 @@ public class RexSimplify {
   }
 
   private void simplifyList(List<RexNode> terms, RexUnknownAs unknownAs) {
-    unknownAs = UNKNOWN; // TODO
     for (int i = 0; i < terms.size(); i++) {
       terms.set(i, simplify(terms.get(i), unknownAs));
     }
@@ -1151,17 +1150,20 @@ public class RexSimplify {
   }
 
   RexNode simplifyAnd(RexCall e, RexUnknownAs unknownAs) {
-    final List<RexNode> terms = new ArrayList<>();
-    final List<RexNode> notTerms = new ArrayList<>();
-    RelOptUtil.decomposeConjunction(e, terms, notTerms);
+    List<RexNode> operands = RelOptUtil.conjunctions(e);
 
     if (unknownAs == FALSE && predicateElimination) {
-      simplifyAndTerms(terms, FALSE);
+      simplifyAndTerms(operands, FALSE);
     } else {
-      simplifyList(terms, unknownAs);
+      simplifyList(operands, unknownAs);
     }
 
-    simplifyList(notTerms, unknownAs.negate());
+    final List<RexNode> terms = new ArrayList<>();
+    final List<RexNode> notTerms = new ArrayList<>();
+
+    for (RexNode o : operands) {
+      RelOptUtil.decomposeConjunction(o, terms, notTerms);
+    }
 
     switch (unknownAs) {
     case FALSE:
