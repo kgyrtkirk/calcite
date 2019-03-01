@@ -1451,9 +1451,7 @@ public class RexSimplify {
     }
     // Add the NOT disjunctions back in.
     for (RexNode notDisjunction : notTerms) {
-      final RexNode call =
-          rexBuilder.makeCall(SqlStdOperatorTable.NOT, notDisjunction);
-      terms.add(simplify(call, FALSE));
+      terms.add(rexBuilder.makeCall(SqlStdOperatorTable.NOT, notDisjunction));
     }
     // The negated terms: only deterministic expressions
     for (RexNode negatedTerm : negatedTerms) {
