@@ -795,7 +795,6 @@ public class RexSimplify {
       return rexBuilder.makeNullLiteral(call.type);
     case 1:
       return operands.get(0);
-    //      return simplify(rexBuilder.makeCast(call.getType(), operands.get(0), true), UNKNOWN);
     default:
       if (operands.equals(call.operands)) {
         return call;
