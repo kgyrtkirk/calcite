@@ -1564,7 +1564,11 @@ SqlNode SelectItem() :
 {
     e = SelectExpression()
     [
-        [ <AS> ]
+        [ <AS> ] {
+            if(e instanceof SqlIdentifier && (( SqlIdentifier)e).isStar()) {
+	            throw SqlUtil.newContextException(getPos(), RESOURCE.aliasedStarNotAllowed());
+            }
+        }
         id = SimpleIdentifier() {
             e = SqlStdOperatorTable.AS.createCall(span().end(e), e, id);
         }

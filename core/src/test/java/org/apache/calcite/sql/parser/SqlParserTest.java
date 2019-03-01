@@ -18,6 +18,7 @@ package org.apache.calcite.sql.parser;
 
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
+import org.apache.calcite.runtime.CalciteResource;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlSetOption;
@@ -716,11 +717,12 @@ public class SqlParserTest {
         "Lexical error at line 1, column 10\\.  Encountered: \"#\" \\(35\\), after : \"\"");
   }
 
-  // TODO: should fail in parser
   @Test public void testStarAsFails() {
-    sql("select * as x from emp")
-        .ok("SELECT * AS `X`\n"
-            + "FROM `EMP`");
+    checkFails("select emp.* ^as^ x from emp", "Aliasing STAR is not allowed");
+  }
+
+  @Test public void testCatalogSchemaTableAsFails() {
+    checkFails("select cat.schem.emp.* ^as^ x from cat.schem.emp", "Aliasing STAR is not allowed");
   }
 
   @Test public void testDerivedColumnList() {
@@ -2479,13 +2481,6 @@ public class SqlParserTest {
     sql("select cat.schem.emp.* from cat.schem.emp")
         .ok("SELECT `CAT`.`SCHEM`.`EMP`.*\n"
                 + "FROM `CAT`.`SCHEM`.`EMP`");
-  }
-
-  @Test public void testAliasedStar() {
-    // OK in parser; validator will give error
-    sql("select emp.* as foo from emp")
-        .ok("SELECT `EMP`.* AS `FOO`\n"
-                + "FROM `EMP`");
   }
 
   @Test public void testNotExists() {
