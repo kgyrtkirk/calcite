@@ -1655,8 +1655,7 @@ public class RexSimplify {
         RexNode t = (RexNode) defaultEdge.target;
         if (t.equals(node)) {
           // all nested calls are redundant
-          // FIXME change sign; and fix it
-          return +(outEdges.size() - 1) * weight0(node);
+          return -(outEdges.size() - 1) * weight0(node);
         } else {
           if (((RexCall) t).getOperands().size() == 2) {
             // nested AND will also be removed
@@ -1711,6 +1710,24 @@ public class RexSimplify {
     int w = weighter.weight(node);
     if (outEdges.size() <= 1) {
       return origCall;
+    }
+
+    if (g.getEdge(node, node) != null) {
+      // loopback edge
+      Set<RexNode> removeFrom = new HashSet<RexNode>();
+      for (DefaultEdge e : outEdges) {
+        RexNode t = (RexNode) e.target;
+        removeFrom.add(t);
+      }
+      List<RexNode> newDisjunctiveOperands = new ArrayList<RexNode>();
+      newDisjunctiveOperands.addAll(disjunctiveTerms);
+      newDisjunctiveOperands.removeAll(removeFrom);
+      newDisjunctiveOperands.add(node);
+      if (newDisjunctiveOperands.size() > 1) {
+        return rexBuilder.makeCall(SqlStdOperatorTable.OR, newDisjunctiveOperands);
+      } else {
+        return newDisjunctiveOperands.get(0);
+      }
     }
 
     Set<RexNode> removeFrom = new HashSet<RexNode>();
