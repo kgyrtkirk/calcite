@@ -1165,6 +1165,15 @@ public class RexSimplify {
       simplifyList(operands, unknownAs);
     }
 
+    if (operands.size() > 1) {
+      List<RexNode> terms = operands;
+      RexCall orCall = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.AND, operands);
+      RexNode newNode = runSaver(orCall, SqlStdOperatorTable.AND, SqlStdOperatorTable.OR);
+      if (orCall != newNode) {
+        return simplify(newNode, unknownAs);
+      }
+    }
+
     final List<RexNode> terms = new ArrayList<>();
     final List<RexNode> notTerms = new ArrayList<>();
 
@@ -1575,7 +1584,7 @@ public class RexSimplify {
 
     if (terms.size() > 1) {
       RexCall orCall = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, terms);
-      RexNode newNode = runSaver(orCall);
+      RexNode newNode = runSaver(orCall, SqlStdOperatorTable.OR, SqlStdOperatorTable.AND);
       if (orCall != newNode) {
         return simplify(newNode, unknownAs);
       }
@@ -1678,10 +1687,14 @@ public class RexSimplify {
    * 
    * Example: 
    * The expression <code>(a && b) || (a && c)</code> can be rewritten to <code>a && (b || c)</code> 
+   * @param SqlKindAND 
+   * @param SqlStdOperatorTableOR 
+   * @param SqlStdOperatorTableAND 
    * @return 
    * 
    */
-  private RexNode runSaver(RexCall origCall) {
+  private RexNode runSaver(RexCall origCall, SqlOperator SqlStdOperatorTableOR,
+      SqlOperator SqlStdOperatorTableAND) {
     List<RexNode> disjunctiveTerms = origCall.getOperands();
     Map<RexNode, NodeCost> costMap = new HashMap<>();
 
@@ -1689,7 +1702,7 @@ public class RexSimplify {
         new DefaultDirectedGraph<RexNode, DefaultEdge>(DefaultEdge.factory());
     for (RexNode n : disjunctiveTerms) {
       g.addVertex(n);
-      if (n.getKind() == SqlKind.AND) {
+      if (n.getKind() == SqlStdOperatorTableAND.kind) {
         List<RexNode> operands = ((RexCall) n).getOperands();
         for (RexNode c : operands) {
           g.addVertex(c);
@@ -1724,7 +1737,7 @@ public class RexSimplify {
       newDisjunctiveOperands.removeAll(removeFrom);
       newDisjunctiveOperands.add(node);
       if (newDisjunctiveOperands.size() > 1) {
-        return rexBuilder.makeCall(SqlStdOperatorTable.OR, newDisjunctiveOperands);
+        return rexBuilder.makeCall(SqlStdOperatorTableOR, newDisjunctiveOperands);
       } else {
         return newDisjunctiveOperands.get(0);
       }
@@ -1735,13 +1748,12 @@ public class RexSimplify {
     for (DefaultEdge e : outEdges) {
       RexNode t = (RexNode) e.target;
       removeFrom.add(t);
-      innerOperands.add(andExclude(t, node));
+      innerOperands.add(andExclude(t, node, SqlStdOperatorTableAND));
     }
 
-    RexNode innerOr = rexBuilder.makeCall(SqlStdOperatorTable.OR, innerOperands);
-    RexNode inner = rexBuilder.makeCall(SqlStdOperatorTable.AND, node, innerOr);
+    RexNode innerOr = rexBuilder.makeCall(SqlStdOperatorTableOR, innerOperands);
+    RexNode inner = rexBuilder.makeCall(SqlStdOperatorTableAND, node, innerOr);
 
-    
     List<RexNode> newDisjunctiveOperands = new ArrayList<RexNode        >();
     newDisjunctiveOperands.addAll(disjunctiveTerms);
     newDisjunctiveOperands.removeAll(removeFrom);
@@ -1750,12 +1762,13 @@ public class RexSimplify {
       return inner;
     else {
       newDisjunctiveOperands.add(inner);
-      return rexBuilder.makeCall(SqlStdOperatorTable.OR, newDisjunctiveOperands);
+      return rexBuilder.makeCall(SqlStdOperatorTableOR, newDisjunctiveOperands);
     }
   }
 
-  private RexNode andExclude(RexNode target, RexNode excludeNode) {
-    assert target.getKind() == SqlKind.AND : "expected an AND call";
+  private RexNode andExclude(RexNode target, RexNode excludeNode,
+      SqlOperator sqlStdOperatorTableAND) {
+    assert target.getKind() == sqlStdOperatorTableAND.kind : "expected an AND call";
     RexCall call = (RexCall) target;
     
     List<RexNode> newOperands =
@@ -1765,7 +1778,7 @@ public class RexSimplify {
     if(newOperands.size()==1) {
       return newOperands.get(0);
     }else {
-      return rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands);
+      return rexBuilder.makeCall(sqlStdOperatorTableAND, newOperands);
     }
   }
 
