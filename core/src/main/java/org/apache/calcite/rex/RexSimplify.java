@@ -1571,14 +1571,12 @@ public class RexSimplify {
       simplifyOrTerms(terms, unknownAs);
     }
 
-    if (terms.size() == 1) {
-
-      return simplify(terms.get(0), unknownAs);
-    }
-    RexCall orCall = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, terms);
-    RexNode newNode = runSaver(orCall);
-    if (orCall != newNode) {
-      return simplify(newNode, unknownAs);
+    if (terms.size() > 1) {
+      RexCall orCall = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, terms);
+      RexNode newNode = runSaver(orCall);
+      if (orCall != newNode) {
+        return simplify(newNode, unknownAs);
+      }
     }
 
     return simplifyOrs(terms, unknownAs);
@@ -1653,7 +1651,7 @@ public class RexSimplify {
       }
       for (DefaultEdge defaultEdge : outEdges) {
         RexNode t = (RexNode) defaultEdge.target;
-        if (t == node) {
+        if (t.equals(node)) {
           // all nested calls are redundant
           // FIXME change sign; and fix it
           return +(outEdges.size() - 1) * weight0(node);

@@ -1172,12 +1172,12 @@ public class RexProgramTest extends RexProgramBuilderBase {
             falseLiteral, cRef,
             falseLiteral, dRef, trueLiteral, eRef,
             falseLiteral, trueLiteral),
-        "OR(?0.a, AND(?0.d, NOT(?0.b), NOT(?0.c)), AND(NOT(?0.b), NOT(?0.c), NOT(?0.e)))");
+        "OR(?0.a, AND(OR(?0.d, NOT(?0.e)), NOT(?0.b), NOT(?0.c)))");
 
     checkSimplify(
         case_(eq(falseLiteral, falseLiteral), falseLiteral,
-              eq(falseLiteral, falseLiteral), trueLiteral,
-              trueLiteral),
+            eq(falseLiteral, falseLiteral), trueLiteral,
+            trueLiteral),
         "false");
 
     // is null, applied to not-null value
