@@ -1573,12 +1573,12 @@ public class RexSimplify {
 
     if (terms.size() == 1) {
 
-      return simplify(terms.get(0));
+      return simplify(terms.get(0), unknownAs);
     }
     RexCall orCall = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, terms);
     RexNode newNode = runSaver(orCall);
     if (orCall != newNode) {
-      return simplify(newNode);
+      return simplify(newNode, unknownAs);
     }
 
     return simplifyOrs(terms, unknownAs);
