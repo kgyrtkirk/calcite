@@ -2163,6 +2163,11 @@ public class RexSimplify {
     final RexNode simplifiedAnds =
         withPredicateElimination(Bug.CALCITE_2401_FIXED)
             .simplifyAnds(predicates);
+    RexNode simplifiedAnds2 =
+        withPredicateElimination(Bug.CALCITE_2401_FIXED)
+            .simplify(
+                RexUtil.composeConjunction(rexBuilder, predicates), RexUnknownAs.FALSE);
+
     if (simplifiedAnds.isAlwaysFalse()) {
       return null;
     }
