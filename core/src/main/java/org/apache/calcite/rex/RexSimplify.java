@@ -24,6 +24,7 @@ import org.apache.calcite.plan.Strong;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.metadata.NullSentinel;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -32,6 +33,9 @@ import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
+import org.apache.calcite.util.graph.DefaultDirectedGraph;
+import org.apache.calcite.util.graph.DefaultEdge;
+import org.apache.calcite.util.graph.DirectedGraph;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BoundType;
@@ -1584,6 +1588,7 @@ public class RexSimplify {
   /** Simplifies a list of terms and combines them into an OR.
    * Modifies the list in place. */
   private RexNode simplifyOrs(List<RexNode> terms, RexUnknownAs unknownAs) {
+    runSaver(terms);
     for (int i = 0; i < terms.size(); i++) {
       final RexNode term = simplify(terms.get(i), unknownAs);
       switch (term.getKind()) {
@@ -1607,6 +1612,50 @@ public class RexSimplify {
       terms.set(i, term);
     }
     return RexUtil.composeDisjunction(rexBuilder, terms);
+  }
+
+  private static class NodeCost {
+
+  }
+  /**
+   * Identifies and pulls out subexpressions.
+   * 
+   * Example: 
+   * The expression <code>(a && b) || (a && c)</code> can be rewritten to <code>a && (b || c)</code> 
+   * 
+   */
+  private void runSaver(List<RexNode> disjunctiveTerms) {
+    Map<RexNode, NodeCost> costMap = new HashMap<>();
+
+    DirectedGraph<RexNode, DefaultEdge> g =
+        new DefaultDirectedGraph<RexNode, DefaultEdge>(DefaultEdge.factory());
+    for (RexNode n : disjunctiveTerms) {
+      g.addVertex(n);
+      if (n.getKind() == SqlKind.AND) {
+        for (RexNode c : ((RexCall) n).getOperands()) {
+          g.addEdge(c, n);
+        }
+      } else {
+        g.addEdge(n, n);
+      }
+    }
+
+  }
+
+  private void runSaver0(List<RexNode> disjunctiveTerms) {
+    DirectedGraph<RexNode, DefaultEdge> g =
+        new DefaultDirectedGraph<RexNode, DefaultEdge>(DefaultEdge.factory());
+    for (RexNode n : disjunctiveTerms) {
+      g.addVertex(n);
+      if (n.getKind() == SqlKind.AND) {
+        for (RexNode c : ((RexCall) n).getOperands()) {
+          g.addEdge(c, n);
+        }
+      } else {
+        g.addEdge(n, n);
+      }
+    }
+
   }
 
   private void verify(RexNode before, RexNode simplified, RexUnknownAs unknownAs) {
