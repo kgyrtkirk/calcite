@@ -2162,8 +2162,8 @@ public class RexSimplify {
   public RexNode simplifyFilterPredicates(Iterable<? extends RexNode> predicates) {
     final RexNode simplifiedAnds =
         withPredicateElimination(Bug.CALCITE_2401_FIXED)
-            .simplifyUnknownAsFalse(
-                RexUtil.composeConjunction(rexBuilder, predicates));
+            .simplify(
+                RexUtil.composeConjunction(rexBuilder, predicates), RexUnknownAs.UNKNOWN);
     if (simplifiedAnds.isAlwaysFalse()) {
       return null;
     }
