@@ -1668,6 +1668,31 @@ public class RexProgramTest extends RexProgramBuilderBase {
     checkSimplify(e, "OR(<=(?0.bool1, true), ?0.bool1)");
   }
 
+  @Test public void testSimplifyU() {
+
+    checkSimplify3(
+        or(
+            and(vBool(), vBool(1)),
+            and(vBool(), vBool(2))),
+        "IS NOT TRUE(?0.bool0)",
+        "IS NOT TRUE(?0.bool0)",
+        "NOT(?0.bool0)"
+
+    );
+  }
+
+  @Test public void testSimplifyU0() {
+    checkSimplify3(
+        or(
+            vBool(),
+            and(vBool(), vBool(2))),
+        "IS NOT TRUE(?0.bool0)",
+        "IS NOT TRUE(?0.bool0)",
+        "NOT(?0.bool0)"
+
+    );
+  }
+
   @Test public void testSimplifyXUnknown() {
 
     checkSimplify3(

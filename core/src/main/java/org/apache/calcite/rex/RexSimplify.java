@@ -48,6 +48,7 @@ import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,7 +56,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.calcite.rex.RexUnknownAs.FALSE;
 import static org.apache.calcite.rex.RexUnknownAs.UNKNOWN;
@@ -1567,6 +1570,17 @@ public class RexSimplify {
     if (predicateElimination) {
       simplifyOrTerms(terms, unknownAs);
     }
+
+    if (terms.size() == 1) {
+
+      return simplify(terms.get(0));
+    }
+    RexCall orCall = (RexCall) rexBuilder.makeCall(SqlStdOperatorTable.OR, terms);
+    RexNode newNode = runSaver(orCall);
+    if (orCall != newNode) {
+      return simplify(newNode);
+    }
+
     return simplifyOrs(terms, unknownAs);
   }
 
@@ -1586,9 +1600,9 @@ public class RexSimplify {
   }
 
   /** Simplifies a list of terms and combines them into an OR.
+  
    * Modifies the list in place. */
   private RexNode simplifyOrs(List<RexNode> terms, RexUnknownAs unknownAs) {
-    runSaver(terms);
     for (int i = 0; i < terms.size(); i++) {
       final RexNode term = simplify(terms.get(i), unknownAs);
       switch (term.getKind()) {
@@ -1617,14 +1631,59 @@ public class RexSimplify {
   private static class NodeCost {
 
   }
+
+  private static class PriorityWeight implements Comparator<RexNode> {
+
+    private final DirectedGraph<RexNode, DefaultEdge> g;
+
+    public PriorityWeight(DirectedGraph<RexNode, DefaultEdge> g) {
+      this.g = g;
+    }
+
+    @Override public int compare(RexNode o1, RexNode o2) {
+      return Integer.compare(weight(o1), weight(o2));
+    }
+
+    private int weight(RexNode node) {
+      List<DefaultEdge> outEdges = g.getOutwardEdges(node);
+      int w = 0;
+      if (outEdges.size() <= 1) {
+        // nothing to do with deg <= 1
+        return 0;
+      }
+      for (DefaultEdge defaultEdge : outEdges) {
+        RexNode t = (RexNode) defaultEdge.target;
+        if (t == node) {
+          // all nested calls are redundant
+          // FIXME change sign; and fix it
+          return +(outEdges.size() - 1) * weight0(node);
+        } else {
+          if (((RexCall) t).getOperands().size() == 2) {
+            // nested AND will also be removed
+            w -= 1;
+          }
+          w -= weight0(node);
+        }
+      }
+      // we should still keep 1 instance of the node
+      return w + weight0(node);
+    }
+
+    private int weight0(RexNode node) {
+      return 1;
+    }
+  }
+
   /**
    * Identifies and pulls out subexpressions.
    * 
    * Example: 
    * The expression <code>(a && b) || (a && c)</code> can be rewritten to <code>a && (b || c)</code> 
+   * @return 
    * 
    */
-  private void runSaver(List<RexNode> disjunctiveTerms) {
+  private RexNode runSaver(RexCall origCall) {
+    List<RexNode> disjunctiveTerms = origCall.getOperands();
     Map<RexNode, NodeCost> costMap = new HashMap<>();
 
     DirectedGraph<RexNode, DefaultEdge> g =
@@ -1632,7 +1691,9 @@ public class RexSimplify {
     for (RexNode n : disjunctiveTerms) {
       g.addVertex(n);
       if (n.getKind() == SqlKind.AND) {
-        for (RexNode c : ((RexCall) n).getOperands()) {
+        List<RexNode> operands = ((RexCall) n).getOperands();
+        for (RexNode c : operands) {
+          g.addVertex(c);
           g.addEdge(c, n);
         }
       } else {
@@ -1640,6 +1701,55 @@ public class RexSimplify {
       }
     }
 
+    // process g
+    PriorityWeight weighter = new PriorityWeight(g);
+    PriorityQueue<RexNode> q = new PriorityQueue<RexNode>(weighter);
+    q.addAll(g.vertexSet());
+    RexNode node = q.poll();
+
+    List<DefaultEdge> outEdges = g.getOutwardEdges(node);
+    int w = weighter.weight(node);
+    if (outEdges.size() <= 1) {
+      return origCall;
+    }
+
+    Set<RexNode> removeFrom = new HashSet<RexNode>();
+    List<RexNode> innerOperands = new ArrayList<RexNode>();
+    for (DefaultEdge e : outEdges) {
+      RexNode t = (RexNode) e.target;
+      removeFrom.add(t);
+      innerOperands.add(andExclude(t, node));
+    }
+
+    RexNode innerOr = rexBuilder.makeCall(SqlStdOperatorTable.OR, innerOperands);
+    RexNode inner = rexBuilder.makeCall(SqlStdOperatorTable.AND, node, innerOr);
+
+    
+    List<RexNode> newDisjunctiveOperands = new ArrayList<RexNode        >();
+    newDisjunctiveOperands.addAll(disjunctiveTerms);
+    newDisjunctiveOperands.removeAll(removeFrom);
+
+    if (newDisjunctiveOperands.size() == 0)
+      return inner;
+    else {
+      newDisjunctiveOperands.add(inner);
+      return rexBuilder.makeCall(SqlStdOperatorTable.OR, newDisjunctiveOperands);
+    }
+  }
+
+  private RexNode andExclude(RexNode target, RexNode excludeNode) {
+    assert target.getKind() == SqlKind.AND : "expected an AND call";
+    RexCall call = (RexCall) target;
+    
+    List<RexNode> newOperands =
+        call.getOperands().stream().filter(n -> !excludeNode.equals(n))
+            .collect(Collectors.toList());
+    
+    if(newOperands.size()==1) {
+      return newOperands.get(0);
+    }else {
+      return rexBuilder.makeCall(SqlStdOperatorTable.AND, newOperands);
+    }
   }
 
   private void runSaver0(List<RexNode> disjunctiveTerms) {
