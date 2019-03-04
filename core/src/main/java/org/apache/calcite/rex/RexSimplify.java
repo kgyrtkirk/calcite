@@ -1562,6 +1562,8 @@ public class RexSimplify {
     final List<RexNode> terms = RelOptUtil.disjunctions(call);
     if (predicateElimination) {
       simplifyOrTerms(terms, unknownAs);
+    } else {
+      simplifyList(terms, unknownAs);
     }
     return simplifyOrs(terms, unknownAs);
   }
@@ -1585,7 +1587,7 @@ public class RexSimplify {
    * Modifies the list in place. */
   private RexNode simplifyOrs(List<RexNode> terms, RexUnknownAs unknownAs) {
     for (int i = 0; i < terms.size(); i++) {
-      final RexNode term = simplify(terms.get(i), unknownAs);
+      final RexNode term = terms.get(i);
       switch (term.getKind()) {
       case LITERAL:
         if (RexLiteral.isNullLiteral(term)) {
