@@ -502,7 +502,7 @@ public class RexSimplify {
     RexSimplify simplify = this;
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
-      if (Predicate.of(t) == null) {
+      if (Predicate.of(t) == null || !isSupportedAsOrPredicate(t)) {
         continue;
       }
       final RexNode t2 = simplify.simplify(t, unknownAs);
@@ -516,10 +516,23 @@ public class RexSimplify {
     }
     for (int i = 0; i < terms.size(); i++) {
       final RexNode t = terms.get(i);
-      if (Predicate.of(t) != null) {
+      if (!(Predicate.of(t) == null || !isSupportedAsOrPredicate(t))) {
         continue;
       }
       terms.set(i, simplify.simplify(t, unknownAs));
+    }
+  }
+
+  private boolean isSupportedAsOrPredicate(RexNode t) {
+    if (!SqlKind.COMPARISON.contains(t.getKind())) {
+      return true;
+    }
+    switch (t.getKind()) {
+    case EQUALS:
+    case NOT_EQUALS:
+      return true;
+    default:
+      return false;
     }
   }
 

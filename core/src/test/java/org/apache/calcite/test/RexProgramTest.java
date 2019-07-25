@@ -2692,6 +2692,17 @@ public class RexProgramTest extends RexProgramBuilderBase {
             is(expected ? "true" : "false"));
   }
 
+  @Test
+  public void testAntiSymmetricSimplifications() {
+    // "1 < a or (a < 2 && b = 2)" can't be simplified
+    checkSimplifyUnchanged(
+        or(
+            lt(literal(1), vIntNotNull()),
+            and(
+                lt(vIntNotNull(), literal(3)),
+                vBoolNotNull(2))));
+  }
+
   private Comparable eval(RexNode e) {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
