@@ -2692,17 +2692,6 @@ public class RexProgramTest extends RexProgramBuilderBase {
             is(expected ? "true" : "false"));
   }
 
-  @Test
-  public void testAntiSymmetricSimplifications() {
-    // "1 < a or (a < 2 && b = 2)" can't be simplified
-    checkSimplifyUnchanged(
-        or(
-            lt(literal(1), vIntNotNull()),
-            and(
-                lt(vIntNotNull(), literal(3)),
-                vBoolNotNull(2))));
-  }
-
   private Comparable eval(RexNode e) {
     return RexInterpreter.evaluate(e, ImmutableMap.of());
   }
@@ -2715,6 +2704,18 @@ public class RexProgramTest extends RexProgramBuilderBase {
     assertThat(e.toString(), is("IN(?0.int0, 1, 2)"));
   }
 
+  /** Unit test for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-3192">[CALCITE-3192]
+   * Simplify OR incorrectly weaks condition</a>. */
+  @Test public void testOrSimplificationNotWeakensCondition() {
+    // "1 < a or (a < 3 and b = 2)" can't be simplified
+    checkSimplifyUnchanged(
+        or(
+            lt(literal(1), vIntNotNull()),
+            and(
+                lt(vIntNotNull(), literal(3)),
+                vBoolNotNull(2))));
+  }
 }
 
 // End RexProgramTest.java
