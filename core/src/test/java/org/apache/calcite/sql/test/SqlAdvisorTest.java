@@ -16,7 +16,6 @@
  */
 package org.apache.calcite.sql.test;
 
-import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.advise.SqlAdvisor;
 import org.apache.calcite.sql.advise.SqlAdvisorValidator;
 import org.apache.calcite.sql.advise.SqlSimpleParser;
@@ -25,15 +24,12 @@ import org.apache.calcite.sql.parser.SqlParserUtil;
 import org.apache.calcite.sql.validate.SqlMoniker;
 import org.apache.calcite.sql.validate.SqlMonikerType;
 import org.apache.calcite.test.SqlValidatorTestCase;
-import org.apache.calcite.testlib.annotations.WithLex;
 
 import com.google.common.collect.ImmutableMap;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,7 +48,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Concrete child class of {@link SqlValidatorTestCase}, containing unit tests
  * for SqlAdvisor.
  */
-@ExtendWith(SqlValidatorTestCase.LexConfiguration.class)
 public class SqlAdvisorTest extends SqlValidatorTestCase {
   public static final SqlTestFactory ADVISOR_TEST_FACTORY = SqlTestFactory.INSTANCE.withValidator(
       SqlAdvisorValidator::new);
@@ -1244,17 +1239,6 @@ public class SqlAdvisorTest extends SqlValidatorTestCase {
     assertSimplify(sql, expected);
   }
 
-  @WithLex(Lex.SQL_SERVER) @Test public void testSimpleParserQuotedIdSqlServer() {
-    testSimpleParserQuotedIdImpl();
-  }
-
-  @WithLex(Lex.MYSQL) @Test public void testSimpleParserQuotedIdMySql() {
-    testSimpleParserQuotedIdImpl();
-  }
-
-  @WithLex(Lex.JAVA) @Test public void testSimpleParserQuotedIdJava() {
-    testSimpleParserQuotedIdImpl();
-  }
 
   @Test public void testSimpleParserQuotedIdDefault() {
     testSimpleParserQuotedIdImpl();
@@ -1378,33 +1362,6 @@ public class SqlAdvisorTest extends SqlValidatorTestCase {
     assertComplete(sql, EMP_COLUMNS, STAR_KEYWORD);
   }
 
-  @Test @WithLex(Lex.JAVA) public void testAdviceKeywordsJava() {
-    String sql;
-    sql = "select deptno, exi^ from emp where 1+2<3+4";
-    assertComplete(sql, "KEYWORD(EXISTS)\n", "exi",
-        ImmutableMap.of("KEYWORD(EXISTS)", "exists"));
-  }
-
-  @Test @WithLex(Lex.JAVA) public void testAdviceMixedCase() {
-    String sql;
-    sql = "select is^ from (select 1 isOne from emp)";
-    assertComplete(sql, "COLUMN(isOne)\n", "is",
-        ImmutableMap.of("COLUMN(isOne)", "isOne"));
-  }
-
-  @Test @WithLex(Lex.JAVA) public void testAdviceExpression() {
-    String sql;
-    sql = "select s.`count`+s.co^ from (select 1 `count` from emp) s";
-    assertComplete(sql, "COLUMN(count)\n", "co",
-        ImmutableMap.of("COLUMN(count)", "`count`"));
-  }
-
-  @Test @WithLex(Lex.JAVA) public void testAdviceEmptyFrom() {
-    String sql;
-    sql = "select * from^";
-    assertComplete(sql, "KEYWORD(FROM)\n", "from",
-        ImmutableMap.of("KEYWORD(FROM)", "from"));
-  }
 
   @Disabled("Inserts are not supported by SimpleParser yet")
   @Test public void testInsert() throws Exception {
@@ -1525,33 +1482,6 @@ public class SqlAdvisorTest extends SqlValidatorTestCase {
         "em");
   }
 
-  @WithLex(Lex.SQL_SERVER) @Test public void testNestSchemaSqlServer() throws Exception {
-    String sql;
-    sql = "select * from SALES.N^";
-    assertComplete(
-        sql,
-        "SCHEMA(CATALOG.SALES.NEST)\n",
-        "N",
-        ImmutableMap.of("SCHEMA(CATALOG.SALES.NEST)", "NEST"));
-
-    sql = "select * from SALES.[n^asfasdf";
-    assertComplete(
-        sql,
-        "SCHEMA(CATALOG.SALES.NEST)\n",
-        "[n",
-        ImmutableMap.of("SCHEMA(CATALOG.SALES.NEST)", "[NEST]"));
-
-    sql = "select * from SALES.[N^est";
-    assertComplete(
-        sql,
-        "SCHEMA(CATALOG.SALES.NEST)\n",
-        "[N",
-        ImmutableMap.of("SCHEMA(CATALOG.SALES.NEST)", "[NEST]"));
-
-    sql = "select * from SALES.NU^";
-    assertComplete(sql, "", "NU");
-  }
-
   @Test public void testUnion() throws Exception {
     // we simplify set ops such as UNION by removing other queries -
     // thereby avoiding validation errors due to mismatched select lists
@@ -1573,12 +1503,4 @@ public class SqlAdvisorTest extends SqlValidatorTestCase {
     assertSimplify(sql, simplified);
   }
 
-  @WithLex(Lex.SQL_SERVER) @Test public void testMssql() {
-    String sql =
-        "select 1 from [emp] union select 2 from [DEPT] a where ^ and deptno < 5";
-    String simplified =
-        "SELECT * FROM [DEPT] a WHERE _suggest_ and deptno < 5";
-    assertSimplify(sql, simplified);
-    assertComplete(sql, EXPR_KEYWORDS, Arrays.asList("TABLE(a)"), DEPT_COLUMNS);
-  }
 }

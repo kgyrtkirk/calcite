@@ -33,8 +33,6 @@ import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.test.catalog.MockCatalogReaderExtended;
-import org.apache.calcite.testlib.annotations.WithLex;
-
 import com.google.common.base.Preconditions;
 
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -467,14 +465,6 @@ public class SqlValidatorTestCase {
    */
   public static class LexConfiguration implements BeforeEachCallback {
     @Override public void beforeEach(ExtensionContext context) {
-      context.getElement()
-          .flatMap(element -> AnnotationSupport.findAnnotation(element, WithLex.class))
-          .ifPresent(lex -> {
-            SqlValidatorTestCase tc = (SqlValidatorTestCase) context.getTestInstance().get();
-            SqlTester tester = tc.tester;
-            tester = tester.withLex(lex.value());
-            tc.tester = tester;
-          });
     }
   }
 }

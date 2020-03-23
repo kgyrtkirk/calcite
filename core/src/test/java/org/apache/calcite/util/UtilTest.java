@@ -35,8 +35,6 @@ import org.apache.calcite.sql.util.SqlBuilder;
 import org.apache.calcite.sql.util.SqlString;
 import org.apache.calcite.test.DiffTestCase;
 import org.apache.calcite.test.Matchers;
-import org.apache.calcite.testlib.annotations.LocaleEnUs;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Iterables;
@@ -111,7 +109,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Unit test for {@link Util} and other classes in this package.
  */
-@LocaleEnUs
 public class UtilTest {
   @Test public void testPrintEquals() {
     assertPrintEquals("\"x\"", "x", true);

@@ -46,7 +46,6 @@ import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.test.catalog.CountingFactory;
-import org.apache.calcite.testlib.annotations.LocaleEnUs;
 import org.apache.calcite.util.Bug;
 import org.apache.calcite.util.ImmutableBitSet;
 
@@ -91,7 +90,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * derived class whose {@link #getTester} returns a different implementation of
  * {@link org.apache.calcite.sql.test.SqlTester}.
  */
-@LocaleEnUs
 public class SqlValidatorTest extends SqlValidatorTestCase {
   //~ Static fields/initializers ---------------------------------------------
 

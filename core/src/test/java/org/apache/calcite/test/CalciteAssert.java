@@ -1507,7 +1507,7 @@ public class CalciteAssert {
 
     @SuppressWarnings("Guava")
     @Deprecated // to be removed in 2.0
-    public final AssertQuery returns(
+    public final AssertQuery returns0(
         com.google.common.base.Function<ResultSet, Void> checker) {
       return returns(sql, checker::apply);
     }

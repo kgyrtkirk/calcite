@@ -26,8 +26,6 @@ import org.apache.calcite.sql.dialect.AnsiSqlDialect;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.testlib.annotations.LocaleEnUs;
-
 import com.google.common.collect.ImmutableList;
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +41,6 @@ import java.util.Locale;
 /**
  * Unit test for SQL limits.
  */
-@LocaleEnUs
 public class SqlLimitsTest {
   protected DiffRepository getDiffRepos() {
     return DiffRepository.lookup(SqlLimitsTest.class);

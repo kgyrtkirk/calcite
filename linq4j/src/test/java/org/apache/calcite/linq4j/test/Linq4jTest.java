@@ -36,8 +36,6 @@ import org.apache.calcite.linq4j.function.Predicate1;
 import org.apache.calcite.linq4j.function.Predicate2;
 import org.apache.calcite.linq4j.tree.ConstantExpression;
 import org.apache.calcite.linq4j.tree.Expressions;
-import org.apache.calcite.linq4j.tree.ParameterExpression;
-
 import com.example.Linq4jExample;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -1185,67 +1183,6 @@ public class Linq4jTest {
     assertTrue(productAbcXy.moveNext());
     assertTrue(productAbcXy.moveNext());
     assertFalse(productAbcXy.moveNext());
-  }
-
-  @Test public void testAsQueryable() {
-    // "count" is an Enumerable method.
-    final int n =
-        Linq4j.asEnumerable(emps)
-            .asQueryable()
-            .count();
-    assertEquals(4, n);
-
-    // "where" is a Queryable method
-    // first, use a lambda
-    ParameterExpression parameter =
-        Expressions.parameter(Employee.class);
-    final Queryable<Employee> nh =
-        Linq4j.asEnumerable(emps)
-            .asQueryable()
-            .where(
-                Expressions.lambda(
-                    Predicate1.class,
-                    Expressions.equal(
-                        Expressions.field(
-                            parameter,
-                            Employee.class,
-                            "deptno"),
-                        Expressions.constant(10)),
-                    parameter));
-    assertEquals(3, nh.count());
-
-    // second, use an expression
-    final Queryable<Employee> nh2 =
-        Linq4j.asEnumerable(emps)
-            .asQueryable()
-            .where(
-                Expressions.lambda(v1 -> v1.deptno == 10));
-    assertEquals(3, nh2.count());
-
-    // use lambda, this time call whereN
-    ParameterExpression parameterE =
-        Expressions.parameter(Employee.class);
-    ParameterExpression parameterN =
-        Expressions.parameter(Integer.TYPE);
-    final Queryable<Employee> nh3 =
-        Linq4j.asEnumerable(emps)
-            .asQueryable()
-            .whereN(
-                Expressions.lambda(
-                    (Class<Predicate2<Employee, Integer>>) (Class) Predicate2.class,
-                    Expressions.andAlso(
-                        Expressions.equal(
-                            Expressions.field(
-                                parameterE,
-                                Employee.class,
-                                "deptno"),
-                            Expressions.constant(10)),
-                        Expressions.lessThan(
-                            parameterN,
-                            Expressions.constant(3))),
-                    parameterE,
-                    parameterN));
-    assertEquals(2, nh3.count());
   }
 
   @Test public void testTake() {
