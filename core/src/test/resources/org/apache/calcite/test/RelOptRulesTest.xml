@@ -3651,27 +3651,6 @@ LogicalIntersect(all=[true])
 ]]>
         </Resource>
     </TestCase>
-    <TestCase name="testJoinOnWithCast">
-        <Resource name="sql">
-            <![CDATA[SELECT * FROM emp t1 INNER JOIN emp t2 ON cast(t1.ename is not distinct from t2.job as boolean) ]]>
-        </Resource>
-        <Resource name="planBefore">
-            <![CDATA[
-LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8], EMPNO0=[$9], ENAME0=[$10], JOB0=[$11], MGR0=[$12], HIREDATE0=[$13], SAL0=[$14], COMM0=[$15], DEPTNO0=[$16], SLACKER0=[$17])
-  LogicalJoin(condition=[CAST(OR(AND(IS NULL($1), IS NULL($11)), IS TRUE(=($1, $11)))):BOOLEAN NOT NULL], joinType=[inner])
-    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-]]>
-        </Resource>
-        <Resource name="planAfter">
-            <![CDATA[
-LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8], EMPNO0=[$9], ENAME0=[$10], JOB0=[$11], MGR0=[$12], HIREDATE0=[$13], SAL0=[$14], COMM0=[$15], DEPTNO0=[$16], SLACKER0=[$17])
-  LogicalJoin(condition=[=($1, $11)], joinType=[inner])
-    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
-]]>
-        </Resource>
-    </TestCase>
     <TestCase name="testJoinProjectTransposeWindow">
         <Resource name="sql">
             <![CDATA[select *

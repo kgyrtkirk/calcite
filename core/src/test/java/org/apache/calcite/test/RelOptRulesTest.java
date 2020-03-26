@@ -6486,17 +6486,6 @@ public class RelOptRulesTest extends RelOptTestBase {
     sql(query).withRule(FilterJoinRule.FILTER_ON_JOIN).check();
   }
 
-  @Test public void testJoinOnWithCast() {
-    String query = "SELECT * FROM "
-        + "emp t1 INNER JOIN "
-        + "emp t2 "
-        + "ON cast(t1.ename is not distinct from t2.job as boolean) ";
-    sql(query)
-        .withRule(FilterJoinRule.FILTER_ON_JOIN)
-    .withRule(ReduceExpressionsRule.JOIN_INSTANCE)
-        .check();
-  }
-
   /**
    * Custom implementation of {@link Filter} for use
    * in test case to verify that {@link FilterMultiJoinMergeRule}
