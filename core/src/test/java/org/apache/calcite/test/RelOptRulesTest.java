@@ -601,6 +601,8 @@ public class RelOptRulesTest extends RelOptTestBase {
     HepProgram program = new HepProgramBuilder()
         .addRuleInstance(JoinPushExpressionsRule.INSTANCE)
         .addRuleInstance(SemiJoinProjectTransposeRule.INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE)
+        .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
         .build();
 
     HepPlanner hepPlanner = new HepPlanner(program);

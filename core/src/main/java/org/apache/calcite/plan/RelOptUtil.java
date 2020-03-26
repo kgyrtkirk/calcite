@@ -3722,7 +3722,7 @@ public abstract class RelOptUtil {
         }
       }
       if (!list.equals(call.getOperands())) {
-        return builder.makeCall(call.getOperator(), list);
+        return call.clone(call.getType(), list);
       }
       return call;
     case OR:
