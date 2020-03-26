@@ -36,6 +36,7 @@ import org.apache.calcite.linq4j.function.Predicate1;
 import org.apache.calcite.linq4j.function.Predicate2;
 import org.apache.calcite.linq4j.tree.ConstantExpression;
 import org.apache.calcite.linq4j.tree.Expressions;
+
 import com.example.Linq4jExample;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

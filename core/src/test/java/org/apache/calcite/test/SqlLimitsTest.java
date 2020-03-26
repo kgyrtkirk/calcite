@@ -26,6 +26,7 @@ import org.apache.calcite.sql.dialect.AnsiSqlDialect;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.BasicSqlType;
 import org.apache.calcite.sql.type.SqlTypeName;
+
 import com.google.common.collect.ImmutableList;
 
 import org.junit.jupiter.api.Test;
