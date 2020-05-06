@@ -1024,7 +1024,6 @@ class RelOptRulesTest extends RelOptTestBase {
 
   @Test void testSortRemoveRowCountBasedZeroLimit() {
     final HepProgram program = new HepProgramBuilder()
-        .addRuleInstance(SortRemoveRule.INSTANCE)
         .build();
     final String sql = "select count(*) as c\n"
         + "from sales.emp\n"
@@ -1035,7 +1034,6 @@ class RelOptRulesTest extends RelOptTestBase {
 
   @Test void testSortRemoveRowCountBasedLimitWithOffset() {
     final HepProgram program = new HepProgramBuilder()
-        .addRuleInstance(SortRemoveRule.INSTANCE)
         .build();
     final String sql = "select count(*) as c\n"
         + "from sales.emp\n"
