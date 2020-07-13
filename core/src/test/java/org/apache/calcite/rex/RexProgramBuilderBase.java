@@ -61,6 +61,7 @@ public abstract class RexProgramBuilderBase {
   protected RexLiteral nullSmallInt;
   protected RexLiteral nullVarchar;
   protected RexLiteral nullDecimal;
+  protected RexLiteral nullVarbinary;
 
   private RelDataType nullableBool;
   private RelDataType nonNullableBool;
@@ -76,6 +77,9 @@ public abstract class RexProgramBuilderBase {
 
   private RelDataType nullableDecimal;
   private RelDataType nonNullableDecimal;
+
+  private RelDataType nullableVarbinary;
+  private RelDataType nonNullableVarbinary;
 
   // Note: JUnit 4 creates new instance for each test method,
   // so we initialize these structures on demand
@@ -142,6 +146,12 @@ public abstract class RexProgramBuilderBase {
     nonNullableDecimal = typeFactory.createSqlType(SqlTypeName.DECIMAL);
     nullableDecimal = typeFactory.createTypeWithNullability(nonNullableDecimal, true);
     nullDecimal = rexBuilder.makeNullLiteral(nullableDecimal);
+
+    nonNullableVarbinary = typeFactory.createSqlType(SqlTypeName.VARBINARY);
+    nullableVarbinary = typeFactory.createTypeWithNullability(nonNullableVarbinary, true);
+    nullVarbinary = rexBuilder.makeNullLiteral(nullableVarbinary);
+
+
   }
 
   private RexDynamicParam getDynamicParam(RelDataType type, String fieldNamePrefix) {
@@ -373,7 +383,6 @@ public abstract class RexProgramBuilderBase {
     return sqlType;
   }
 
-
   protected RelDataType tChar(int precision) {
     return tChar(false, precision);
   }
@@ -428,6 +437,14 @@ public abstract class RexProgramBuilderBase {
       type = nullable(type);
     }
     return type;
+  }
+
+  protected RelDataType tVarbinary() {
+    return nonNullableVarbinary;
+  }
+
+  protected RelDataType tVarbinary(boolean nullable) {
+    return nullable ? nullableVarbinary : nonNullableVarbinary;
   }
 
   protected RelDataType tArray(RelDataType elemType) {
