@@ -3963,4 +3963,10 @@ class SqlToRelConverterTest extends SqlToRelTestBase {
           conformance);
     }
   }
+
+  @Test void testCastError() {
+    final String sql = "select cast(cast(count(distinct empno) as varchar(65536)) as varbinary)\n"
+        + "from emp group by deptno";
+    sql(sql).ok();
+  }
 }
