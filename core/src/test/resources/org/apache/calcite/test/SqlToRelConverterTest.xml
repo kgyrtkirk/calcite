@@ -297,6 +297,20 @@ LogicalProject(EXPR$0=[ROW(ITEM(ITEM(ITEM(ITEM($3, 0), 'detail'), 'skills'), 0).
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testCastError">
+        <Resource name="sql">
+            <![CDATA[select cast(cast(count(distinct empno) as varchar(65536)) as varbinary)
+from emp group by deptno]]>
+        </Resource>
+        <Resource name="plan">
+            <![CDATA[
+LogicalProject(EXPR$0=[CAST(CAST($1):VARCHAR(65536) NOT NULL):VARBINARY NOT NULL])
+  LogicalAggregate(group=[{0}], agg#0=[COUNT(DISTINCT $1)])
+    LogicalProject(DEPTNO=[$7], EMPNO=[$0])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testCollectionTableWithLateral">
         <Resource name="sql">
             <![CDATA[select * from dept, lateral table(ramp(dept.deptno))]]>
@@ -3743,7 +3757,6 @@ LogicalProject(DEPTNO=[$7])
 ]]>
         </Resource>
     </TestCase>
-
     <TestCase name="testSubQueryAggregateFunctionFollowedBySimpleOperation">
         <Resource name="sql">
             <![CDATA[select deptno
