@@ -1808,6 +1808,10 @@ class RexProgramTest extends RexProgramTestBase {
     checkSimplifyUnchanged(isNull(cast(vVarcharNotNull(), tInt(false))));
   }
 
+  @Test void testSimplifyVarbinary() {
+    checkSimplifyUnchanged(cast(cast(vInt(), tVarchar(true,100)), tVarbinary(true)));
+  }
+
   @Test void checkSimplifyDynamicParam() {
     checkSimplify(isNotNull(lt(vInt(0), vInt(1))),
         "AND(IS NOT NULL(?0.int0), IS NOT NULL(?0.int1))");

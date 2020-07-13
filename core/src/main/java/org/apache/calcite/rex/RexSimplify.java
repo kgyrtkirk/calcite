@@ -1915,9 +1915,7 @@ public class RexSimplify {
       }
       // Here we try to remove inner cast (B-like cases)
       if (RexUtil.isLosslessCast(intExpr.getType(), operand.getType())
-          && (e.getType().getSqlTypeName() == operand.getType().getSqlTypeName()
-          || e.getType().getSqlTypeName() == SqlTypeName.CHAR
-          || operand.getType().getSqlTypeName() != SqlTypeName.CHAR)) {
+          && RexUtil.isLosslessCast(operand.getType(), e.getType())) {
         return rexBuilder.makeCast(e.getType(), intExpr);
       }
     }
