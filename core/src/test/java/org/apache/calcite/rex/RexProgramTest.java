@@ -1808,8 +1808,11 @@ class RexProgramTest extends RexProgramTestBase {
     checkSimplifyUnchanged(isNull(cast(vVarcharNotNull(), tInt(false))));
   }
 
+  /** Unit test for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-4118">[CALCITE-4118]
+   * RexSimplify might remove CAST from RexNode incorrectly</a>. */
   @Test void testSimplifyVarbinary() {
-    checkSimplifyUnchanged(cast(cast(vInt(), tVarchar(true,100)), tVarbinary(true)));
+    checkSimplifyUnchanged(cast(cast(vInt(), tVarchar(true, 100)), tVarbinary(true)));
   }
 
   @Test void checkSimplifyDynamicParam() {
