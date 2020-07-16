@@ -1913,6 +1913,18 @@ public class RexSimplify {
           && sameTypeOrNarrowsNullability(e.getType(), intExpr.getType())) {
         return intExpr;
       }
+      if (RexUtil.isLosslessCast(intExpr.getType(), operand.getType())
+          && RexUtil.isLosslessCast(intExpr.getType(), e.getType())
+      ) {
+        return rexBuilder.makeCast(e.getType(), intExpr);
+      }
+
+      if (RexUtil.isLosslessCast(intExpr.getType(), operand.getType())
+          && RexUtil.isLosslessCast(e.getType(), operand.getType())
+      ) {
+        return rexBuilder.makeCast(e.getType(), intExpr);
+      }
+
       // Here we try to remove inner cast (B-like cases)
       if (RexUtil.isLosslessCast(intExpr.getType(), operand.getType())
           && RexUtil.isLosslessCast(operand.getType(), e.getType())) {
