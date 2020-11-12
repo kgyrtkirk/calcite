@@ -209,16 +209,17 @@ public class RexCall extends RexNode {
   @Override public boolean isAlwaysFalse() {
     switch (getKind()) {
     case IS_NULL:
-      return !operands.get(0).getType().isNullable();
+      return operands.get(0).isSafe() && !operands.get(0).getType().isNullable();
     case IS_NOT_TRUE:
     case IS_FALSE:
     case NOT:
-      return operands.get(0).isAlwaysTrue();
+      return operands.get(0).isSafe() && operands.get(0).isAlwaysTrue();
     case IS_NOT_FALSE:
     case IS_TRUE:
     case CAST:
-      return operands.get(0).isAlwaysFalse();
+      return operands.get(0).isSafe() && operands.get(0).isAlwaysFalse();
     case SEARCH:
+      // FIXME ???
       final Sarg sarg = ((RexLiteral) operands.get(1)).getValueAs(Sarg.class);
       return sarg.isNone()
           && (!sarg.containsNull || !operands.get(0).getType().isNullable());

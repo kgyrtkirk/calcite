@@ -28,7 +28,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.util.ImmutableBitSet;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +79,7 @@ class RexProgramFuzzyTest extends RexProgramBuilderBase {
   private static final Duration DEFAULT_FUZZ_TEST_DURATION =
       Duration.of(Integer.getInteger("rex.fuzzing.default.duration", 5), ChronoUnit.SECONDS);
   private static final long DEFAULT_FUZZ_TEST_ITERATIONS =
-      Long.getLong("rex.fuzzing.default.iterations", 0);
+      Long.getLong("rex.fuzzing.default.iterations", 1110);
   private static final boolean DEFAULT_FUZZ_TEST_FAIL =
       Boolean.getBoolean("rex.fuzzing.default.fail");
 
@@ -338,7 +337,6 @@ class RexProgramFuzzyTest extends RexProgramBuilderBase {
     t.setStackTrace(stackTrace);
   }
 
-  @Disabled("Ignore for now: CALCITE-3457")
   @Test void defaultFuzzTest() {
     try {
       runRexFuzzer(DEFAULT_FUZZ_TEST_SEED, DEFAULT_FUZZ_TEST_DURATION, 1,
@@ -354,7 +352,6 @@ class RexProgramFuzzyTest extends RexProgramBuilderBase {
     }
   }
 
-  @Disabled("Ignore for now: CALCITE-3457")
   @Test void testFuzzy() {
     runRexFuzzer(SEED, TEST_DURATION, MAX_FAILURES, TEST_ITERATIONS, TOPN_SLOWEST);
   }
@@ -456,10 +453,10 @@ class RexProgramFuzzyTest extends RexProgramBuilderBase {
     checkUnknownAs(expression);
   }
 
-  @Disabled("This is just a scaffold for quick investigation of a single fuzz test")
+  //  @Disabled("This is just a scaffold for quick investigation of a single fuzz test")
   @Test void singleFuzzyTest() {
     Random r = new Random();
-    r.setSeed(4887662474363391810L);
+    r.setSeed(-335857830775270378L);
     RexFuzzer fuzzer = new RexFuzzer(rexBuilder, typeFactory);
     generateRexAndCheckTrueFalse(fuzzer, r);
   }

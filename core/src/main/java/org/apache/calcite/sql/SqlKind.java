@@ -1263,6 +1263,43 @@ public enum SqlKind {
   @API(since = "1.24", status = API.Status.EXPERIMENTAL)
   public static final Set<SqlKind> SIMPLE_BINARY_OPS;
 
+  public static final Set<SqlKind> SAFE_OPS = EnumSet.of(
+      IN, EQUALS, NOT_EQUALS,
+      LESS_THAN, GREATER_THAN,
+      GREATER_THAN_OR_EQUAL, LESS_THAN_OR_EQUAL,
+      LITERAL,
+      PLUS_PREFIX,
+      MINUS_PREFIX,
+      PLUS,
+      MINUS,
+      TIMES,
+      IS_FALSE,
+      IS_NOT_FALSE,
+      IS_TRUE,
+      IS_NOT_TRUE,
+      IS_NULL,
+      IS_NOT_NULL,
+      IS_DISTINCT_FROM,
+      IS_NOT_DISTINCT_FROM,
+      IN,
+      SEARCH,
+      OR,
+      AND,
+      NOT,
+      CASE,
+      LIKE,
+      COALESCE,
+      TRIM,
+      LTRIM,
+      RTRIM,
+      BETWEEN,
+      CEIL,
+      FLOOR,
+      REVERSE,
+      INPUT_REF,
+      TIMESTAMP_ADD,
+      TIMESTAMP_DIFF);
+
   static {
     EnumSet<SqlKind> kinds = EnumSet.copyOf(SqlKind.BINARY_ARITHMETIC);
     kinds.remove(SqlKind.MOD);

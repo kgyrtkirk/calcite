@@ -811,6 +811,9 @@ public class RexSimplify {
     if (hasCustomNullabilityRules(a.getKind())) {
       return null;
     }
+    if (!a.isSafe()) {
+      return null;
+    }
     switch (Strong.policy(a)) {
     case NOT_NULL:
       return rexBuilder.makeLiteral(true);

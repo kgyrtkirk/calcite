@@ -66,6 +66,10 @@ public abstract class RexNode {
     return getKind() == kind;
   }
 
+  public boolean isSafe() {
+    return SqlKind.SAFE_OPS.contains(getKind());
+  }
+
   public boolean isA(Collection<SqlKind> kinds) {
     return getKind().belongsTo(kinds);
   }

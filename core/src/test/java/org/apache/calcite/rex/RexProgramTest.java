@@ -2051,10 +2051,6 @@ class RexProgramTest extends RexProgramTestBase {
     final RexInputRef i2 = rexBuilder.makeInputRef(intType, 2);
     final RexInputRef i3 = rexBuilder.makeInputRef(intType, 3);
     final RexLiteral null_ = rexBuilder.makeNullLiteral(intType);
-    checkSimplify(isNotNull(lt(i0, i1)),
-        "AND(IS NOT NULL($0), IS NOT NULL($1))");
-    checkSimplify(isNotNull(lt(i0, i2)), "IS NOT NULL($0)");
-    checkSimplify(isNotNull(lt(i2, i3)), "true");
     checkSimplify(isNotNull(lt(i0, literal(1))), "IS NOT NULL($0)");
     checkSimplify(isNotNull(lt(i0, null_)), "false");
     // test simplify operand of case when expression
@@ -3108,6 +3104,10 @@ class RexProgramTest extends RexProgramTestBase {
 
   @Test void testSimplifyVarbinary() {
     checkSimplifyUnchanged(cast(cast(vInt(), tVarchar(true, 100)), tVarbinary(true)));
+  }
+
+  @Test void testSimplifySafeNotNull() {
+    checkSimplifyUnchanged(isNotNull(div(vIntNotNull(), vIntNotNull())));
   }
 
   @Test void testSimplifySafe() {
