@@ -23,6 +23,7 @@ import org.apache.calcite.util.NlsString;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -58,8 +59,9 @@ public class RexAnalyzer {
         variables.stream().map(RexAnalyzer::getComparables)
             .collect(Util.toImmutableList());
     final Iterable<List<Comparable>> product = Linq4j.product(generators);
-    return Util.transform(product,
-        values -> ImmutableMap.copyOf(Pair.zip(variables, values)));
+    Function<List<Comparable>, Map<RexNode, Comparable>> function =
+        values -> ImmutableMap.copyOf(Pair.zip(variables, values));
+    return Util.transform(product, function);
   }
 
   private static List<Comparable> getComparables(RexNode variable) {
