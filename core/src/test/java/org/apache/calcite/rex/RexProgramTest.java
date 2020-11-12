@@ -3109,4 +3109,9 @@ class RexProgramTest extends RexProgramTestBase {
   @Test void testSimplifyVarbinary() {
     checkSimplifyUnchanged(cast(cast(vInt(), tVarchar(true, 100)), tVarbinary(true)));
   }
+
+  @Test void testSimplifySafe() {
+    checkSimplifyUnchanged(isNotNull(div(vIntNotNull(),vIntNotNull())));
+  }
+
 }
