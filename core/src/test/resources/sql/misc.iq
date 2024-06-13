@@ -2641,4 +2641,19 @@ FROM "hr"."emps";
 
 !ok
 
+# ???
+select "name" from "hr"."emps" e
+  where e."name" = 'Sebastian' and e."deptno" < 100;
+
+!ok
+
+!plan
+
+select "name" from "hr"."emps" e
+  where e."name" in ( 'Sebastian' ) and e."name" = 'Sebastian' and e."deptno" < 100;
+
+!ok
+
+!plan
+
 # End misc.iq

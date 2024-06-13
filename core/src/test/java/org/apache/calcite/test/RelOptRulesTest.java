@@ -1646,6 +1646,22 @@ class RelOptRulesTest extends RelOptTestBase {
         .check();
   }
 
+  @Test void testAX() {
+    final String sql = "select ename from emp "
+        + "  where "
+        + "   ename in ( 'Sebastian' ) and ename = 'Sebastian' and deptno < 100";
+    sql(sql)
+//        .withExpand(true)
+//        .withDecorrelate(true)
+        .withTrim(true)
+//        .withRelBuilderConfig(b -> b.withPruneInputOfAggregate(true))
+//        .withPreRule(CoreRules.FILTER_PROJECT_TRANSPOSE,
+//            CoreRules.FILTER_INTO_JOIN,
+//            CoreRules.PROJECT_MERGE)
+        .withRule()
+        .checkUnchanged();
+  }
+
   @Test void testSemiJoinRule() {
     final String sql = "select dept.* from dept join (\n"
         + "  select distinct deptno from emp\n"

@@ -16,6 +16,19 @@
   ~ limitations under the License.
   -->
 <Root>
+  <TestCase name="testAX">
+    <Resource name="sql">
+      <![CDATA[select ename from emp   where ename in ( 'Sebastian' ) and ename = 'Sebastian' and deptno < 100]]>
+    </Resource>
+    <Resource name="planBefore">
+      <![CDATA[
+LogicalProject(ENAME=[$0])
+  LogicalFilter(condition=[AND(=($0, 'Sebastian'), <($1, 100))])
+    LogicalProject(ENAME=[$1], DEPTNO=[$7])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+    </Resource>
+  </TestCase>
   <TestCase name="testAddRedundantSemiJoinRule">
     <Resource name="sql">
       <![CDATA[select 1 from emp inner join dept on emp.deptno = dept.deptno]]>

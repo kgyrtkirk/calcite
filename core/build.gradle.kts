@@ -44,6 +44,12 @@ val testPostgresql by configurations.creating(integrationTestConfig)
 val testMysql by configurations.creating(integrationTestConfig)
 
 dependencies {
+
+    implementation("net.hydromatic:quidem")
+    implementation("net.hydromatic:foodmart-data-hsqldb")
+    implementation("net.hydromatic:foodmart-queries")
+    implementation("net.hydromatic:scott-data-hsqldb")
+
     api(project(":linq4j"))
 
     api("org.locationtech.jts:jts-core")
@@ -88,7 +94,7 @@ dependencies {
     testPostgresql("org.postgresql:postgresql")
 
     //testImplementation(project(":testkit"))
-    testCompileOnly("org.apache.calcite:calcite-testkit:1.38.0-SNAPSHOT")
+    testImplementation("org.apache.calcite:calcite-testkit:1.38.0-SNAPSHOT")
     testImplementation("commons-lang:commons-lang")
     testImplementation("net.bytebuddy:byte-buddy")
     testImplementation("net.hydromatic:foodmart-queries")

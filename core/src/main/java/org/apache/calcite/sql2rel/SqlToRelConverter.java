@@ -1773,9 +1773,7 @@ public class SqlToRelConverter {
    * cast if necessary. If the expression already has the right type family,
    * returns the expression unchanged. */
   private RexNode ensureSqlType(RelDataType type, RexNode node) {
-    if (type.getSqlTypeName() == node.getType().getSqlTypeName()
-        || (type.getSqlTypeName() == SqlTypeName.VARCHAR
-            && node.getType().getSqlTypeName() == SqlTypeName.CHAR)) {
+    if (type.getSqlTypeName() == node.getType().getSqlTypeName()) {
       return node;
     }
     return rexBuilder.ensureType(type, node, true);
