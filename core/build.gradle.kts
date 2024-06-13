@@ -237,7 +237,8 @@ fun JavaCompile.configureAnnotationSet(sourceSet: SourceSet) {
 }
 
 val annotationProcessorMain by tasks.registering(JavaCompile::class) {
-    configureAnnotationSet(sourceSets.main.get())
+    val a = configureAnnotationSet(sourceSets.main.get())
+    // generatedJavaSources(a,a.destinationDirectory,'main')
 }
 
 val annotationProcessorTest by tasks.registering(JavaCompile::class) {

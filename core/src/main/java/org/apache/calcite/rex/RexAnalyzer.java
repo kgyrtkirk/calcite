@@ -61,7 +61,7 @@ public class RexAnalyzer {
             .collect(toImmutableList());
     final Iterable<List<Comparable>> product = Linq4j.product(generators);
     return Util.transform(product,
-        values -> ImmutableMap.copyOf(Pair.zip(variables, values)));
+        values -> ImmutableMap.<RexNode, Comparable>copyOf(Pair.zip(variables, values)));
   }
 
   private static List<Comparable> getComparables(RexNode variable) {

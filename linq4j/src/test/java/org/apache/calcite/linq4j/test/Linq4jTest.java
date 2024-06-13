@@ -34,8 +34,11 @@ import org.apache.calcite.linq4j.function.Functions;
 import org.apache.calcite.linq4j.function.IntegerFunction1;
 import org.apache.calcite.linq4j.function.Predicate1;
 import org.apache.calcite.linq4j.function.Predicate2;
+import org.apache.calcite.linq4j.tree.BinaryExpression;
 import org.apache.calcite.linq4j.tree.ConstantExpression;
 import org.apache.calcite.linq4j.tree.Expressions;
+import org.apache.calcite.linq4j.tree.FunctionExpression;
+import org.apache.calcite.linq4j.tree.MemberExpression;
 import org.apache.calcite.linq4j.tree.ParameterExpression;
 
 import com.example.Linq4jExample;
@@ -1195,21 +1198,11 @@ public class Linq4jTest {
 
     // "where" is a Queryable method
     // first, use a lambda
-    ParameterExpression parameter =
-        Expressions.parameter(Employee.class);
-    final Queryable<Employee> nh =
-        Linq4j.asEnumerable(emps)
-            .asQueryable()
-            .where(
-                Expressions.lambda(
-                    Predicate1.class,
-                    Expressions.equal(
-                        Expressions.field(
-                            parameter,
-                            Employee.class,
-                            "deptno"),
-                        Expressions.constant(10)),
-                    parameter));
+	ParameterExpression parameter = Expressions.parameter(Employee.class);
+	MemberExpression field = Expressions.field(parameter, Employee.class, "deptno");
+	BinaryExpression equal = Expressions.equal(field, Expressions.constant(10));
+    FunctionExpression lambda = Expressions.lambda(Predicate1.class, equal, parameter);
+    final Queryable<Employee> nh = Linq4j.asEnumerable(emps).asQueryable().where(lambda);
     assertEquals(3, nh.count());
 
     // second, use an expression
