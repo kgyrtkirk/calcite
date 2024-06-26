@@ -16,6 +16,29 @@
   ~ limitations under the License.
   -->
 <Root>
+  <TestCase name="testAX">
+    <Resource name="sql">
+      <![CDATA[select ename from emp   where ename in ( 'Sebastian' ) and ename = 'Sebastian' and deptno < 100]]>
+    </Resource>
+    <Resource name="planBefore">
+      <![CDATA[
+LogicalProject(ENAME=[$0])
+  LogicalValues(tuples=[[]])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testAX2">
+    <Resource name="sql">
+      <![CDATA[select ename from emp   where ename in ( 'Sebastian' ) and ename = 'Sebastian']]>
+    </Resource>
+    <Resource name="planBefore">
+      <![CDATA[
+LogicalFilter(condition=[=($0, 'Sebastian')])
+  LogicalProject(ENAME=[$1])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+    </Resource>
+  </TestCase>
   <TestCase name="testAddRedundantSemiJoinRule">
     <Resource name="sql">
       <![CDATA[select 1 from emp inner join dept on emp.deptno = dept.deptno]]>
@@ -4950,6 +4973,17 @@ LogicalUnion(all=[true])
     LogicalTableScan(table=[[CATALOG, SALES, EMP]])
   LogicalProject(EXPR$0=[LOWER($1)])
     LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testIncorrectInType">
+    <Resource name="sql">
+      <![CDATA[select ename from emp   where ename in ( 'Sebastian' ) and ename = 'Sebastian' and deptno < 100]]>
+    </Resource>
+    <Resource name="planBefore">
+      <![CDATA[
+LogicalProject(ENAME=[$0])
+  LogicalValues(tuples=[[]])
 ]]>
     </Resource>
   </TestCase>
