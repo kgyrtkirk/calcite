@@ -1242,3 +1242,4 @@ class MaterializedViewRelOptRulesTest {
   }
 }
 
+
