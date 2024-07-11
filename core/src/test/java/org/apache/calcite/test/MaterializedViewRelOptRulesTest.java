@@ -1241,5 +1241,3 @@ class MaterializedViewRelOptRulesTest {
         .ok();
   }
 }
-
-
