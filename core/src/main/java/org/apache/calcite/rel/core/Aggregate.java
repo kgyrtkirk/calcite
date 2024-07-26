@@ -644,10 +644,10 @@ public abstract class Aggregate extends SingleRel implements Hintable {
   }
 
   /** Used for PERCENTILE_DISC return type inference. */
-  public static class PercentileDiscAggCallBinding extends AggCallBinding {
+  public static class PercentileDiscAggCallBinding1 extends AggCallBinding {
     private final RelDataType collationType;
 
-    PercentileDiscAggCallBinding(RelDataTypeFactory typeFactory, SqlAggFunction aggFunction,
+    PercentileDiscAggCallBinding1(RelDataTypeFactory typeFactory, SqlAggFunction aggFunction,
         List<RelDataType> operands, RelDataType collationType, int groupCount,
         boolean filter) {
       super(typeFactory, aggFunction, operands, groupCount, filter);

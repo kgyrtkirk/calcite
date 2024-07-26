@@ -469,18 +469,54 @@ public class AggregateCall {
     final RelDataTypeFactory typeFactory =
         aggregateRelBase.getCluster().getTypeFactory();
 
-    if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
-        || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
-      assert collation.getKeys().size() == 1;
-      return new Aggregate.PercentileDiscAggCallBinding(typeFactory,
-          aggFunction, SqlTypeUtil.projectTypes(rowType, argList),
-          SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
+      
+    AggCallBindingFactory f = aggFunction.unwrap(AggCallBindingFactory.class);
+    if(f != null ) {
+      List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, argList);
+      return f.AggCallBinding(this, typeFactory, aggFunction,
+          RexUtil.types(rexList), projectTypes,
           aggregateRelBase.getGroupCount(), hasFilter());
     }
+    if(true)
     return new Aggregate.AggCallBinding(typeFactory, aggFunction,
         RexUtil.types(rexList), SqlTypeUtil.projectTypes(rowType, argList),
         aggregateRelBase.getGroupCount(), hasFilter());
+      else{
+        AggregateCall aggregateCall = this;
+            if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
+                || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
+              assert collation.getKeys().size() == 1;
+              return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
+                  aggFunction, SqlTypeUtil.projectTypes(rowType, argList),
+                  SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
+        
+                   aggregateRelBase.getGroupCount(), hasFilter());
+             }
+        
+    }
+
+      }
   }
+
+static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
+
+  @Override
+  public org.apache.calcite.rel.core.Aggregate.AggCallBinding AggCallBinding(
+    AggregateCall aggregateCall,  
+  RelDataTypeFactory typeFactory,
+      SqlAggFunction aggFunction, List<RelDataType> preOperands, List<RelDataType> operands, int groupCount,
+      boolean filter) {
+    if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
+        || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
+      assert aggregateCall.collation.getKeys().size() == 1;
+      return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
+          aggFunction, preOperands,
+          SqlTypeUtil.projectTypes(aggregateCall.rowType, aggregateCall.collation.getKeys()).get(0),
+          aggregateRelBase.getGroupCount(), hasFilter());
+    }
+  }
+
+}
 
   /**
    * Creates an equivalent AggregateCall with new argument ordinals.
