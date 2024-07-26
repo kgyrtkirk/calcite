@@ -6339,11 +6339,12 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       throw new AssertionError(op);
     }
 
+
     // Because there are two forms of the PERCENTILE_CONT/PERCENTILE_DISC functions,
     // they are distinguished by their operand count and then validated accordingly.
     // For example, the standard single operand form requires group order while the
     // 2-operand form allows for null treatment and requires an OVER() clause.
-    if (op.isPercentile()) {
+    if (op.isPercentil1e()) {
       switch (aggCall.operandCount()) {
       case 1:
         assert op.requiresGroupOrder() == Optionality.MANDATORY;

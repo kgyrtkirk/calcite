@@ -33,7 +33,6 @@ import org.apache.calcite.util.mapping.Mapping;
 import org.apache.calcite.util.mapping.Mappings;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -56,7 +55,7 @@ public class AggregateCall {
   private final boolean distinct;
   private final boolean approximate;
   private final boolean ignoreNulls;
-  
+
   public final RelDataType type;
   public final @Nullable String name;
   public final List<RexNode> rexList;
