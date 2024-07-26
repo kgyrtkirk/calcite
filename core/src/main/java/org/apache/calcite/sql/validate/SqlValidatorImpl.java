@@ -6342,10 +6342,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     }
 
     AggregateParamsValidator apv = op.unwrap(AggregateParamsValidator.class);
-    Optional<AggregateParamsValidator> oo = Optional.of(apv);
-    oo.transform( v -> v.validateAggregateParams(this, op, aggCall, filter, distinctList, orderList, scope));
-
-    apv.validateAggregateParams(this, op, aggCall, filter, distinctList, orderList, scope);   
+    if (apv != null) {
+      apv.validateAggregateParams(this, op, aggCall, filter, distinctList, orderList, scope);
+    }
   }
 
   @Override public void validateCall(
