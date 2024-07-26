@@ -115,6 +115,9 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
     if (clazz.isInstance(staticFun)) {
       return clazz.cast(staticFun);
     }
+    T ext = extensions.unwrap(clazz);
+    if (ext != null)
+      return ext;
     return super.unwrap(clazz);
   }
 
