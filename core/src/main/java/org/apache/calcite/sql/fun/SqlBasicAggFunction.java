@@ -24,6 +24,7 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlStaticAggFunction;
 import org.apache.calcite.sql.SqlSyntax;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable.PercentileValidator1;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
@@ -263,5 +264,10 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
         allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+  }
+
+  public SqlAggFunction withFunctionX(PercentileValidator1 percentileValidator1) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'withFunctionX'");
   }
 }
