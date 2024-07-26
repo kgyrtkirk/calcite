@@ -651,7 +651,6 @@ public abstract class Aggregate extends SingleRel implements Hintable {
         List<RelDataType> operands, RelDataType collationType, int groupCount,
         boolean filter) {
       super(typeFactory, aggFunction, operands, groupCount, filter);
-      assert aggFunction.isPercentile();
       this.collationType = collationType;
     }
 

@@ -223,7 +223,7 @@ public abstract class SqlAggFunction extends SqlFunction implements Context {
    *
    * <p>NOTE: This API is experimental and subject to change without notice. */
   @Experimental
-  public boolean isPercentile() {
+  public boolean isPercentil1e() {
     return false;
   }
 }
