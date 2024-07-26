@@ -488,7 +488,7 @@ public class AggregateCall {
         RexUtil.types(rexList), projectTypes,
         aggregateRelBase.getGroupCount(), hasFilter());
   }
-  static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
+  public static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
 
     @Override
     public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {

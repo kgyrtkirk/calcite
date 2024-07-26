@@ -643,6 +643,7 @@ public abstract class Aggregate extends SingleRel implements Hintable {
     }
   }
 
+  // FIXME move
   /** Used for PERCENTILE_DISC return type inference. */
   public static class PercentileDiscAggCallBinding1 extends AggCallBinding {
     private final RelDataType collationType;

@@ -17,6 +17,8 @@
 package org.apache.calcite.sql.fun;
 
 import org.apache.calcite.avatica.util.TimeUnit;
+import org.apache.calcite.rel.core.AggCallBindingFactory;
+import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.AggregateParamsValidator;
 import org.apache.calcite.sql.SqlAggFunction;
@@ -2273,8 +2275,8 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withGroupOrder(Optionality.MANDATORY)
           .withAllowsFraming(false)
-          .withFunctionX(new PercentileValidator1())
-          ;
+                  .withExtension(AggregateParamsValidator.class, new PercentileValidator1())
+                  .withExtension(AggCallBindingFactory.class, new AggregateCall.PercentileXAggCallBindingFactory());          ;
 
 static class PercentileValidator1 implements AggregateParamsValidator {
 
@@ -2285,7 +2287,7 @@ static class PercentileValidator1 implements AggregateParamsValidator {
     // they are distinguished by their operand count and then validated accordingly.
     // For example, the standard single operand form requires group order while the
     // 2-operand form allows for null treatment and requires an OVER() clause.
-    if (op.isPercentil1e()) {
+    if (true) {
       switch (aggCall.operandCount()) {
       case 1:
         assert op.requiresGroupOrder() == Optionality.MANDATORY;
@@ -2335,7 +2337,10 @@ static class PercentileValidator1 implements AggregateParamsValidator {
               OperandTypes.UNIT_INTERVAL_NUMERIC_LITERAL)
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withGroupOrder(Optionality.MANDATORY)
-          .withAllowsFraming(false);
+          .withAllowsFraming(false)
+          .withExtension(AggregateParamsValidator.class, new PercentileValidator1())
+          .withExtension(AggCallBindingFactory.class, new AggregateCall.PercentileXAggCallBindingFactory());          ;
+  ;
 
   /**
    * The LISTAGG operator. String aggregator function.
