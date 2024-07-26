@@ -55,7 +55,6 @@ public class AggregateCall {
   private final boolean distinct;
   private final boolean approximate;
   private final boolean ignoreNulls;
-
   public final RelDataType type;
   public final @Nullable String name;
   public final List<RexNode> rexList;
@@ -468,56 +467,50 @@ public class AggregateCall {
     final RelDataType rowType = aggregateRelBase.getInput().getRowType();
     final RelDataTypeFactory typeFactory =
         aggregateRelBase.getCluster().getTypeFactory();
+    List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, argList);
+    
 
-      
     AggCallBindingFactory f = aggFunction.unwrap(AggCallBindingFactory.class);
-    if(f != null ) {
-      List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, argList);
-      return f.AggCallBinding(this, typeFactory, aggFunction,
-          RexUtil.types(rexList), projectTypes,
-          aggregateRelBase.getGroupCount(), hasFilter());
-    }
-    if(true)
-    return new Aggregate.AggCallBinding(typeFactory, aggFunction,
-        RexUtil.types(rexList), SqlTypeUtil.projectTypes(rowType, argList),
-        aggregateRelBase.getGroupCount(), hasFilter());
-      else{
-        AggregateCall aggregateCall = this;
-            if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
-                || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
-              assert collation.getKeys().size() == 1;
-              return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
-                  aggFunction, SqlTypeUtil.projectTypes(rowType, argList),
-                  SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
-        
-                   aggregateRelBase.getGroupCount(), hasFilter());
-             }
-        
+    if (f != null) {
+      return f.createAggCallBinding(this, aggregateRelBase);
     }
 
-      }
-  }
-
-static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
-
-  @Override
-  public org.apache.calcite.rel.core.Aggregate.AggCallBinding AggCallBinding(
-    AggregateCall aggregateCall,  
-  RelDataTypeFactory typeFactory,
-      SqlAggFunction aggFunction, List<RelDataType> preOperands, List<RelDataType> operands, int groupCount,
-      boolean filter) {
+    if(false)
     if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
         || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
-      assert aggregateCall.collation.getKeys().size() == 1;
+      assert collation.getKeys().size() == 1;
       return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
-          aggFunction, preOperands,
-          SqlTypeUtil.projectTypes(aggregateCall.rowType, aggregateCall.collation.getKeys()).get(0),
+          aggFunction, projectTypes,
+          SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
           aggregateRelBase.getGroupCount(), hasFilter());
     }
+    return new Aggregate.AggCallBinding(typeFactory, aggFunction,
+        RexUtil.types(rexList), projectTypes,
+        aggregateRelBase.getGroupCount(), hasFilter());
   }
+  static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
 
-}
+    @Override
+    public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {
+      // TODO Auto-generated method stub
+      SqlAggFunction aggFunction = aggregateCall.aggFunction;
+    final RelDataType rowType = aggregateRelBase.getInput().getRowType();
+    final RelDataTypeFactory typeFactory =
+        aggregateRelBase.getCluster().getTypeFactory();
+      RelCollation collation = aggregateCall.collation;
+      List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, aggregateCall.argList);
 
+      if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
+          || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
+        assert collation.getKeys().size() == 1;
+        return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
+            aggFunction, projectTypes,
+            SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
+            aggregateRelBase.getGroupCount(), aggregateCall.hasFilter());
+      }
+      return null;
+    }
+  }
   /**
    * Creates an equivalent AggregateCall with new argument ordinals.
    *

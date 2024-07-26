@@ -2279,7 +2279,7 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
 static class PercentileValidator1 implements AggregateParamsValidator {
 
     @Override
-    public Void validateAggregateParams(SqlValidator validator, SqlAggFunction op,SqlCall aggCall, @Nullable SqlNode filter, @Nullable SqlNodeList distinctList,
+    public void validateAggregateParams(SqlValidator validator, SqlAggFunction op,SqlCall aggCall, @Nullable SqlNode filter, @Nullable SqlNodeList distinctList,
             @Nullable SqlNodeList orderList, SqlValidatorScope scope) {
     // Because there are two forms of the PERCENTILE_CONT/PERCENTILE_DISC functions,
     // they are distinguished by their operand count and then validated accordingly.
