@@ -69,7 +69,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
       boolean requiresOrder, boolean requiresOver,
       Optionality requiresGroupOrder, Optionality distinctOptionality,
       SqlSyntax syntax, boolean allowsNullTreatment, boolean allowsSeparator,
-      boolean percentile, boolean allowsFraming, @org.checkerframework.checker.nullness.qual.Nullable SqlAggFunctionExtensionContainer extensions) {
+      boolean percentile, boolean allowsFraming, @Nullable SqlAggFunctionExtensionContainer extensions) {
     super(name, sqlIdentifier, kind,
         requireNonNull(returnTypeInference, "returnTypeInference"), operandTypeInference,
         requireNonNull(operandTypeChecker, "operandTypeChecker"),
@@ -216,19 +216,6 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
         allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
-
-  // @Override public boolean isPercentile() {
-  //   return percentile;
-  // }
-
-  // /** Sets {@link #isPercentile()}. */
-  // public SqlBasicAggFunction withPercentile1(boolean percentile) {
-  //   return new SqlBasicAggFunction(getName(), getSqlIdentifier(), kind,
-  //       getReturnTypeInference(), getOperandTypeInference(),
-  //       getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
-  //       requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-  //       allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
-  // }
 
   @Override public boolean allowsFraming() {
     return allowsFraming;
