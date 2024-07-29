@@ -216,14 +216,4 @@ public abstract class SqlAggFunction extends SqlFunction implements Context {
   public @Nullable SqlAggFunction getRollup() {
     return null;
   }
-
-  /** Returns whether this aggregate function is a PERCENTILE function.
-   * Such functions require a {@code WITHIN GROUP} clause that has precisely
-   * one sort key.
-   *
-   * <p>NOTE: This API is experimental and subject to change without notice. */
-  @Experimental
-  public boolean isPercentil1e1() {
-    return false;
-  }
 }
