@@ -475,19 +475,20 @@ public class AggregateCall {
       return f.createAggCallBinding(this, aggregateRelBase);
     }
 
-    if(false)
-    if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
-        || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
-      assert collation.getKeys().size() == 1;
-      return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
-          aggFunction, projectTypes,
-          SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
-          aggregateRelBase.getGroupCount(), hasFilter());
-    }
+    if (false)
+      if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
+          || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
+        assert collation.getKeys().size() == 1;
+        return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
+            aggFunction, projectTypes,
+            SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
+            aggregateRelBase.getGroupCount(), hasFilter());
+      }
     return new Aggregate.AggCallBinding(typeFactory, aggFunction,
         RexUtil.types(rexList), projectTypes,
         aggregateRelBase.getGroupCount(), hasFilter());
   }
+
   public static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
 
     @Override public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {

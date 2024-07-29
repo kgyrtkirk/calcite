@@ -16,10 +16,14 @@
  */
 package org.apache.calcite.rel.core;
 
+import org.apache.calcite.rel.core.Aggregate.AggCallBinding;
 import org.apache.calcite.sql.SqlAggFunctionExtension;
 
 import org.codehaus.commons.nullanalysis.NotNull;
 
+/**
+ * Extension to override {@link AggCallBinding} creation.
+ */
 public interface AggCallBindingFactory extends SqlAggFunctionExtension {
     @NotNull
     Aggregate.AggCallBinding createAggCallBinding(AggregateCall aggregateCall,

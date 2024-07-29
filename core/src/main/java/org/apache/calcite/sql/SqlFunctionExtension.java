@@ -16,7 +16,17 @@
  */
 package org.apache.calcite.sql;
 
-// marker interface for aggfunctionextensions
+/**
+ * Parent class for Sql function extensions.
+ *
+ * Extensions of this interface might be hooked into the parser or other parts of the project.
+ * Main intention is to enable flexible addition of features not mandatorily specified for all funcitons.
+ *
+ * Examples could be:
+ * <ul>
+ *   <li>customized parser features
+ *   <li>custom validation logic for some function. FIXME write more
+ * </ul>
+ */
 public interface SqlFunctionExtension {
-
 }

@@ -21,11 +21,14 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+/**
+ * Extension to enable custom aggregate params validation.
+ */
 public interface AggregateParamsValidator extends SqlAggFunctionExtension {
 
     void validateAggregateParams(
-SqlValidator validator, SqlAggFunction op,
-        SqlCall aggCall,
+            SqlValidator validator, SqlAggFunction op,
+            SqlCall aggCall,
             @Nullable SqlNode filter, @Nullable SqlNodeList distinctList,
             @Nullable SqlNodeList orderList, SqlValidatorScope scope);
 

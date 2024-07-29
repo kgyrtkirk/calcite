@@ -16,28 +16,34 @@
  */
 package org.apache.calcite.sql.fun;
 
+import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.sql.SqlAggFunctionExtension;
+import org.apache.calcite.sql.SqlFunctionExtension;
 
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
 
-public class SqlAggFunctionExtensionContainer {
+/**
+ * Provides set level functions for {@link SqlFunctionExtension}.
+ */
+public class SqlAggFunctionExtensionContainer implements Wrapper {
 
-    private Map<Class<SqlAggFunctionExtension>, SqlAggFunctionExtension> extensionMap;
+    private Map<Class<? extends SqlAggFunctionExtension>, SqlAggFunctionExtension> extensionMap;
 
-    public static final SqlAggFunctionExtensionContainer EMPTY =
-            new SqlAggFunctionExtensionContainer(ImmutableMap.of());
+    public static final SqlAggFunctionExtensionContainer EMPTY = new SqlAggFunctionExtensionContainer(
+            ImmutableMap.of());
 
     public SqlAggFunctionExtensionContainer(
-            ImmutableMap<Class<SqlAggFunctionExtension>, SqlAggFunctionExtension> newMap) {
+            ImmutableMap<Class<? extends SqlAggFunctionExtension>, SqlAggFunctionExtension> newMap) {
         extensionMap = newMap;
     }
 
     public <T extends SqlAggFunctionExtension> SqlAggFunctionExtensionContainer with(Class<T> clazz, T extension) {
-        ImmutableMap<Class<SqlAggFunctionExtension>, SqlAggFunctionExtension> newMap = ImmutableMap
-                .<Class<SqlAggFunctionExtension>, SqlAggFunctionExtension>builder()
+        ImmutableMap<Class<? extends SqlAggFunctionExtension>, SqlAggFunctionExtension> newMap = ImmutableMap
+                .<Class<? extends SqlAggFunctionExtension>, SqlAggFunctionExtension>builder()
                 .putAll(extensionMap)
+                .put(clazz, extension)
                 .build();
 
         return new SqlAggFunctionExtensionContainer(newMap);
@@ -47,5 +53,4 @@ public class SqlAggFunctionExtensionContainer {
     public <T extends Object> T unwrap(Class<T> clazz) {
         return (T) extensionMap.get(clazz);
     }
-
 }
