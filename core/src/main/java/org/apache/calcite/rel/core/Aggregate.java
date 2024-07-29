@@ -642,21 +642,4 @@ public abstract class Aggregate extends SingleRel implements Hintable {
       return SqlUtil.newContextException(SqlParserPos.ZERO, e);
     }
   }
-
-  /** Used for PERCENTILE_DISC return type inference. */
-  public static class PercentileDiscAggCallBinding extends AggCallBinding {
-    private final RelDataType collationType;
-
-    PercentileDiscAggCallBinding(RelDataTypeFactory typeFactory, SqlAggFunction aggFunction,
-        List<RelDataType> operands, RelDataType collationType, int groupCount,
-        boolean filter) {
-      super(typeFactory, aggFunction, operands, groupCount, filter);
-      assert aggFunction.isPercentile();
-      this.collationType = collationType;
-    }
-
-    @Override public RelDataType getCollationType() {
-      return collationType;
-    }
-  }
 }

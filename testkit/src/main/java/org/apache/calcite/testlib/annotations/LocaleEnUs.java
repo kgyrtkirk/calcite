@@ -14,14 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.testlib.annotations
+package org.apache.calcite.testlib.annotations;
 
-import java.lang.annotation.Inherited
+public @interface LocaleEnUs {
 
-@Inherited
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-annotation class WithLocale(
-    val language: String,
-    val country: String = "",
-    val variant: String = ""
-)
+}

@@ -18,6 +18,7 @@ package org.apache.calcite.sql.fun;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlAggFunctionExtension;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -55,6 +56,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
   private final boolean allowsSeparator;
   private final boolean percentile;
   private final boolean allowsFraming;
+  private final SqlAggFunctionExtensionContainer extensions;
 
   //~ Constructors -----------------------------------------------------------
 
@@ -67,7 +69,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
       boolean requiresOrder, boolean requiresOver,
       Optionality requiresGroupOrder, Optionality distinctOptionality,
       SqlSyntax syntax, boolean allowsNullTreatment, boolean allowsSeparator,
-      boolean percentile, boolean allowsFraming) {
+      boolean percentile, boolean allowsFraming, @Nullable SqlAggFunctionExtensionContainer extensions) {
     super(name, sqlIdentifier, kind,
         requireNonNull(returnTypeInference, "returnTypeInference"), operandTypeInference,
         requireNonNull(operandTypeChecker, "operandTypeChecker"),
@@ -81,6 +83,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
     this.allowsSeparator = allowsSeparator;
     this.percentile = percentile;
     this.allowsFraming = allowsFraming;
+    this.extensions = requireNonNull(extensions, "extensions");
   }
 
   /** Creates a SqlBasicAggFunction whose name is the same as its kind. */
@@ -97,7 +100,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
     return new SqlBasicAggFunction(name, null, kind, returnTypeInference, null,
         operandTypeChecker, null, SqlFunctionCategory.NUMERIC, false, false,
         Optionality.FORBIDDEN, Optionality.OPTIONAL, SqlSyntax.FUNCTION, false,
-        false, false, true);
+        false, false, true, SqlAggFunctionExtensionContainer.EMPTY);
   }
 
   //~ Methods ----------------------------------------------------------------
@@ -106,6 +109,9 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
     if (clazz.isInstance(staticFun)) {
       return clazz.cast(staticFun);
     }
+    T ext = extensions.unwrap(clazz);
+    if (ext != null)
+      return ext;
     return super.unwrap(clazz);
   }
 
@@ -149,7 +155,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   /** Sets {@link #getDistinctOptionality()}. */
@@ -158,7 +164,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   /** Sets {@link #getFunctionType()}. */
@@ -167,7 +173,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, category, requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   @Override public SqlSyntax getSyntax() {
@@ -180,7 +186,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   @Override public boolean allowsNullTreatment() {
@@ -193,7 +199,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   /** Returns whether this aggregate function allows '{@code SEPARATOR string}'
@@ -208,20 +214,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
-  }
-
-  @Override public boolean isPercentile() {
-    return percentile;
-  }
-
-  /** Sets {@link #isPercentile()}. */
-  public SqlBasicAggFunction withPercentile(boolean percentile) {
-    return new SqlBasicAggFunction(getName(), getSqlIdentifier(), kind,
-        getReturnTypeInference(), getOperandTypeInference(),
-        getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
-        requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   @Override public boolean allowsFraming() {
@@ -234,7 +227,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   /** Sets {@link #requiresOver()}. */
@@ -243,7 +236,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         over, requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   /** Sets {@link #requiresGroupOrder()}. */
@@ -252,7 +245,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), groupOrder, distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
   }
 
   /** Sets that value to be returned when {@link #unwrap} is applied to
@@ -262,6 +255,14 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
         getReturnTypeInference(), getOperandTypeInference(),
         getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
         requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
-        allowsNullTreatment, allowsSeparator, percentile, allowsFraming);
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions);
+  }
+
+  public <T extends SqlAggFunctionExtension> SqlBasicAggFunction withExtension(Class<T> clazz, T extension) {
+    return new SqlBasicAggFunction(getName(), getSqlIdentifier(), kind,
+        getReturnTypeInference(), getOperandTypeInference(),
+        getOperandTypeChecker(), staticFun, getFunctionType(), requiresOrder(),
+        requiresOver(), requiresGroupOrder(), distinctOptionality, syntax,
+        allowsNullTreatment, allowsSeparator, percentile, allowsFraming, extensions.with(clazz, extension));
   }
 }

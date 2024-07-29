@@ -14,14 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.calcite.testlib.annotations
+package org.apache.calcite.rel.core;
 
-import org.apache.calcite.testlib.WithLocaleExtension
-import org.junit.jupiter.api.extension.ExtendWith
-import java.lang.annotation.Inherited
+import org.apache.calcite.rel.core.Aggregate.AggCallBinding;
+import org.apache.calcite.sql.SqlAggFunctionExtension;
 
-@Inherited
-@Target(AnnotationTarget.CLASS)
-@ExtendWith(WithLocaleExtension::class)
-@WithLocale(language = "en", country = "US")
-annotation class LocaleEnUs
+import org.codehaus.commons.nullanalysis.NotNull;
+
+/**
+ * Extension to override {@link AggCallBinding} creation.
+ */
+public interface AggCallBindingFactory extends SqlAggFunctionExtension {
+    @NotNull
+    Aggregate.AggCallBinding createAggCallBinding(AggregateCall aggregateCall,
+            Aggregate aggregateRelBase);
+
+}
