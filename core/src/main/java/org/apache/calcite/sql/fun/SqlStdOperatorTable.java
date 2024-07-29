@@ -2321,7 +2321,6 @@ static class PercentileValidator1 implements AggregateParamsValidator {
     }
     }
 
-
 }
 
   /**
