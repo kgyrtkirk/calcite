@@ -2281,8 +2281,8 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withGroupOrder(Optionality.MANDATORY)
           .withAllowsFraming(false)
-                  .withExtension(AggregateParamsValidator.class, new PercentileAggregateParamsValidator())
-                  .withExtension(AggCallBindingFactory.class, new PercentileAggCallBindingFactory());
+          .withExtension(AggregateParamsValidator.class, new PercentileAggregateParamsValidator())
+          .withExtension(AggCallBindingFactory.class, new PercentileAggCallBindingFactory());
 
 static class PercentileAggregateParamsValidator implements AggregateParamsValidator {
 
