@@ -31,8 +31,8 @@ public class SqlAggFunctionExtensionContainer implements Wrapper {
 
     private Map<Class<? extends SqlAggFunctionExtension>, SqlAggFunctionExtension> extensionMap;
 
-    public static final SqlAggFunctionExtensionContainer EMPTY = new SqlAggFunctionExtensionContainer(
-            ImmutableMap.of());
+    public static final SqlAggFunctionExtensionContainer EMPTY =
+            new SqlAggFunctionExtensionContainer(ImmutableMap.of());
 
     public SqlAggFunctionExtensionContainer(
             ImmutableMap<Class<? extends SqlAggFunctionExtension>, SqlAggFunctionExtension> newMap) {

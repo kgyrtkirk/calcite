@@ -25,7 +25,6 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlAggFunction;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Optionality;
@@ -475,42 +474,11 @@ public class AggregateCall {
       return f.createAggCallBinding(this, aggregateRelBase);
     }
 
-    if (false)
-      if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
-          || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
-        assert collation.getKeys().size() == 1;
-        return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
-            aggFunction, projectTypes,
-            SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
-            aggregateRelBase.getGroupCount(), hasFilter());
-      }
     return new Aggregate.AggCallBinding(typeFactory, aggFunction,
         RexUtil.types(rexList), projectTypes,
         aggregateRelBase.getGroupCount(), hasFilter());
   }
 
-  public static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
-
-    @Override public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {
-      // TODO Auto-generated method stub
-      SqlAggFunction aggFunction = aggregateCall.aggFunction;
-    final RelDataType rowType = aggregateRelBase.getInput().getRowType();
-    final RelDataTypeFactory typeFactory =
-        aggregateRelBase.getCluster().getTypeFactory();
-      RelCollation collation = aggregateCall.collation;
-      List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, aggregateCall.argList);
-
-      if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
-          || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
-        assert collation.getKeys().size() == 1;
-        return new Aggregate.PercentileDiscAggCallBinding1(typeFactory,
-            aggFunction, projectTypes,
-            SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
-            aggregateRelBase.getGroupCount(), aggregateCall.hasFilter());
-      }
-      return null;
-    }
-  }
   /**
    * Creates an equivalent AggregateCall with new argument ordinals.
    *
