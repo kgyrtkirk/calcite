@@ -17,6 +17,14 @@
 package org.apache.calcite.sql.fun;
 
 import org.apache.calcite.avatica.util.TimeUnit;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.core.AggCallBindingFactory;
+import org.apache.calcite.rel.core.Aggregate;
+import org.apache.calcite.rel.core.Aggregate.AggCallBinding;
+import org.apache.calcite.rel.core.AggregateCall;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.AggregateParamsValidator;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
@@ -36,6 +44,7 @@ import org.apache.calcite.sql.SqlLateralOperator;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlMatchFunction;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNullTreatmentOperator;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -66,10 +75,13 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlModality;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql2rel.AuxiliaryConverter;
 import org.apache.calcite.util.Litmus;
 import org.apache.calcite.util.Optionality;
@@ -86,6 +98,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.apache.calcite.linq4j.Nullness.castNonNull;
+import static org.apache.calcite.util.Static.RESOURCE;
 
 import static java.util.Objects.requireNonNull;
 
@@ -2267,8 +2280,88 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
               OperandTypes.UNIT_INTERVAL_NUMERIC_LITERAL)
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withGroupOrder(Optionality.MANDATORY)
-          .withPercentile(true)
-          .withAllowsFraming(false);
+          .withAllowsFraming(false)
+          .withExtension(AggregateParamsValidator.class, new PercentileAggregateParamsValidator())
+          .withExtension(AggCallBindingFactory.class, new PercentileAggCallBindingFactory());
+
+static class PercentileAggregateParamsValidator implements AggregateParamsValidator {
+
+    @Override public void validateAggregateParams(SqlValidator validator, SqlAggFunction op,SqlCall aggCall, @Nullable SqlNode filter, @Nullable SqlNodeList distinctList,
+            @Nullable SqlNodeList orderList, SqlValidatorScope scope) {
+    // Because there are two forms of the PERCENTILE_CONT/PERCENTILE_DISC functions,
+    // they are distinguished by their operand count and then validated accordingly.
+    // For example, the standard single operand form requires group order while the
+    // 2-operand form allows for null treatment and requires an OVER() clause.
+      switch (aggCall.operandCount()) {
+      case 1:
+        assert op.requiresGroupOrder() == Optionality.MANDATORY;
+        assert orderList != null;
+        // Validate that percentile function have a single ORDER BY expression
+        if (orderList.size() != 1) {
+          throw validator.newValidationError(orderList,
+              RESOURCE.orderByRequiresOneKey(op.getName()));
+        }
+        // Validate that the ORDER BY field is of NUMERIC type
+        SqlNode node = orderList.get(0);
+        assert node != null;
+        final RelDataType type = validator.deriveType(scope, node);
+        final @Nullable SqlTypeFamily family = type.getSqlTypeName().getFamily();
+        if (family == null
+            || family.allowableDifferenceTypes().isEmpty()) {
+          throw validator.newValidationError(orderList,
+              RESOURCE.unsupportedTypeInOrderBy(
+                  type.getSqlTypeName().getName(),
+                  op.getName()));
+        }
+        break;
+      case 2:
+        assert op.allowsNullTreatment();
+        assert op.requiresOver();
+        assert op.requiresGroupOrder() == Optionality.FORBIDDEN;
+        break;
+      default:
+        throw validator.newValidationError(aggCall, RESOURCE.percentileFunctionsArgumentLimit());
+      }
+    }
+  }
+
+  public static class PercentileAggCallBindingFactory  implements AggCallBindingFactory{
+
+    @Override public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {
+      SqlAggFunction aggFunction = aggregateCall.getAggregation();
+    final RelDataType rowType = aggregateRelBase.getInput().getRowType();
+    final RelDataTypeFactory typeFactory =
+        aggregateRelBase.getCluster().getTypeFactory();
+      RelCollation collation = aggregateCall.collation;
+      List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, aggregateCall.getArgList());
+
+      if (aggFunction.getKind() == SqlKind.PERCENTILE_DISC
+          || aggFunction.getKind() == SqlKind.PERCENTILE_CONT) {
+        assert collation.getKeys().size() == 1;
+        return new PercentileDiscAggCallBinding(typeFactory,
+            aggFunction, projectTypes,
+            SqlTypeUtil.projectTypes(rowType, collation.getKeys()).get(0),
+            aggregateRelBase.getGroupCount(), aggregateCall.hasFilter());
+      }
+      return null;
+    }
+  }
+
+  /** Used for PERCENTILE_DISC return type inference. */
+  public static class PercentileDiscAggCallBinding extends AggCallBinding {
+    private final RelDataType collationType;
+
+    PercentileDiscAggCallBinding(RelDataTypeFactory typeFactory, SqlAggFunction aggFunction,
+        List<RelDataType> operands, RelDataType collationType, int groupCount,
+        boolean filter) {
+      super(typeFactory, aggFunction, ImmutableList.of(), operands, groupCount, filter);
+      this.collationType = collationType;
+    }
+
+    @Override public RelDataType getCollationType() {
+      return collationType;
+    }
+  }
 
   /**
    * {@code PERCENTILE_DISC} inverse distribution aggregate function.
@@ -2283,8 +2376,10 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
               OperandTypes.UNIT_INTERVAL_NUMERIC_LITERAL)
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withGroupOrder(Optionality.MANDATORY)
-          .withPercentile(true)
-          .withAllowsFraming(false);
+          .withAllowsFraming(false)
+          .withExtension(AggregateParamsValidator.class, new PercentileAggregateParamsValidator())
+          .withExtension(AggCallBindingFactory.class, new PercentileAggCallBindingFactory());          ;
+  ;
 
   /**
    * The LISTAGG operator. String aggregator function.
