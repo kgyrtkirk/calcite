@@ -16,8 +16,10 @@
  */
 package org.apache.calcite.sql.fun;
 
+import org.apache.calcite.rel.core.AggCallBindingFactory;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.AggregateParamsValidator;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlBasicFunction;
 import org.apache.calcite.sql.SqlBinaryOperator;
@@ -32,6 +34,8 @@ import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.SqlWriter;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable.PercentileAggCallBindingFactory;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable.PercentileAggregateParamsValidator;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.OperandHandlers;
 import org.apache.calcite.sql.type.OperandTypes;
@@ -765,7 +769,10 @@ public abstract class SqlLibraryOperators {
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withOver(true)
           .withAllowsNullTreatment(true)
-          .withAllowsFraming(false);
+          .withAllowsFraming(false)
+          .withExtension(AggregateParamsValidator.class, new PercentileAggregateParamsValidator())
+          .withExtension(AggCallBindingFactory.class, new PercentileAggCallBindingFactory());
+
 
   /** The {@code PERCENTILE_DISC} function, BigQuery's
    * equivalent to {@link SqlStdOperatorTable#PERCENTILE_DISC},
@@ -779,7 +786,9 @@ public abstract class SqlLibraryOperators {
           .withFunctionType(SqlFunctionCategory.SYSTEM)
           .withOver(true)
           .withAllowsNullTreatment(true)
-          .withAllowsFraming(false);
+          .withAllowsFraming(false)
+          .withExtension(AggregateParamsValidator.class, new PercentileAggregateParamsValidator())
+          .withExtension(AggCallBindingFactory.class, new PercentileAggCallBindingFactory());
 
   /** The "DATE" function. It has the following overloads:
    *
