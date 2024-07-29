@@ -94,6 +94,7 @@ import java.util.function.Supplier;
 
 import static org.apache.calcite.linq4j.Nullness.castNonNull;
 import static org.apache.calcite.util.Static.RESOURCE;
+
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -2280,8 +2281,7 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
 
 static class PercentileValidator1 implements AggregateParamsValidator {
 
-    @Override
-    public void validateAggregateParams(SqlValidator validator, SqlAggFunction op,SqlCall aggCall, @Nullable SqlNode filter, @Nullable SqlNodeList distinctList,
+    @Override public void validateAggregateParams(SqlValidator validator, SqlAggFunction op,SqlCall aggCall, @Nullable SqlNode filter, @Nullable SqlNodeList distinctList,
             @Nullable SqlNodeList orderList, SqlValidatorScope scope) {
     // Because there are two forms of the PERCENTILE_CONT/PERCENTILE_DISC functions,
     // they are distinguished by their operand count and then validated accordingly.
@@ -2321,7 +2321,7 @@ static class PercentileValidator1 implements AggregateParamsValidator {
     }
     }
 
-    
+
 }
 
   /**

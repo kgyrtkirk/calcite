@@ -468,7 +468,7 @@ public class AggregateCall {
     final RelDataTypeFactory typeFactory =
         aggregateRelBase.getCluster().getTypeFactory();
     List<RelDataType> projectTypes = SqlTypeUtil.projectTypes(rowType, argList);
-    
+
 
     AggCallBindingFactory f = aggFunction.unwrap(AggCallBindingFactory.class);
     if (f != null) {
@@ -490,8 +490,7 @@ public class AggregateCall {
   }
   public static class PercentileXAggCallBindingFactory  implements AggCallBindingFactory{
 
-    @Override
-    public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {
+    @Override public Aggregate.AggCallBinding  createAggCallBinding(AggregateCall aggregateCall, Aggregate aggregateRelBase) {
       // TODO Auto-generated method stub
       SqlAggFunction aggFunction = aggregateCall.aggFunction;
     final RelDataType rowType = aggregateRelBase.getInput().getRowType();

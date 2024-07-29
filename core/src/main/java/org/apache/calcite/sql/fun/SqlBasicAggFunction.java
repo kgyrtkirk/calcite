@@ -25,7 +25,6 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlStaticAggFunction;
 import org.apache.calcite.sql.SqlSyntax;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable.PercentileValidator1;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
@@ -36,11 +35,7 @@ import org.apache.calcite.util.Optionality;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import com.google.common.collect.ImmutableList;
-
 import static java.util.Objects.requireNonNull;
-
-import java.util.Map;
 
 /**
  * Concrete implementation of {@link SqlAggFunction}.
@@ -74,8 +69,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
       boolean requiresOrder, boolean requiresOver,
       Optionality requiresGroupOrder, Optionality distinctOptionality,
       SqlSyntax syntax, boolean allowsNullTreatment, boolean allowsSeparator,
-      boolean percentile, boolean allowsFraming, @javax.annotation.Nullable SqlAggFunctionExtensionContainer extensions
-      ) {
+      boolean percentile, boolean allowsFraming, @org.checkerframework.checker.nullness.qual.Nullable SqlAggFunctionExtensionContainer extensions) {
     super(name, sqlIdentifier, kind,
         requireNonNull(returnTypeInference, "returnTypeInference"), operandTypeInference,
         requireNonNull(operandTypeChecker, "operandTypeChecker"),
@@ -89,7 +83,7 @@ public final class SqlBasicAggFunction extends SqlAggFunction {
     this.allowsSeparator = allowsSeparator;
     this.percentile = percentile;
     this.allowsFraming = allowsFraming;
-    this.extensions = requireNonNull(extensions);
+    this.extensions = requireNonNull(extensions, "extensions");
   }
 
   /** Creates a SqlBasicAggFunction whose name is the same as its kind. */
