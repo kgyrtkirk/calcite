@@ -47,8 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Rule that converts CASE-style filtered aggregates into true filtered
- * aggregates.
+ * Rule that converts CASE-style filtered aggregates into true filtered aggregates.
  *
  * <p>For example,
  *
@@ -95,7 +94,6 @@ public class AggregateCaseToFilterRule
         return true;
       }
     }
-
     return false;
   }
 
