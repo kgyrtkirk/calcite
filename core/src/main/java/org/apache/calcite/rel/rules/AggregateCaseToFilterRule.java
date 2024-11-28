@@ -32,7 +32,6 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -90,8 +89,7 @@ public class AggregateCaseToFilterRule
 
     for (AggregateCall aggregateCall : aggregate.getAggCallList()) {
       final int singleArg = soleArgument(aggregateCall);
-      if (singleArg >= 0
-          && isThreeArgCase(project.getProjects().get(singleArg))) {
+      if (singleArg >= 0) {
         return true;
       }
     }
@@ -240,18 +238,22 @@ public class AggregateCaseToFilterRule
           return null;
         }
         final RexCall caseCall = (RexCall) rexNode;
+        ImmutableList<RexNode> operands = caseCall.operands;
+        RexIf rexIf = new RexIf(operands.get(0), operands.get(1), operands.get(2));
+        if (RexLiteral.isNullLiteral(rexIf.left) && RexLiteral.isNullLiteral(rexIf.right)) {
+          // Flip the conditional to put the `null` on the else side.
+          return new RexIf(
+              rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, rexIf.condition),
+              rexIf.right,
+              rexIf.left
+          );
+        }
+        return rexIf;
+      }
 
-        // If one arg is null and the other is not, reverse them and set "flip",
-        // which negates the filter.
-        final boolean flip = RexLiteral.isNullLiteral(caseCall.operands.get(1))
-            && !RexLiteral.isNullLiteral(caseCall.operands.get(2));
-        final RexNode arg1 = caseCall.operands.get(flip ? 2 : 1);
-        final RexNode arg2 = caseCall.operands.get(flip ? 1 : 2);
-
-        final SqlPostfixOperator op = flip ? SqlStdOperatorTable.IS_NOT_TRUE : SqlStdOperatorTable.IS_TRUE;
-        final RexNode filterFromCase = rexBuilder.makeCall(op, caseCall.operands.get(0));
-
-        return new RexIf(filterFromCase, arg1, arg2);
+      private static boolean isThreeArgCase(final RexNode rexNode)
+      {
+        return rexNode.getKind() == SqlKind.CASE && ((RexCall) rexNode).operands.size() == 3;
       }
     }
 
@@ -519,11 +521,6 @@ public class AggregateCaseToFilterRule
     return aggregateCall.getArgList().size() == 1
         ? aggregateCall.getArgList().get(0)
         : -1;
-  }
-
-  private static boolean isThreeArgCase(final RexNode rexNode) {
-    return rexNode.getKind() == SqlKind.CASE
-        && ((RexCall) rexNode).operands.size() == 3;
   }
 
   private static boolean isIntLiteral(RexNode rexNode, BigDecimal value) {
