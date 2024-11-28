@@ -237,10 +237,9 @@ public class AggregateCaseToFilterRule
         if (!isThreeArgCase(rexNode)) {
           return null;
         }
-        final RexCall caseCall = (RexCall) rexNode;
-        ImmutableList<RexNode> operands = caseCall.operands;
+        List<RexNode> operands = ((RexCall) rexNode).operands;
         RexIf rexIf = new RexIf(operands.get(0), operands.get(1), operands.get(2));
-        if (RexLiteral.isNullLiteral(rexIf.left) && RexLiteral.isNullLiteral(rexIf.right)) {
+        if (RexLiteral.isNullLiteral(rexIf.left) && !RexLiteral.isNullLiteral(rexIf.right)) {
           // Flip the conditional to put the `null` on the else side.
           return new RexIf(
               rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, rexIf.condition),
