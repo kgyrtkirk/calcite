@@ -20,6 +20,7 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Project;
@@ -36,7 +37,6 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RelBuilderFactory;
-
 import com.google.common.collect.ImmutableList;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -98,6 +98,110 @@ public class AggregateCaseToFilterRule
   }
 
   @Override public void onMatch(RelOptRuleCall call) {
+    final Aggregate aggregate = call.rel(0);
+    final Project project = call.rel(1);
+    final List<AggregateCall> newCalls =
+        new ArrayList<>(aggregate.getAggCallList().size());
+    final List<RexNode> newProjects = new ArrayList<>(project.getProjects());
+
+    LocalAggBuilder lab = new LocalAggBuilder(call.builder(), project);
+
+    for (AggregateCall aggregateCall : aggregate.getAggCallList()) {
+      lab.add(aggregateCall);
+    }
+
+    if (lab.aggs.equals(aggregate.getAggCallList())) {
+      // no progress
+      return;
+    }
+
+    RelNode newRel = lab.build(aggregate);
+
+    call.transformTo(newRel);
+    call.getPlanner().prune(aggregate);
+  }
+
+  private static class RexIf
+  {
+    public final RexNode condition;
+    public final RexNode left;
+    public final RexNode right;
+
+    public RexIf(RexNode condition, RexNode left, RexNode right)
+    {
+      this.condition = condition;
+      this.left = left;
+      this.right = right;
+    }
+
+    public static RexIf of(RexBuilder rexBuilder, RexNode rexNode)
+    {
+      if (!isThreeArgCase(rexNode)) {
+        return null;
+      }
+      final RexCall caseCall = (RexCall) rexNode;
+
+      // If one arg is null and the other is not, reverse them and set "flip",
+      // which negates the filter.
+      final boolean flip = RexLiteral.isNullLiteral(caseCall.operands.get(1))
+          && !RexLiteral.isNullLiteral(caseCall.operands.get(2));
+      final RexNode arg1 = caseCall.operands.get(flip ? 2 : 1);
+      final RexNode arg2 = caseCall.operands.get(flip ? 1 : 2);
+
+      final SqlPostfixOperator op = flip ? SqlStdOperatorTable.IS_NOT_TRUE : SqlStdOperatorTable.IS_TRUE;
+      final RexNode filterFromCase = rexBuilder.makeCall(op, caseCall.operands.get(0));
+
+      return new RexIf(filterFromCase, arg1, arg2);
+    }
+  }
+
+  /**
+   * Helper class to aid building the output {@link Aggregate}.
+   */
+  private static class LocalAggBuilder
+  {
+    private RelBuilder builder;
+    private List<AggregateCall> aggs = new ArrayList<>();
+    private List<RexNode> newProjects;
+    private Project oldProject;
+
+
+    public LocalAggBuilder(RelBuilder builder, Project project)
+    {
+      this.builder = builder;
+      this.oldProject = project;
+      this.newProjects = new ArrayList<RexNode>(project.getProjects());
+    }
+
+    public RelNode build(Aggregate oldAggregate)
+    {
+      Aggregate aggregate = oldAggregate;
+      final RelBuilder relBuilder = builder
+          .push(oldProject.getInput())
+          .project(newProjects);
+
+      final RelBuilder.GroupKey groupKey =
+          relBuilder.groupKey(aggregate.getGroupSet(), aggregate.getGroupSets());
+
+      relBuilder.aggregate(groupKey, aggs)
+          .convert(aggregate.getRowType(), false);
+
+      return relBuilder.build();
+    }
+
+    public void add(AggregateCall aggregateCall)
+    {
+      @Nullable
+      AggregateCall a = transform(aggregateCall, oldProject, newProjects);
+      if(a==null) {
+        a=aggregateCall;
+      }
+      aggs.add(a);
+    }
+
+  }
+
+  public void onMatch0(RelOptRuleCall call) {
     final Aggregate aggregate = call.rel(0);
     final Project project = call.rel(1);
     final List<AggregateCall> newCalls =
