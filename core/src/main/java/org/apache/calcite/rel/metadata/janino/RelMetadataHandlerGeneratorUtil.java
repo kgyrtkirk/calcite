@@ -79,7 +79,7 @@ public class RelMetadataHandlerGeneratorUtil {
 
     // Class definition
     buff.append("public final class ").append(name).append("\n")
-        .append("  implements ").append(handlerClass.getCanonicalName().replace('$', '.')).append(" {\n");
+        .append("  implements ").append(handlerClass.getCanonicalName()).append(" {\n");
 
     // Properties
     Ord.forEach(declaredMethods.values(), (declaredMethod, i) ->
