@@ -93,8 +93,8 @@ dependencies {
     testOracle("com.oracle.ojdbc:ojdbc8")
     testPostgresql("org.postgresql:postgresql")
 
-    //testImplementation(project(":testkit"))
-    testImplementation("org.apache.calcite:calcite-testkit:1.38.0-SNAPSHOT")
+    // testImplementation(project(":testkit"))
+    testImplementation("org.apache.calcite:calcite-testkit:1.39.0-SNAPSHOT")
     testImplementation("commons-lang:commons-lang")
     testImplementation("net.bytebuddy:byte-buddy")
     testImplementation("net.hydromatic:foodmart-queries")

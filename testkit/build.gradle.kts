@@ -19,8 +19,8 @@ plugins {
 }
 
 dependencies {
-    // api(project(":core"))
-    compileOnly("org.apache.calcite:calcite-core:1.38.0-SNAPSHOT")
+    api(project(":core"))
+    // compileOnly("org.apache.calcite:calcite-core:1.38.0-SNAPSHOT")
     api("org.checkerframework:checker-qual")
 
     implementation(platform("org.junit:junit-bom"))

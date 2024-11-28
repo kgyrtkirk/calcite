@@ -20,7 +20,12 @@ import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.rel.metadata.NullSentinel;
 import org.apache.calcite.util.NlsString;
+import org.apache.calcite.util.Pair;
+import org.apache.calcite.util.Util;
+
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,7 +59,8 @@ public class RexAnalyzer {
         variables.stream().map(RexAnalyzer::getComparables)
             .collect(toImmutableList());
     final Iterable<List<Comparable>> product = Linq4j.product(generators);
-    return null;
+    return Util.transform(product,
+        values -> ImmutableMap.copyOf(Pair.zip(variables, values)));
   }
 
   private static List<Comparable> getComparables(RexNode variable) {

@@ -1170,7 +1170,7 @@ public class Linq4jTest {
     ParameterExpression parameter =
         Expressions.parameter(Employee.class);
     final Queryable<Employee> nh =
-null;    assertEquals(3, nh.count());
+    null;    assertTrue(false);
 
     // second, use an expression
     final Queryable<Employee> nh2 =
