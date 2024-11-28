@@ -39,7 +39,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RelBuilderFactory;
 import com.google.common.collect.ImmutableList;
-
+import com.google.common.collect.Lists;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.immutables.value.Value;
 
@@ -193,13 +193,54 @@ public class AggregateCaseToFilterRule
     public void add(AggregateCall aggregateCall)
     {
       @Nullable
-      AggregateCall a = transform(aggregateCall, oldProject, newProjects);
+      AggregateCall a = null;
+
+      if(a==null) {
+        a = transformX1(this, aggregateCall);
+      }
+
+      if(a==null) {
+        a = transform0(aggregateCall, oldProject, newProjects);
+      }
+
       if(a==null) {
         a=aggregateCall;
       }
       aggs.add(a);
     }
 
+    public RexBuilder getRexBuilder()
+    {
+      return oldProject.getCluster().getRexBuilder();
+    }
+
+    /**
+     * Adds the expression to be projected.
+     *
+     * Returns the index of the projected expression.
+     */
+    public int projectExpr(RexNode expr)
+    {
+      newProjects.add(expr);
+      return newProjects.size() - 1;
+    }
+
+    public int projectCombinedFilter(AggregateCall call, RexNode condition)
+    {
+      return projectExpr(buildCombinedFilter(call, condition));
+    }
+
+    protected RexNode buildCombinedFilter(AggregateCall call, RexNode condition)
+    {
+      if (call.filterArg < 0) {
+        return condition;
+      }
+      RexNode oldFilterExpr = oldProject.getProjects().get(call.filterArg);
+      return RexUtil.composeConjunction(
+          getRexBuilder(),
+          ImmutableList.of(condition, oldFilterExpr)
+      );
+    }
   }
 
   public void onMatch0(RelOptRuleCall call) {
@@ -239,6 +280,118 @@ public class AggregateCaseToFilterRule
   }
 
 
+
+  public static interface AggregateCallTransform {
+
+    public @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call);
+
+  }
+
+  protected static abstract class ThreeArgCaseBasedAggregateCallTransform implements AggregateCallTransform {
+
+    public final @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call) {
+
+      final int singleArg = soleArgument(call);
+      if (singleArg < 0) {
+        return null;
+      }
+      final RexNode rexNode = localAggBuilder.oldProject.getProjects().get(singleArg);
+      final RexBuilder rexBuilder = localAggBuilder.getRexBuilder();
+
+      RexIf c = RexIf.of(rexBuilder, rexNode);
+      if (c == null) {
+        return null;
+      }
+
+      return trasnsform(localAggBuilder, call, c);
+    }
+
+    protected abstract @Nullable AggregateCall trasnsform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf);
+
+  }
+
+  /**
+   * Recognizes conditionally filtered distinct.
+   *
+   * <pre>
+   * COUNT(DISTINCT CASE WHEN x = 'foo' THEN y END)
+   *  =>
+   * COUNT(DISTINCT y) FILTER(WHERE x = 'foo')
+   * </pre>
+   */
+  protected static class FilteredDistinctTransform extends ThreeArgCaseBasedAggregateCallTransform
+  {
+    @Override
+    protected @Nullable AggregateCall trasnsform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    {
+      if(call.isDistinct()) {
+        return null;
+      }
+      SqlKind kind = call.getAggregation().getKind();
+      if (!(kind == SqlKind.COUNT && RexLiteral.isNullLiteral(rexIf.right))) {
+        return null;
+      }
+
+      int leftIndex = localAggBuilder.projectExpr(rexIf.left);
+      int filterIndex = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      return AggregateCall.create(
+          SqlStdOperatorTable.COUNT, true, false,
+          false, call.rexList, ImmutableList.of(leftIndex),
+          filterIndex, null, RelCollations.EMPTY,
+          call.getType(), call.getName()
+      );
+    }
+  }
+
+  private static RexNode getFilterExpr(AggregateCall call, Project project)
+  {
+    if (call.filterArg >= 0) {
+      return project.getProjects().get(call.filterArg);
+    }
+    return null;
+  }
+
+
+  public static @Nullable AggregateCall transformX1(LocalAggBuilder localAggBuilder, AggregateCall call)
+  {
+    final int singleArg = soleArgument(call);
+    if (singleArg < 0) {
+      return null;
+    }
+    final RexNode rexNode = localAggBuilder.oldProject.getProjects().get(singleArg);
+    final RexBuilder rexBuilder = localAggBuilder.getRexBuilder();
+
+    RexIf c = RexIf.of(rexBuilder, rexNode);
+    if (c == null) {
+      return null;
+    }
+
+    final RexNode combinedFilter = RexUtil.composeConjunction(
+        rexBuilder,
+        Lists.newArrayList(c.condition, getFilterExpr(call, localAggBuilder.oldProject))
+    );
+
+    final SqlKind kind = call.getAggregation().getKind();
+
+    if (call.isDistinct()) {
+      // Just one style supported:
+      //   COUNT(DISTINCT CASE WHEN x = 'foo' THEN y END)
+      // =>
+      //   COUNT(DISTINCT y) FILTER(WHERE x = 'foo')
+
+      if (kind == SqlKind.COUNT && RexLiteral.isNullLiteral(c.right)) {
+        int leftIndex = localAggBuilder.projectExpr(c.left);
+        int filterIndex = localAggBuilder.projectExpr(combinedFilter);
+        return AggregateCall.create(SqlStdOperatorTable.COUNT, true, false,
+            false, call.rexList, ImmutableList.of(leftIndex),
+            filterIndex, null, RelCollations.EMPTY,
+            call.getType(), call.getName());
+      }
+    }
+    return null;
+
+  }
+
   private static @Nullable AggregateCall transform0(AggregateCall call,
       Project project, List<RexNode> newProjects) {
     final int singleArg = soleArgument(call);
@@ -261,8 +414,12 @@ public class AggregateCaseToFilterRule
       );
 
 
+      return null;
 //      AggregateCall possibleRet = transform2(c, call);
     }
+
+    {
+
     if (!isThreeArgCase(rexNode)) {
       return null;
     }
@@ -362,14 +519,7 @@ public class AggregateCaseToFilterRule
     } else {
       return null;
     }
-  }
-
-  private static RexNode getFilterExpr(AggregateCall call, Project project)
-  {
-    if (call.filterArg >= 0) {
-      return project.getProjects().get(call.filterArg);
     }
-    return null;
   }
 
   private static @Nullable AggregateCall transform(AggregateCall call,
