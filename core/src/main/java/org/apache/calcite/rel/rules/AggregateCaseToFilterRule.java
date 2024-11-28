@@ -23,6 +23,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.rules.AggregateCaseToFilterRule.AggregateCallTransform.LocalAggBuilder;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
@@ -121,102 +122,104 @@ public class AggregateCaseToFilterRule
     call.getPlanner().prune(aggregate);
   }
 
-  /**
-   * Helper class to aid building the output {@link Aggregate}.
-   */
-  protected static class LocalAggBuilder
-  {
-    private RelBuilder builder;
-    private List<AggregateCall> aggs = new ArrayList<>();
-    private List<RexNode> newProjects;
-    private Project oldProject;
 
+  public interface AggregateCallTransform {
 
-    public LocalAggBuilder(RelBuilder builder, Project project)
-    {
-      this.builder = builder;
-      this.oldProject = project;
-      this.newProjects = new ArrayList<RexNode>(project.getProjects());
-    }
-
-    public RelNode build(Aggregate oldAggregate)
-    {
-      Aggregate aggregate = oldAggregate;
-      final RelBuilder relBuilder = builder
-          .push(oldProject.getInput())
-          .project(newProjects);
-
-      final RelBuilder.GroupKey groupKey =
-          relBuilder.groupKey(aggregate.getGroupSet(), aggregate.getGroupSets());
-
-      relBuilder.aggregate(groupKey, aggs)
-          .convert(aggregate.getRowType(), false);
-
-      return relBuilder.build();
-    }
-
-    public void add(AggregateCall aggregateCall)
-    {
-      @Nullable
-      AggregateCall a = null;
-
-      if (a == null) {
-        a = new FilteredDistinctTransform().transform(this, aggregateCall);
-      }
-      if (a == null) {
-        a = new FilteredDistinctTransform1().transform(this, aggregateCall);
-      }
-
-      if(a==null) {
-        a=aggregateCall;
-      }
-      aggs.add(a);
-    }
-
-    public RexBuilder getRexBuilder()
-    {
-      return builder.getRexBuilder();
-    }
 
     /**
-     * Adds the expression to be projected.
-     *
-     * Returns the index of the projected expression.
+     * Helper class to aid building the output {@link Aggregate}.
      */
-    public int projectExpr(RexNode expr)
+    static class LocalAggBuilder
     {
-      newProjects.add(expr);
-      return newProjects.size() - 1;
-    }
+      private RelBuilder builder;
+      private List<AggregateCall> aggs = new ArrayList<>();
+      private List<RexNode> newProjects;
+      private Project oldProject;
 
-    public int projectCombinedFilter(AggregateCall call, RexNode condition)
-    {
-      return projectExpr(buildCombinedFilter(call, condition));
-    }
 
-    protected RexNode buildCombinedFilter(AggregateCall call, RexNode condition)
-    {
-      if (call.filterArg < 0) {
-        return condition;
+      public LocalAggBuilder(RelBuilder builder, Project project)
+      {
+        this.builder = builder;
+        this.oldProject = project;
+        this.newProjects = new ArrayList<RexNode>(project.getProjects());
       }
-      RexNode oldFilterExpr = oldProject.getProjects().get(call.filterArg);
-      return RexUtil.composeConjunction(
-          getRexBuilder(),
-          ImmutableList.of(condition, oldFilterExpr)
-      );
+
+      public RelNode build(Aggregate oldAggregate)
+      {
+        Aggregate aggregate = oldAggregate;
+        final RelBuilder relBuilder = builder
+            .push(oldProject.getInput())
+            .project(newProjects);
+
+        final RelBuilder.GroupKey groupKey =
+            relBuilder.groupKey(aggregate.getGroupSet(), aggregate.getGroupSets());
+
+        relBuilder.aggregate(groupKey, aggs)
+        .convert(aggregate.getRowType(), false);
+
+        return relBuilder.build();
+      }
+
+      public void add(AggregateCall aggregateCall)
+      {
+        @Nullable
+        AggregateCall a = null;
+
+        if (a == null) {
+          a = new FilteredDistinctTransform().transform(this, aggregateCall);
+        }
+        if (a == null) {
+          a = new FilteredDistinctTransform1().transform(this, aggregateCall);
+        }
+
+        if(a==null) {
+          a=aggregateCall;
+        }
+        aggs.add(a);
+      }
+
+      public RexBuilder getRexBuilder()
+      {
+        return builder.getRexBuilder();
+      }
+
+      /**
+       * Adds the expression to be projected.
+       *
+       * Returns the index of the projected expression.
+       */
+      public int projectExpr(RexNode expr)
+      {
+        newProjects.add(expr);
+        return newProjects.size() - 1;
+      }
+
+      public int projectCombinedFilter(AggregateCall call, RexNode condition)
+      {
+        return projectExpr(buildCombinedFilter(call, condition));
+      }
+
+      protected RexNode buildCombinedFilter(AggregateCall call, RexNode condition)
+      {
+        if (call.filterArg < 0) {
+          return condition;
+        }
+        RexNode oldFilterExpr = oldProject.getProjects().get(call.filterArg);
+        return RexUtil.composeConjunction(
+            getRexBuilder(),
+            ImmutableList.of(condition, oldFilterExpr)
+            );
+      }
+
+      public RelDataTypeFactory getTypeFactory()
+      {
+        return builder.getTypeFactory();
+      }
     }
-
-    public RelDataTypeFactory getTypeFactory()
-    {
-      return builder.getTypeFactory();
-   }
-  }
-
-  public static interface AggregateCallTransform {
     public @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call);
   }
 
-  protected static abstract class ThreeArgCaseBasedAggregateCallTransform implements AggregateCallTransform {
+  public static abstract class ThreeArgCaseBasedAggregateCallTransform implements AggregateCallTransform {
 
     protected static class RexIf
     {
