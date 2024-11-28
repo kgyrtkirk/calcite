@@ -195,8 +195,8 @@ public class AggregateCaseToFilterRule
       @Nullable
       AggregateCall a = null;
 
-      if(a==null) {
-        a = transformX1(this, aggregateCall);
+      if (a == null) {
+        a = new FilteredDistinctTransform().transform(this, aggregateCall);
       }
 
       if(a==null) {
@@ -303,10 +303,10 @@ public class AggregateCaseToFilterRule
         return null;
       }
 
-      return trasnsform(localAggBuilder, call, c);
+      return transform(localAggBuilder, call, c);
     }
 
-    protected abstract @Nullable AggregateCall trasnsform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf);
+    protected abstract @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf);
 
   }
 
@@ -322,9 +322,9 @@ public class AggregateCaseToFilterRule
   protected static class FilteredDistinctTransform extends ThreeArgCaseBasedAggregateCallTransform
   {
     @Override
-    protected @Nullable AggregateCall trasnsform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
     {
-      if(call.isDistinct()) {
+      if (!call.isDistinct()) {
         return null;
       }
       SqlKind kind = call.getAggregation().getKind();
