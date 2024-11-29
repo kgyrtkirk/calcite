@@ -483,12 +483,9 @@ public class AggregateCaseToFilterRule
     Config DEFAULT = ImmutableAggregateCaseToFilterRule.Config.of()
         .withOperandSupplier(b0 -> b0.operand(Aggregate.class).oneInput(b1 -> b1.operand(Project.class).anyInputs()));
 
-
-    default List<AggregateCallTransform> transforms() {
+    @Value.Default default List<AggregateCallTransform> transforms() {
       return DEFAULT_TRANSFORMS;
     }
-
-
 
     @Override
     default AggregateCaseToFilterRule toRule()
