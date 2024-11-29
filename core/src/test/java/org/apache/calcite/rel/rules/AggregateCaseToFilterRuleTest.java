@@ -16,6 +16,7 @@
  */
 package org.apache.calcite.rel.rules;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.plan.RelOptRule;
@@ -43,7 +44,21 @@ public final class AggregateCaseToFilterRuleTest
   {
     String sql = ""
         + "select count(case when \"deptno\" > 1 then 71 end) from \"hr\".\"emps\"";
-    new Fixture(sql, CoreRules.AGGREGATE_CASE_TO_FILTER)
+    new Fixture(sql, AggregateCaseToFilterRule.Config.DEFAULT.withTransforms(ImmutableList.of()).toRule())
+        .assertThatPlan(
+            allOf(
+                not(containsString("COUNT() FILTER $0")),
+                containsString("CASE")
+            )
+        );
+  }
+
+  @Test
+  void t11()
+  {
+    String sql = ""
+        + "select count(case when \"deptno\" > 1 then 71 end) from \"hr\".\"emps\"";
+    new Fixture(sql, AggregateCaseToFilterRule.Config.DEFAULT.toRule())
         .assertThatPlan(
             allOf(
                 containsString("COUNT() FILTER $0"),

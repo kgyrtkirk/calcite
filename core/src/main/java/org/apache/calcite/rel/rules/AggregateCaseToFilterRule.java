@@ -134,24 +134,16 @@ public class AggregateCaseToFilterRule
     call.getPlanner().prune(aggregate);
   }
 
-  private RexNode transform(LocalAggBuilder lab, AggregateCall aggregateCall)
+  public RexNode transform(LocalAggBuilder lab, AggregateCall aggregateCall)
   {
-    @Nullable
-    RexNode a = null;
-
-    if (a == null) {
-      a = FILTERED_DISTINCT.transform(lab, aggregateCall);
+    for (AggregateCallTransform transform : config.transforms()) {
+      @Nullable
+      RexNode expr = transform.transform(lab, aggregateCall);
+      if (expr != null) {
+        return expr;
+      }
     }
-    if (a == null) {
-      a = FILTERED_COUNT.transform(lab, aggregateCall);
-    }
-    if (a == null) {
-      a = FILTERED_AGGREGATION.transform(lab, aggregateCall);
-    }
-    if (a == null) {
-      a = lab.addAggregation(aggregateCall);
-    }
-    return a;
+    return lab.addAggregation(aggregateCall);
   }
 
   public interface AggregateCallTransform
@@ -486,6 +478,12 @@ public class AggregateCaseToFilterRule
     @Value.Default default List<AggregateCallTransform> transforms() {
       return DEFAULT_TRANSFORMS;
     }
+
+    /** Sets {@link #transforms()}. */
+    Config withTransforms(AggregateCallTransform... elements) ;
+
+    /** Sets {@link #transforms()}. */
+    Config withTransforms(Iterable<? extends AggregateCallTransform> elements) ;
 
     @Override
     default AggregateCaseToFilterRule toRule()
