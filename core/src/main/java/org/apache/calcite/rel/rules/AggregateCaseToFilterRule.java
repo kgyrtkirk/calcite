@@ -28,6 +28,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
@@ -83,9 +84,9 @@ public class AggregateCaseToFilterRule
         .as(Config.class));
   }
 
+  // FIXME
   @Override public boolean matches(final RelOptRuleCall call) {
     final Aggregate aggregate = call.rel(0);
-    final Project project = call.rel(1);
 
     for (AggregateCall aggregateCall : aggregate.getAggCallList()) {
       final int singleArg = soleArgument(aggregateCall);
@@ -120,13 +121,13 @@ public class AggregateCaseToFilterRule
 
   public interface AggregateCallTransform {
 
-
     /**
      * Helper class to aid building the output {@link Aggregate}.
      */
     static class LocalAggBuilder
     {
       private RelBuilder builder;
+      private List<RexNode> projectsAbove = new ArrayList<>();
       private List<AggregateCall> aggs = new ArrayList<>();
       private List<RexNode> projectsBelow;
       private Project oldProject;
@@ -151,6 +152,7 @@ public class AggregateCaseToFilterRule
             .groupKey(oldAggregate.getGroupSet(), oldAggregate.getGroupSets());
 
         relBuilder.aggregate(groupKey, aggs)
+            .project(projectsAbove)
             .convert(oldAggregate.getRowType(), false);
 
         return relBuilder.build();
@@ -158,8 +160,7 @@ public class AggregateCaseToFilterRule
 
       public void add(AggregateCall aggregateCall)
       {
-        @Nullable
-        AggregateCall a = null;
+        @Nullable RexNode a = null;
 
         if (a == null) {
           a = new FilteredDistinctTransform().transform(this, aggregateCall);
@@ -171,9 +172,9 @@ public class AggregateCaseToFilterRule
           a = new FilteredAggregationTransform().transform(this, aggregateCall);
         }
         if(a==null) {
-          a=aggregateCall;
+          a = addAggregation(aggregateCall);
         }
-        aggs.add(a);
+        projectsAbove.add(a);
       }
 
       public RexBuilder getRexBuilder()
@@ -213,8 +214,14 @@ public class AggregateCaseToFilterRule
       {
         return builder.getTypeFactory();
       }
+
+      public RexNode addAggregation(@Nullable AggregateCall agg)
+      {
+        aggs.add(agg);
+        return new RexInputRef(aggs.size() - 1, agg.getType());
+      }
     }
-    public @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call);
+    public @Nullable RexNode transform(LocalAggBuilder localAggBuilder, AggregateCall call);
   }
 
   public static abstract class ThreeArgCaseBasedAggregateCallTransform implements AggregateCallTransform {
@@ -280,7 +287,7 @@ public class AggregateCaseToFilterRule
     }
 
 
-    public final @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call) {
+    public final @Nullable RexNode transform(LocalAggBuilder localAggBuilder, AggregateCall call) {
 
       final int singleArg = soleArgument(call);
       if (singleArg < 0) {
@@ -295,7 +302,13 @@ public class AggregateCaseToFilterRule
       }
       c = c.normalize(rexBuilder, call.getAggregation().getKind() == SqlKind.SUM0);
 
-      return transform(localAggBuilder, call, c);
+      @Nullable
+      AggregateCall agg = transform(localAggBuilder, call, c);
+      if(agg==null) {
+        return null;
+      }
+
+      return localAggBuilder.addAggregation(agg);
     }
 
     protected abstract @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf);
