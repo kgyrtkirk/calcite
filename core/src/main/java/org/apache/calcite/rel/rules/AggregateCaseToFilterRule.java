@@ -68,6 +68,15 @@ public class AggregateCaseToFilterRule
     extends RelRule<AggregateCaseToFilterRule.Config>
     implements TransformationRule
 {
+  public static final AggregateCallTransform FILTERED_DISTINCT = new FilteredDistinctTransform();
+  public static final AggregateCallTransform FILTERED_COUNT = new FilteredCountTransform();
+  public static final AggregateCallTransform FILTERED_AGGREGATION = new FilteredAggregationTransform();
+
+  public static final List<AggregateCallTransform> DEFAULT_TRANSFORMS = ImmutableList.of(
+      FILTERED_DISTINCT,
+      FILTERED_COUNT,
+      FILTERED_AGGREGATION
+  );
 
   /** Creates an AggregateCaseToFilterRule. */
   protected AggregateCaseToFilterRule(Config config)
@@ -131,13 +140,13 @@ public class AggregateCaseToFilterRule
     RexNode a = null;
 
     if (a == null) {
-      a = new FilteredDistinctTransform().transform(lab, aggregateCall);
+      a = FILTERED_DISTINCT.transform(lab, aggregateCall);
     }
     if (a == null) {
-      a = new FilteredCountTransform().transform(lab, aggregateCall);
+      a = FILTERED_COUNT.transform(lab, aggregateCall);
     }
     if (a == null) {
-      a = new FilteredAggregationTransform().transform(lab, aggregateCall);
+      a = FILTERED_AGGREGATION.transform(lab, aggregateCall);
     }
     if (a == null) {
       a = lab.addAggregation(aggregateCall);
@@ -309,30 +318,32 @@ public class AggregateCaseToFilterRule
       }
     }
 
-    public final @Nullable RexNode transform(LocalAggBuilder localAggBuilder, AggregateCall call)
+    public final @Nullable RexNode transform(LocalAggBuilder lab, AggregateCall call)
     {
       final int singleArg = soleArgument(call);
       if (singleArg < 0) {
         return null;
       }
-      final RexNode rexNode = localAggBuilder.oldProject.getProjects().get(singleArg);
-      final RexBuilder rexBuilder = localAggBuilder.getRexBuilder();
-
-      RexIf c = RexIf.of(rexNode);
-      if (c == null) {
+      final RexNode rexNode = lab.oldProject.getProjects().get(singleArg);
+      RexIf rexIf = RexIf.of(rexNode);
+      if (rexIf == null) {
         return null;
       }
-      c = c.normalize(rexBuilder, call.getAggregation().getKind() == SqlKind.SUM0);
+      rexIf = rexIf.normalize(lab.getRexBuilder(), call.getAggregation().getKind() == SqlKind.SUM0);
       @Nullable
-      AggregateCall agg = transform(localAggBuilder, call, c);
+      AggregateCall agg = transform(lab, call, rexIf);
       if (agg == null) {
         return null;
       }
-      return localAggBuilder.addAggregation(agg);
+      return lab.addAggregation(agg);
     }
 
-    protected abstract @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call,
-        RexIf rexIf);
+    /**
+     * May rewrite the passed {@link AggregateCall} to an alternate {@link AggregateCall}.
+     *
+     * It must register new expressions with the {@link LocalAggBuilder}.
+     */
+    protected abstract @Nullable AggregateCall transform(LocalAggBuilder lab, AggregateCall call, RexIf rexIf);
   }
 
   /**
@@ -361,42 +372,6 @@ public class AggregateCaseToFilterRule
           filterIndex, null, RelCollations.EMPTY,
           call.getType(), call.getName()
       );
-    }
-  }
-
-  /**
-   * Recognizes conditionally filtered aggregations.
-   *
-   * <pre>
-   * AGG(CASE WHEN x = 'foo' THEN expr END)
-   *  =>
-   * AGG(expr) FILTER (x = 'foo')
-   * </pre>
-   */
-  protected static class FilteredAggregationTransform extends ThreeArgCaseBasedAggregateCallTransform
-  {
-    @Override
-    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
-    {
-      if (!matches(call, rexIf)) {
-        return null;
-      }
-      int argIdx = localAggBuilder.projectBelowAgg(rexIf.left);
-      int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
-      return AggregateCall.create(
-          call.getParserPosition(), call.getAggregation(), false,
-          false, false, call.rexList, ImmutableList.of(argIdx),
-          filterIdx, null, RelCollations.EMPTY,
-          call.getType(), call.getName()
-      );
-    }
-
-    private boolean matches(AggregateCall call, RexIf rexIf)
-    {
-      if (call.isDistinct()) {
-        return false;
-      }
-      return RexLiteral.isNullLiteral(rexIf.right) && call.getAggregation().allowsFilter();
     }
   }
 
@@ -448,6 +423,42 @@ public class AggregateCaseToFilterRule
   }
 
   /**
+   * Recognizes conditionally filtered aggregations.
+   *
+   * <pre>
+   * AGG(CASE WHEN x = 'foo' THEN expr END)
+   *  =>
+   * AGG(expr) FILTER (x = 'foo')
+   * </pre>
+   */
+  protected static class FilteredAggregationTransform extends ThreeArgCaseBasedAggregateCallTransform
+  {
+    @Override
+    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    {
+      if (!matches(call, rexIf)) {
+        return null;
+      }
+      int argIdx = localAggBuilder.projectBelowAgg(rexIf.left);
+      int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      return AggregateCall.create(
+          call.getParserPosition(), call.getAggregation(), false,
+          false, false, call.rexList, ImmutableList.of(argIdx),
+          filterIdx, null, RelCollations.EMPTY,
+          call.getType(), call.getName()
+      );
+    }
+
+    private boolean matches(AggregateCall call, RexIf rexIf)
+    {
+      if (call.isDistinct()) {
+        return false;
+      }
+      return RexLiteral.isNullLiteral(rexIf.right) && call.getAggregation().allowsFilter();
+    }
+  }
+
+  /**
    * Returns the argument, if an aggregate call has a single argument, otherwise
    * -1.
    */
@@ -471,6 +482,13 @@ public class AggregateCaseToFilterRule
   {
     Config DEFAULT = ImmutableAggregateCaseToFilterRule.Config.of()
         .withOperandSupplier(b0 -> b0.operand(Aggregate.class).oneInput(b1 -> b1.operand(Project.class).anyInputs()));
+
+
+    default List<AggregateCallTransform> transforms() {
+      return DEFAULT_TRANSFORMS;
+    }
+
+
 
     @Override
     default AggregateCaseToFilterRule toRule()
