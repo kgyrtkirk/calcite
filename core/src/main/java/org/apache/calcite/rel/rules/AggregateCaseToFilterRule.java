@@ -99,11 +99,8 @@ public class AggregateCaseToFilterRule
   @Override public void onMatch(RelOptRuleCall call) {
     final Aggregate aggregate = call.rel(0);
     final Project project = call.rel(1);
-    final List<AggregateCall> newCalls =
-        new ArrayList<>(aggregate.getAggCallList().size());
-    final List<RexNode> newProjects = new ArrayList<>(project.getProjects());
 
-    LocalAggBuilder lab = new LocalAggBuilder(call.builder(), project);
+    LocalAggBuilder lab = new LocalAggBuilder(call.builder(), aggregate, project);
 
     for (AggregateCall aggregateCall : aggregate.getAggCallList()) {
       lab.add(aggregateCall);
@@ -114,7 +111,7 @@ public class AggregateCaseToFilterRule
       return;
     }
 
-    RelNode newRel = lab.build(aggregate);
+    RelNode newRel = lab.build();
 
     call.transformTo(newRel);
     call.getPlanner().prune(aggregate);
@@ -131,29 +128,30 @@ public class AggregateCaseToFilterRule
     {
       private RelBuilder builder;
       private List<AggregateCall> aggs = new ArrayList<>();
-      private List<RexNode> newProjects;
+      private List<RexNode> projectsBelow;
       private Project oldProject;
+      private Aggregate oldAggregate;
 
 
-      public LocalAggBuilder(RelBuilder builder, Project oldProject)
+      public LocalAggBuilder(RelBuilder builder, Aggregate oldAggregate, Project oldProject)
       {
         this.builder = builder;
+        this.oldAggregate = oldAggregate;
         this.oldProject = oldProject;
-        this.newProjects = new ArrayList<RexNode>(oldProject.getProjects());
+        this.projectsBelow = new ArrayList<RexNode>(oldProject.getProjects());
       }
 
-      public RelNode build(Aggregate oldAggregate)
+      public RelNode build()
       {
-        Aggregate aggregate = oldAggregate;
         final RelBuilder relBuilder = builder
             .push(oldProject.getInput())
-            .project(newProjects);
+            .project(projectsBelow);
 
-        final RelBuilder.GroupKey groupKey =
-            relBuilder.groupKey(aggregate.getGroupSet(), aggregate.getGroupSets());
+        final RelBuilder.GroupKey groupKey = relBuilder
+            .groupKey(oldAggregate.getGroupSet(), oldAggregate.getGroupSets());
 
         relBuilder.aggregate(groupKey, aggs)
-            .convert(aggregate.getRowType(), false);
+            .convert(oldAggregate.getRowType(), false);
 
         return relBuilder.build();
       }
@@ -166,12 +164,12 @@ public class AggregateCaseToFilterRule
         if (a == null) {
           a = new FilteredDistinctTransform().transform(this, aggregateCall);
         }
-if(a==null) {
-  a=new FilteredCountTransform().transform(this, aggregateCall);
-}
-if (a == null) {
-  a = new FilteredAggregationTransform().transform(this, aggregateCall);
-}
+        if (a == null) {
+          a = new FilteredCountTransform().transform(this, aggregateCall);
+        }
+        if (a == null) {
+          a = new FilteredAggregationTransform().transform(this, aggregateCall);
+        }
         if(a==null) {
           a=aggregateCall;
         }
@@ -190,8 +188,8 @@ if (a == null) {
        */
       public int projectExpr(RexNode expr)
       {
-        newProjects.add(expr);
-        return newProjects.size() - 1;
+        projectsBelow.add(expr);
+        return projectsBelow.size() - 1;
       }
 
       public int projectCombinedFilter(AggregateCall call, RexNode condition)
