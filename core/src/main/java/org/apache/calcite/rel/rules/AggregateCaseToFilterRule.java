@@ -167,7 +167,7 @@ public class AggregateCaseToFilterRule
           a = new FilteredDistinctTransform().transform(this, aggregateCall);
         }
         if (a == null) {
-          a = new FilteredDistinctTransform1().transform(this, aggregateCall);
+          a = new FilteredAggregationTransform().transform(this, aggregateCall);
         }
 
         if(a==null) {
@@ -232,27 +232,50 @@ public class AggregateCaseToFilterRule
         this.right = right;
       }
 
-      public static RexIf of(RexBuilder rexBuilder, RexNode rexNode)
+      public static RexIf of(RexNode rexNode)
       {
         if (!isThreeArgCase(rexNode)) {
           return null;
         }
         List<RexNode> operands = ((RexCall) rexNode).operands;
-        RexIf rexIf = new RexIf(operands.get(0), operands.get(1), operands.get(2));
-        if (RexLiteral.isNullLiteral(rexIf.left) && !RexLiteral.isNullLiteral(rexIf.right)) {
-          // Flip the conditional to put the `null` on the else side.
-          return new RexIf(
-              rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, rexIf.condition),
-              rexIf.right,
-              rexIf.left
-          );
-        }
-        return rexIf;
+        return new RexIf(operands.get(0), operands.get(1), operands.get(2));
       }
 
       private static boolean isThreeArgCase(final RexNode rexNode)
       {
         return rexNode.getKind() == SqlKind.CASE && ((RexCall) rexNode).operands.size() == 3;
+      }
+
+      /**
+       * Makes a null literal if the node is 0.
+       */
+      public RexNode nullIfZero(RexBuilder rexBuilder, RexNode node)
+      {
+        if (isIntLiteral(node, BigDecimal.ZERO)) {
+          return rexBuilder.makeNullLiteral(node.getType());
+        }
+        return node;
+      }
+
+      /**
+       * Normalizes the conditional.
+       * 
+       * Swaps branches to put the null to the end.
+       */
+      public RexIf normalize(RexBuilder rexBuilder, boolean treatZeroAsNull)
+      {
+        RexNode newLeft = treatZeroAsNull ? nullIfZero(rexBuilder, left) : left;
+        RexNode newRight = treatZeroAsNull ? nullIfZero(rexBuilder, right) : right;
+
+        if (RexLiteral.isNullLiteral(left) && !RexLiteral.isNullLiteral(right)) {
+          // Flip the conditional to put the `null` on the else side.
+          return new RexIf(
+              rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, condition),
+              newRight,
+              newLeft
+          );
+        }
+        return new RexIf(condition, newLeft, newRight);
       }
     }
 
@@ -266,10 +289,11 @@ public class AggregateCaseToFilterRule
       final RexNode rexNode = localAggBuilder.oldProject.getProjects().get(singleArg);
       final RexBuilder rexBuilder = localAggBuilder.getRexBuilder();
 
-      RexIf c = RexIf.of(rexBuilder, rexNode);
+      RexIf c = RexIf.of(rexNode);
       if (c == null) {
         return null;
       }
+      c = c.normalize(rexBuilder, call.getAggregation().getKind() == SqlKind.SUM0);
 
       return transform(localAggBuilder, call, c);
     }
@@ -308,7 +332,7 @@ public class AggregateCaseToFilterRule
   }
 
   /**
-   * Recognizes conditionally filtered distinct.
+   * Recognizes conditionally filtered aggregations.
    *
    * <pre>
    * AGG(CASE WHEN x = 'foo' THEN expr END)
@@ -316,17 +340,7 @@ public class AggregateCaseToFilterRule
    * AGG(expr) FILTER (x = 'foo')
    * </pre>
    */
-  /*
-  // A1: AGG(CASE WHEN x = 'foo' THEN expr END)
-  //   => AGG(expr) FILTER (x = 'foo')
-  // A2: SUM0(CASE WHEN x = 'foo' THEN cnt ELSE 0 END)
-  //   => SUM0(cnt) FILTER (x = 'foo')
-  // B: SUM0(CASE WHEN x = 'foo' THEN 1 ELSE 0 END)
-  //   => COUNT() FILTER (x = 'foo')
-  // C: COUNT(CASE WHEN x = 'foo' THEN 'dummy' END)
-  //   => COUNT() FILTER (x = 'foo')
-   */
-  protected static class FilteredDistinctTransform1 extends ThreeArgCaseBasedAggregateCallTransform
+  protected static class FilteredAggregationTransform extends ThreeArgCaseBasedAggregateCallTransform
   {
     @Override
     protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
@@ -334,7 +348,6 @@ public class AggregateCaseToFilterRule
       if(call.isDistinct()) {
         return null;
       }
-
       SqlKind kind = call.getAggregation().getKind();
 
       // Four styles supported:
@@ -483,7 +496,7 @@ public class AggregateCaseToFilterRule
     final RexNode rexNode = localAggBuilder.oldProject.getProjects().get(singleArg);
     final RexBuilder rexBuilder = localAggBuilder.getRexBuilder();
 
-    ThreeArgCaseBasedAggregateCallTransform.RexIf c = ThreeArgCaseBasedAggregateCallTransform.RexIf.of(rexBuilder, rexNode);
+    ThreeArgCaseBasedAggregateCallTransform.RexIf c = ThreeArgCaseBasedAggregateCallTransform.RexIf.of(rexNode);
     if (c == null) {
       return null;
     }
