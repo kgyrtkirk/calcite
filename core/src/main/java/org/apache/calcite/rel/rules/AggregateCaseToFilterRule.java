@@ -135,11 +135,11 @@ public class AggregateCaseToFilterRule
       private Project oldProject;
 
 
-      public LocalAggBuilder(RelBuilder builder, Project project)
+      public LocalAggBuilder(RelBuilder builder, Project oldProject)
       {
         this.builder = builder;
-        this.oldProject = project;
-        this.newProjects = new ArrayList<RexNode>(project.getProjects());
+        this.oldProject = oldProject;
+        this.newProjects = new ArrayList<RexNode>(oldProject.getProjects());
       }
 
       public RelNode build(Aggregate oldAggregate)
@@ -153,7 +153,7 @@ public class AggregateCaseToFilterRule
             relBuilder.groupKey(aggregate.getGroupSet(), aggregate.getGroupSets());
 
         relBuilder.aggregate(groupKey, aggs)
-        .convert(aggregate.getRowType(), false);
+            .convert(aggregate.getRowType(), false);
 
         return relBuilder.build();
       }
@@ -166,10 +166,12 @@ public class AggregateCaseToFilterRule
         if (a == null) {
           a = new FilteredDistinctTransform().transform(this, aggregateCall);
         }
-        if (a == null) {
-          a = new FilteredAggregationTransform().transform(this, aggregateCall);
-        }
-
+if(a==null) {
+  a=new FilteredCountTransform().transform(this, aggregateCall);
+}
+if (a == null) {
+  a = new FilteredAggregationTransform().transform(this, aggregateCall);
+}
         if(a==null) {
           a=aggregateCall;
         }
@@ -259,7 +261,7 @@ public class AggregateCaseToFilterRule
 
       /**
        * Normalizes the conditional.
-       * 
+       *
        * Swaps branches to put the null to the end.
        */
       public RexIf normalize(RexBuilder rexBuilder, boolean treatZeroAsNull)
@@ -345,57 +347,25 @@ public class AggregateCaseToFilterRule
     @Override
     protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
     {
-      if(call.isDistinct()) {
+      if(!matches(call, rexIf)) {
         return null;
       }
-      SqlKind kind = call.getAggregation().getKind();
+      int argIdx = localAggBuilder.projectExpr(rexIf.left);
+      int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      return AggregateCall.create(
+          call.getParserPosition(), call.getAggregation(), false,
+          false, false, call.rexList, ImmutableList.of(argIdx),
+          filterIdx, null, RelCollations.EMPTY,
+          call.getType(), call.getName()
+      );
+    }
 
-      // Four styles supported:
-      //
-      // A1: AGG(CASE WHEN x = 'foo' THEN expr END)
-      //   => AGG(expr) FILTER (x = 'foo')
-      // A2: SUM0(CASE WHEN x = 'foo' THEN cnt ELSE 0 END)
-      //   => SUM0(cnt) FILTER (x = 'foo')
-      // B: SUM0(CASE WHEN x = 'foo' THEN 1 ELSE 0 END)
-      //   => COUNT() FILTER (x = 'foo')
-      // C: COUNT(CASE WHEN x = 'foo' THEN 'dummy' END)
-      //   => COUNT() FILTER (x = 'foo')
-
-      final SqlParserPos pos = call.getParserPosition();
-      if (kind == SqlKind.COUNT // Case C
-          && rexIf.left .isA(SqlKind.LITERAL)
-          && !RexLiteral.isNullLiteral(rexIf.left)
-          && RexLiteral.isNullLiteral(rexIf.right)) {
-        int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
-        return AggregateCall.create(pos, SqlStdOperatorTable.COUNT, false, false,
-            false, call.rexList, ImmutableList.of(), filterIdx, null,
-            RelCollations.EMPTY, call.getType(),
-            call.getName());
-      } else if (kind == SqlKind.SUM0 // Case B
-          && isIntLiteral(rexIf.left, BigDecimal.ONE)
-          && isIntLiteral(rexIf.right, BigDecimal.ZERO)) {
-
-        int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
-        final RelDataTypeFactory typeFactory = localAggBuilder.getTypeFactory();
-        final RelDataType dataType =
-            typeFactory.createTypeWithNullability(
-                typeFactory.createSqlType(SqlTypeName.BIGINT), false);
-        return AggregateCall.create(pos, SqlStdOperatorTable.COUNT, false, false,
-            false, call.rexList, ImmutableList.of(), filterIdx, null,
-            RelCollations.EMPTY, dataType, call.getName());
-      } else if ((RexLiteral.isNullLiteral(rexIf.right) // Case A1
-              && call.getAggregation().allowsFilter())
-          || (kind == SqlKind.SUM0 // Case A2
-              && isIntLiteral(rexIf.right, BigDecimal.ZERO))) {
-        int arg1Idx = localAggBuilder.projectExpr(rexIf.left);
-        int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
-        return AggregateCall.create(pos, call.getAggregation(), false,
-            false, false, call.rexList, ImmutableList.of(arg1Idx),
-            filterIdx, null, RelCollations.EMPTY,
-            call.getType(), call.getName());
-      } else {
-        return null;
+    private boolean matches(AggregateCall call, RexIf rexIf)
+    {
+      if (call.isDistinct()) {
+        return false;
       }
+      return RexLiteral.isNullLiteral(rexIf.right) && call.getAggregation().allowsFilter();
     }
   }
 
@@ -403,27 +373,78 @@ public class AggregateCaseToFilterRule
    * Recognizes conditionally filtered distinct.
    *
    * <pre>
-   * AGG(CASE WHEN x = 'foo' THEN expr END)
-   *  =>
-   * AGG(expr) FILTER (x = 'foo')
+  * SUM0(CASE WHEN x = 'foo' THEN 1 END)
+  *   => COUNT() FILTER (x = 'foo')
+  * COUNT(CASE WHEN x = 'foo' THEN 'dummy' END)
+  *    => COUNT() FILTER (x = 'foo')
    * </pre>
+   *
+   * note:
+   *
+   * <pre>
+   * SUM0(CASE WHEN x = 'foo' THEN 1 ELSE 0 END)
+   * </pre>
+   *
+   * is also handled as the `0` branch was normalized.
    */
-  /*
-  // A1: AGG(CASE WHEN x = 'foo' THEN expr END)
-  //   => AGG(expr) FILTER (x = 'foo')
-  // A2: SUM0(CASE WHEN x = 'foo' THEN cnt ELSE 0 END)
-  //   => SUM0(cnt) FILTER (x = 'foo')
-  // B: SUM0(CASE WHEN x = 'foo' THEN 1 ELSE 0 END)
-  //   => COUNT() FILTER (x = 'foo')
-  // C: COUNT(CASE WHEN x = 'foo' THEN 'dummy' END)
-  //   => COUNT() FILTER (x = 'foo')
-   */
-  protected static class FilteredDistinctTransform2 extends ThreeArgCaseBasedAggregateCallTransform
+  protected static class FilteredCountTransform extends ThreeArgCaseBasedAggregateCallTransform
   {
+
+    private boolean matches(AggregateCall call, RexIf rexIf)
+    {
+      SqlKind kind = call.getAggregation().getKind();
+      return !call.isDistinct() &&
+          ((kind == SqlKind.SUM0 && isIntLiteral(rexIf.left, BigDecimal.ONE)) || kind == SqlKind.COUNT) &&
+          RexLiteral.isNullLiteral(rexIf.right) &&
+          call.getAggregation().allowsFilter();
+    }
+
     @Override
     protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
     {
-      if(call.isDistinct()) {
+      if(!matches(call, rexIf)) {
+        return null;
+      }
+      final SqlParserPos pos = call.getParserPosition();
+      int filterIdx = localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      return AggregateCall.create(
+          pos, SqlStdOperatorTable.COUNT, false, false,
+          false, call.rexList, ImmutableList.of(), filterIdx, null,
+          RelCollations.EMPTY, call.getType(),
+          call.getName()
+      );
+    }
+  }
+  /**
+   * Recognizes conditionally filtered distinct.
+   *
+   * <pre>
+  * SUM0(CASE WHEN x = 'foo' THEN 1 END)
+  *   => COUNT() FILTER (x = 'foo')
+  * COUNT(CASE WHEN x = 'foo' THEN 'dummy' END)
+  *    => COUNT() FILTER (x = 'foo')
+   * </pre>
+   *
+   * note:
+   *
+   * <pre>
+   * SUM0(CASE WHEN x = 'foo' THEN 1 ELSE 0 END)
+   * </pre>
+   *
+   * is also handled as the `0` branch was normalized.
+   */
+  protected static class FilteredCountTransform1 extends ThreeArgCaseBasedAggregateCallTransform
+  {
+
+    private boolean matches(AggregateCall call, RexIf rexIf)
+    {
+      return !call.isDistinct();
+    }
+
+    @Override
+    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    {
+      if(!matches(call, rexIf)) {
         return null;
       }
 
