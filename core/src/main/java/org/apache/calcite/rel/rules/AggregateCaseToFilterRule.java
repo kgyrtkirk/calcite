@@ -177,22 +177,6 @@ public class AggregateCaseToFilterRule
         this.projectsBelow = new ArrayList<RexNode>(oldProject.getProjects());
       }
 
-      public RelNode build()
-      {
-        final RelBuilder relBuilder = builder
-            .push(oldProject.getInput())
-            .project(projectsBelow);
-
-        final RelBuilder.GroupKey groupKey = relBuilder
-            .groupKey(oldAggregate.getGroupSet(), oldAggregate.getGroupSets());
-
-        relBuilder.aggregate(groupKey, aggs)
-            .project(projectsAbove)
-            .convert(oldAggregate.getRowType(), false);
-
-        return relBuilder.build();
-      }
-
       public RexBuilder getRexBuilder()
       {
         return builder.getRexBuilder();
@@ -230,6 +214,23 @@ public class AggregateCaseToFilterRule
             ImmutableList.of(condition, oldFilterExpr)
         );
       }
+
+      public RelNode build()
+      {
+        final RelBuilder relBuilder = builder
+            .push(oldProject.getInput())
+            .project(projectsBelow);
+
+        final RelBuilder.GroupKey groupKey = relBuilder
+            .groupKey(oldAggregate.getGroupSet(), oldAggregate.getGroupSets());
+
+        relBuilder.aggregate(groupKey, aggs)
+            .project(projectsAbove)
+            .convert(oldAggregate.getRowType(), false);
+
+        return relBuilder.build();
+      }
+
 
       public RelDataTypeFactory getTypeFactory()
       {
