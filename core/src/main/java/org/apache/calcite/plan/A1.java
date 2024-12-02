@@ -26,11 +26,19 @@ public class A1 extends ThreeArgCaseBasedAggregateCallTransform
 
   @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
   {
-    if(true)
-    {
+    if (true) {
       throw new RuntimeException("FIXME: Unimplemented!");
     }
     return null;
+
+  }
+
+  @Override protected boolean matches(AggregateCall aggregateCall, RexIf rexIf)
+  {
+    if (true) {
+      throw new RuntimeException("FIXME: Unimplemented!");
+    }
+    return false;
 
   }
 
