@@ -168,7 +168,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
         this.oldAggregate = oldAggregate;
         this.oldProject = oldProject;
         this.projectsBelow = new ArrayList<>(oldProject.getProjects());
-        this.projectsAbove= createProjectsForGroupKeys(oldAggregate);
+        this.projectsAbove = createProjectsForGroupKeys(oldAggregate);
       }
 
       private static List<RexNode> createProjectsForGroupKeys(Aggregate agg) {
@@ -296,7 +296,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
               rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, condition),
               newRight, newLeft);
         }
-        if(condition.getType().isNullable()) {
+        if (condition.getType().isNullable()) {
           return new RexIf(
               rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, condition),
               newLeft, newRight);
@@ -378,10 +378,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       int leftIndex = localAggBuilder.projectBelowAgg(rexIf.left);
       int filterIndex =
           localAggBuilder.projectCombinedFilter(call, rexIf.condition);
-      final RelDataTypeFactory typeFactory =
-          localAggBuilder.getRexBuilder().getTypeFactory();
-      final RelDataType dataType = typeFactory.createTypeWithNullability(
-          typeFactory.createSqlType(SqlTypeName.BIGINT), false);
+      final RelDataType dataType = makeNullableBigIntType(localAggBuilder.getRexBuilder());
       return AggregateCall.create(SqlStdOperatorTable.COUNT, true, false, false,
           call.rexList, ImmutableList.of(leftIndex), filterIndex, null,
           RelCollations.EMPTY, dataType, call.getName());
@@ -406,15 +403,15 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
    *
    * is also handled as the `0` branch was normalized.
    */
-  protected static class FilteredCountTransform extends ThreeArgCaseBasedAggregateCallTransform {
+  protected static class FilteredCountTransform
+      extends ThreeArgCaseBasedAggregateCallTransform {
 
     protected boolean matches(AggregateCall call, RexIf rexIf) {
       SqlKind kind = call.getAggregation().getKind();
       return !call.isDistinct()
           && ((kind == SqlKind.SUM0 && isIntLiteral(rexIf.left, BigDecimal.ONE))
               || kind == SqlKind.COUNT)
-          && isNullLiteral(rexIf.right)
-          && call.getAggregation().allowsFilter();
+          && isNullLiteral(rexIf.right) && call.getAggregation().allowsFilter();
     }
 
     @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder,
@@ -422,14 +419,20 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       final SqlParserPos pos = call.getParserPosition();
       int filterIdx =
           localAggBuilder.projectCombinedFilter(call, rexIf.condition);
-      final RelDataTypeFactory typeFactory =
-          localAggBuilder.getRexBuilder().getTypeFactory();
-      final RelDataType dataType = typeFactory.createTypeWithNullability(
-          typeFactory.createSqlType(SqlTypeName.BIGINT), false);
+      final RelDataType dataType = makeNullableBigIntType(localAggBuilder.getRexBuilder());
       return AggregateCall.create(pos, SqlStdOperatorTable.COUNT, false, false,
           false, call.rexList, ImmutableList.of(), filterIdx, null,
           RelCollations.EMPTY, dataType, call.getName());
     }
+  }
+
+  private static RelDataType makeNullableBigIntType(RexBuilder rexBuilder) {
+    final RelDataTypeFactory typeFactory =
+        rexBuilder.getTypeFactory();
+    RelDataType bigIntType = typeFactory.createSqlType(SqlTypeName.BIGINT);
+    final RelDataType dataType =
+        typeFactory.createTypeWithNullability(bigIntType, false);
+    return dataType;
   }
 
   /**
