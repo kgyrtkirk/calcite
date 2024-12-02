@@ -16,8 +16,6 @@
  */
 package org.apache.calcite.rel.rules;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptUtil;
@@ -28,9 +26,13 @@ import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 import org.apache.calcite.util.Util;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -39,8 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public final class AggregateCaseToFilterRuleTest
 {
 
-  @Test
-  void t1()
+  @Test void t1()
   {
     String sql = ""
         + "select count(case when \"deptno\" > 1 then 71 end) from \"hr\".\"emps\"";
@@ -48,13 +49,10 @@ public final class AggregateCaseToFilterRuleTest
         .assertThatPlan(
             allOf(
                 not(containsString("COUNT() FILTER $0")),
-                containsString("CASE")
-            )
-        );
+                containsString("CASE")));
   }
 
-  @Test
-  void t11()
+  @Test void t11()
   {
     String sql = ""
         + "select count(case when \"deptno\" > 1 then 71 end) from \"hr\".\"emps\"";
@@ -62,9 +60,7 @@ public final class AggregateCaseToFilterRuleTest
         .assertThatPlan(
             allOf(
                 containsString("COUNT() FILTER $0"),
-                not(containsString("CASE"))
-            )
-        );
+                not(containsString("CASE"))));
   }
 
   /**
@@ -76,16 +72,14 @@ public final class AggregateCaseToFilterRuleTest
    * Since join inputs are sorted, and this join preserves the order of the left
    * input, there shouldn't be any sort operator above the join.
    */
-  @Test
-  void removeSortOverEnumerableNestedLoopJoin()
+  @Test void removeSortOverEnumerableNestedLoopJoin()
   {
-    RuleSet prepareRules = RuleSets.ofList(
-        CoreRules.SORT_PROJECT_TRANSPOSE,
+    RuleSet prepareRules =
+        RuleSets.ofList(CoreRules.SORT_PROJECT_TRANSPOSE,
         EnumerableRules.ENUMERABLE_JOIN_RULE,
         EnumerableRules.ENUMERABLE_PROJECT_RULE,
         EnumerableRules.ENUMERABLE_SORT_RULE,
-        EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE
-    );
+        EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
     // Inner join is not considered since the ENUMERABLE_JOIN_RULE does not
     // generate a nestedLoop
     // join in the case of inner joins.
@@ -98,9 +92,7 @@ public final class AggregateCaseToFilterRuleTest
           .assertThatPlan(
               allOf(
                   containsString("EnumerableNestedLoopJoin"),
-                  not(containsString("EnumerableSort"))
-              )
-          );
+                  not(containsString("EnumerableSort"))));
     }
   }
 
@@ -117,17 +109,15 @@ public final class AggregateCaseToFilterRuleTest
    * Until CALCITE-2018 is fixed we can add back
    * EnumerableRules.ENUMERABLE_SORT_RULE
    */
-  @Test
-  void removeSortOverEnumerableCorrelate() throws Exception
+  @Test void removeSortOverEnumerableCorrelate() throws Exception
   {
-    RuleSet prepareRules = RuleSets.ofList(
-        CoreRules.SORT_PROJECT_TRANSPOSE,
+    RuleSet prepareRules =
+        RuleSets.ofList(CoreRules.SORT_PROJECT_TRANSPOSE,
         CoreRules.JOIN_TO_CORRELATE,
         EnumerableRules.ENUMERABLE_PROJECT_RULE,
         EnumerableRules.ENUMERABLE_CORRELATE_RULE,
         EnumerableRules.ENUMERABLE_FILTER_RULE,
-        EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE
-    );
+        EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
     for (String joinType : Arrays.asList("left", "inner")) {
       String sql = "select e.\"deptno\" from \"hr\".\"emps\" e "
           + joinType + " join \"hr\".\"depts\" d "
@@ -138,9 +128,7 @@ public final class AggregateCaseToFilterRuleTest
           toString(actualPlan),
           allOf(
               containsString("EnumerableCorrelate"),
-              not(containsString("EnumerableSort"))
-          )
-      );
+              not(containsString("EnumerableSort"))));
     }
   }
 
@@ -153,19 +141,17 @@ public final class AggregateCaseToFilterRuleTest
    * Since join inputs are sorted, and this join preserves the order of the left
    * input, there shouldn't be any sort operator above the join.
    */
-  @Test
-  void removeSortOverEnumerableSemiJoin() throws Exception
+  @Test void removeSortOverEnumerableSemiJoin() throws Exception
   {
-    RuleSet prepareRules = RuleSets.ofList(
-        CoreRules.SORT_PROJECT_TRANSPOSE,
+    RuleSet prepareRules =
+        RuleSets.ofList(CoreRules.SORT_PROJECT_TRANSPOSE,
         CoreRules.PROJECT_TO_SEMI_JOIN,
         CoreRules.JOIN_TO_SEMI_JOIN,
         EnumerableRules.ENUMERABLE_PROJECT_RULE,
         EnumerableRules.ENUMERABLE_SORT_RULE,
         EnumerableRules.ENUMERABLE_JOIN_RULE,
         EnumerableRules.ENUMERABLE_FILTER_RULE,
-        EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE
-    );
+        EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
     String sql = "select e.\"deptno\" from \"hr\".\"emps\" e\n"
         + " where e.\"deptno\" in (select d.\"deptno\" from \"hr\".\"depts\" d)\n"
         + " order by e.\"empid\"";
@@ -176,9 +162,7 @@ public final class AggregateCaseToFilterRuleTest
         toString(actualPlan),
         allOf(
             containsString("EnumerableHashJoin"),
-            not(containsString("EnumerableSort"))
-        )
-    );
+            not(containsString("EnumerableSort"))));
   }
 
   private static String toString(RelNode rel)
@@ -186,9 +170,7 @@ public final class AggregateCaseToFilterRuleTest
     return Util.toLinux(
         RelOptUtil.dumpPlan(
             "", rel, SqlExplainFormat.TEXT,
-            SqlExplainLevel.DIGEST_ATTRIBUTES
-        )
-    );
+            SqlExplainLevel.DIGEST_ATTRIBUTES));
   }
 
   static class Fixture extends SortRemoveRuleTest.Fixture

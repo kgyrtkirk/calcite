@@ -37,7 +37,9 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RelBuilderFactory;
+
 import com.google.common.collect.ImmutableList;
+
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.immutables.value.Value;
 
@@ -49,14 +51,16 @@ import java.util.List;
  * Rule that converts CASE-style filtered aggregates into true filtered
  * aggregates.
  *
- * <p>
- * For example,
+ *
+ *
+ * <p>For example,
  *
  * <blockquote> <code>SELECT SUM(CASE WHEN gender = 'F' THEN salary END)<br>
  *   FROM Emp</code> </blockquote>
  *
- * <p>
- * becomes
+ *
+ *
+ * <p>becomes
  *
  * <blockquote> <code>SELECT SUM(salary) FILTER (WHERE gender = 'F')<br>
  *   FROM Emp</code> </blockquote>
@@ -72,11 +76,10 @@ public class AggregateCaseToFilterRule
   public static final AggregateCallTransform FILTERED_COUNT = new FilteredCountTransform();
   public static final AggregateCallTransform FILTERED_AGGREGATION = new FilteredAggregationTransform();
 
-  public static final List<AggregateCallTransform> DEFAULT_TRANSFORMS = ImmutableList.of(
-      FILTERED_DISTINCT,
+  public static final List<AggregateCallTransform> DEFAULT_TRANSFORMS =
+      ImmutableList.of(FILTERED_DISTINCT,
       FILTERED_COUNT,
-      FILTERED_AGGREGATION
-  );
+      FILTERED_AGGREGATION);
 
   /** Creates an AggregateCaseToFilterRule. */
   protected AggregateCaseToFilterRule(Config config)
@@ -91,13 +94,11 @@ public class AggregateCaseToFilterRule
     this(
         Config.DEFAULT.withRelBuilderFactory(relBuilderFactory)
             .withDescription(description)
-            .as(Config.class)
-    );
+            .as(Config.class));
   }
 
   // FIXME
-  @Override
-  public boolean matches(final RelOptRuleCall call)
+  @Override public boolean matches(final RelOptRuleCall call)
   {
     final Aggregate aggregate = call.rel(0);
 
@@ -110,8 +111,7 @@ public class AggregateCaseToFilterRule
     return false;
   }
 
-  @Override
-  public void onMatch(RelOptRuleCall call)
+  @Override public void onMatch(RelOptRuleCall call)
   {
     final Aggregate aggregate = call.rel(0);
     final Project project = call.rel(1);
@@ -212,8 +212,7 @@ public class AggregateCaseToFilterRule
         RexNode oldFilterExpr = oldProject.getProjects().get(call.filterArg);
         return RexUtil.composeConjunction(
             getRexBuilder(),
-            ImmutableList.of(condition, oldFilterExpr)
-        );
+            ImmutableList.of(condition, oldFilterExpr));
       }
 
       public RelNode build()
@@ -303,8 +302,7 @@ public class AggregateCaseToFilterRule
           return new RexIf(
               rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, condition),
               newRight,
-              newLeft
-          );
+              newLeft);
         }
         return new RexIf(condition, newLeft, newRight);
       }
@@ -349,8 +347,7 @@ public class AggregateCaseToFilterRule
    */
   protected static class FilteredDistinctTransform extends ThreeArgCaseBasedAggregateCallTransform
   {
-    @Override
-    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
     {
       SqlKind kind = call.getAggregation().getKind();
       if (!(call.isDistinct() && kind == SqlKind.COUNT && RexLiteral.isNullLiteral(rexIf.right))) {
@@ -362,8 +359,7 @@ public class AggregateCaseToFilterRule
           SqlStdOperatorTable.COUNT, true, false,
           false, call.rexList, ImmutableList.of(leftIndex),
           filterIndex, null, RelCollations.EMPTY,
-          call.getType(), call.getName()
-      );
+          call.getType(), call.getName());
     }
   }
 
@@ -397,8 +393,7 @@ public class AggregateCaseToFilterRule
           call.getAggregation().allowsFilter();
     }
 
-    @Override
-    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
     {
       if (!matches(call, rexIf)) {
         return null;
@@ -409,8 +404,7 @@ public class AggregateCaseToFilterRule
           pos, SqlStdOperatorTable.COUNT, false, false,
           false, call.rexList, ImmutableList.of(), filterIdx, null,
           RelCollations.EMPTY, call.getType(),
-          call.getName()
-      );
+          call.getName());
     }
   }
 
@@ -425,8 +419,7 @@ public class AggregateCaseToFilterRule
    */
   protected static class FilteredAggregationTransform extends ThreeArgCaseBasedAggregateCallTransform
   {
-    @Override
-    protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
+    @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder, AggregateCall call, RexIf rexIf)
     {
       if (!matches(call, rexIf)) {
         return null;
@@ -437,8 +430,7 @@ public class AggregateCaseToFilterRule
           call.getParserPosition(), call.getAggregation(), false,
           false, false, call.rexList, ImmutableList.of(argIdx),
           filterIdx, null, RelCollations.EMPTY,
-          call.getType(), call.getName()
-      );
+          call.getType(), call.getName());
     }
 
     private boolean matches(AggregateCall call, RexIf rexIf)
@@ -485,8 +477,7 @@ public class AggregateCaseToFilterRule
     /** Sets {@link #transforms()}. */
     Config withTransforms(Iterable<? extends AggregateCallTransform> elements) ;
 
-    @Override
-    default AggregateCaseToFilterRule toRule()
+    @Override default AggregateCaseToFilterRule toRule()
     {
       return new AggregateCaseToFilterRule(this);
     }
