@@ -1170,19 +1170,7 @@ public class Linq4jTest {
     ParameterExpression parameter =
         Expressions.parameter(Employee.class);
     final Queryable<Employee> nh =
-        Linq4j.asEnumerable(emps)
-            .asQueryable()
-            .where(
-                Expressions.lambda(
-                    Predicate1.class,
-                    Expressions.equal(
-                        Expressions.field(
-                            parameter,
-                            Employee.class,
-                            "deptno"),
-                        Expressions.constant(10)),
-                    parameter));
-    assertThat(nh.count(), is(3));
+    null;    assertTrue(false);
 
     // second, use an expression
     final Queryable<Employee> nh2 =

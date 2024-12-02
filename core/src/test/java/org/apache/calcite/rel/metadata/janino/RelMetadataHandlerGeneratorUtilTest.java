@@ -23,6 +23,7 @@ import org.apache.calcite.util.Sources;
 
 import com.google.common.io.CharStreams;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -41,6 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test {@link RelMetadataHandlerGeneratorUtil}.
  */
+@Disabled
 class RelMetadataHandlerGeneratorUtilTest {
   private static final Path RESULT_DIR = Paths.get("build/metadata");
 

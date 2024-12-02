@@ -182,7 +182,7 @@ public final class SortRemoveRuleTest {
   }
 
   /** Test fixture. */
-  private static class Fixture {
+  static class Fixture {
     final RuleSet prepareRules;
     final String sql;
     final UnaryOperator<SqlToRelConverter.Config> sqlToRelConfigTransform;
