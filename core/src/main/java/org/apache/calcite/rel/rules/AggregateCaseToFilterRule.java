@@ -167,7 +167,16 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
         this.builder = builder;
         this.oldAggregate = oldAggregate;
         this.oldProject = oldProject;
-        this.projectsBelow = new ArrayList<RexNode>(oldProject.getProjects());
+        this.projectsBelow = new ArrayList<>(oldProject.getProjects());
+        this.projectsAbove= createProjectsForGroupKeys(oldAggregate);
+      }
+
+      private static List<RexNode> createProjectsForGroupKeys(Aggregate agg) {
+        List<RexNode> ret = new ArrayList<>();
+        for (int i = 0; i < agg.getGroupCount(); i++) {
+          ret.add(RexInputRef.of(i, agg.getRowType()));
+        }
+        return ret;
       }
 
       public RexBuilder getRexBuilder() {
@@ -220,7 +229,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
 
       public RexNode addAggregation(@Nullable AggregateCall agg) {
         aggs.add(agg);
-        return new RexInputRef(aggs.size() - 1, agg.getType());
+        return new RexInputRef(oldAggregate.getGroupCount() + aggs.size() - 1, agg.getType());
       }
     }
 
