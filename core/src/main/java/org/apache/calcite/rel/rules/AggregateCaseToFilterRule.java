@@ -130,9 +130,9 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
   }
 
   public RexNode transform(LocalAggBuilder lab, AggregateCall aggregateCall) {
-    for (AggregateCallTransform transform : config.transforms()) {
+    for (AggregateCallTransform t : config.transforms()) {
       @Nullable
-      RexNode expr = transform.transform(lab, aggregateCall);
+      RexNode expr = t.transform(lab, aggregateCall);
       if (expr != null) {
         return expr;
       }
@@ -141,19 +141,21 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
   }
 
   /**
-   * TODO.
+   * Provides facilities to implement Aggregate rewrites with a {@link Project} below and above.
+   *
+   * {@link LocalAggBuilder} should be used to create the new rewritten {@link Aggregate}.
    */
   public interface AggregateCallTransform {
     /**
      * Helper class to aid building the output {@link Aggregate}.
      *
-     * Keeps track of thing to help build the new aggregates vertically.
+     * Keeps track of things to help build the new aggregates vertically.
      *
      * Constructed layout is:
      * <pre>
      * Project( $projectsAbove )
      *   Aggregate( $aggs )
-     *     Project( $projectsBelove )
+     *     Project( $projectsBelow )
      * </pre>
      */
     class LocalAggBuilder {
@@ -241,14 +243,15 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       }
     }
 
-    @Nullable RexNode transform(LocalAggBuilder localAggBuilder,
-        AggregateCall call);
+    @Nullable RexNode transform(LocalAggBuilder lab, AggregateCall call);
 
     boolean matches(AggregateCall aggregateCall, Project project);
   }
 
   /**
-   * FIXME.
+   * Aggregate rewrites specialized to target AGG( CASE {COND} THEN {LEFT} ELSE {RIGHT} END ).
+   *
+   * The inner CASE statement is presented as a {@link RexIf} class to the internal implementations.
    */
   public abstract static class ThreeArgCaseBasedAggregateCallTransform
       implements AggregateCallTransform {
@@ -313,7 +316,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       }
     }
 
-    public final @Nullable RexNode transform(LocalAggBuilder lab, AggregateCall aggregateCall) {
+    @Override public final @Nullable RexNode transform(LocalAggBuilder lab, AggregateCall aggregateCall) {
       RexIf rexIf = extractRexIf(aggregateCall, lab.oldProject);
       if (rexIf == null || !matches(aggregateCall, rexIf)) {
         return null;
