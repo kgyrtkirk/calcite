@@ -18,6 +18,7 @@ package org.apache.calcite.plan;
 
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.rules.AggregateCaseToFilterRule.ThreeArgCaseBasedAggregateCallTransform;
+import org.apache.calcite.rex.RexNode;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -26,11 +27,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 public class A1 extends ThreeArgCaseBasedAggregateCallTransform {
 
-  @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder,
+  @Override protected @Nullable RexNode transform(LocalAggBuilder localAggBuilder,
       AggregateCall call, RexIf rexIf) {
-    if (true) {
-      throw new RuntimeException("FIXME: Unimplemented!");
-    }
     return null;
   }
 
