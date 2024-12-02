@@ -24,6 +24,7 @@ import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.rules.AggregateCaseToFilterRule.AggregateCallTransform.LocalAggBuilder;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
@@ -286,6 +287,11 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
               rexBuilder.makeCall(SqlStdOperatorTable.IS_NOT_TRUE, condition),
               newRight, newLeft);
         }
+        if(condition.getType().isNullable()) {
+          return new RexIf(
+              rexBuilder.makeCall(SqlStdOperatorTable.IS_TRUE, condition),
+              newLeft, newRight);
+        }
         return new RexIf(condition, newLeft, newRight);
       }
     }
@@ -363,9 +369,13 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       int leftIndex = localAggBuilder.projectBelowAgg(rexIf.left);
       int filterIndex =
           localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      final RelDataTypeFactory typeFactory =
+          localAggBuilder.getRexBuilder().getTypeFactory();
+      final RelDataType dataType = typeFactory.createTypeWithNullability(
+          typeFactory.createSqlType(SqlTypeName.BIGINT), false);
       return AggregateCall.create(SqlStdOperatorTable.COUNT, true, false, false,
           call.rexList, ImmutableList.of(leftIndex), filterIndex, null,
-          RelCollations.EMPTY, call.getType(), call.getName());
+          RelCollations.EMPTY, dataType, call.getName());
     }
   }
 
@@ -403,9 +413,13 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       final SqlParserPos pos = call.getParserPosition();
       int filterIdx =
           localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      final RelDataTypeFactory typeFactory =
+          localAggBuilder.getRexBuilder().getTypeFactory();
+      final RelDataType dataType = typeFactory.createTypeWithNullability(
+          typeFactory.createSqlType(SqlTypeName.BIGINT), false);
       return AggregateCall.create(pos, SqlStdOperatorTable.COUNT, false, false,
           false, call.rexList, ImmutableList.of(), filterIdx, null,
-          RelCollations.EMPTY, call.getType(), call.getName());
+          RelCollations.EMPTY, dataType, call.getName());
     }
   }
 
