@@ -232,6 +232,13 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
         aggs.add(agg);
         return new RexInputRef(oldAggregate.getGroupCount() + aggs.size() - 1, agg.getType());
       }
+
+      public RexNode getAggFilterExpr(AggregateCall call) {
+        if (call.filterArg < 0) {
+          return null;
+        }
+        return oldProject.getProjects().get(call.filterArg);
+      }
     }
 
     @Nullable RexNode transform(LocalAggBuilder localAggBuilder,
@@ -372,7 +379,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
         AggregateCall call, RexIf rexIf) {
       int leftIndex = lab.projectBelowAgg(rexIf.left);
       int filterIndex = lab.projectCombinedFilter(call, rexIf.condition);
-      final RelDataType dataType = makeNullableBigIntType(lab.getRexBuilder());
+      final RelDataType dataType = makeNotNullableBigIntType(lab.getRexBuilder());
       AggregateCall agg =
           AggregateCall.create(SqlStdOperatorTable.COUNT, true, false, false,
               call.rexList, ImmutableList.of(leftIndex), filterIndex, null,
@@ -414,7 +421,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
         AggregateCall call, RexIf rexIf) {
       final SqlParserPos pos = call.getParserPosition();
       int filterIdx = lab.projectCombinedFilter(call, rexIf.condition);
-      final RelDataType dataType = makeNullableBigIntType(lab.getRexBuilder());
+      final RelDataType dataType = makeNotNullableBigIntType(lab.getRexBuilder());
       AggregateCall agg = AggregateCall.create(pos, SqlStdOperatorTable.COUNT,
           false, false, false, call.rexList, ImmutableList.of(), filterIdx,
           null, RelCollations.EMPTY, dataType, call.getName());
@@ -422,7 +429,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
     }
   }
 
-  private static RelDataType makeNullableBigIntType(RexBuilder rexBuilder) {
+  private static RelDataType makeNotNullableBigIntType(RexBuilder rexBuilder) {
     final RelDataTypeFactory typeFactory =
         rexBuilder.getTypeFactory();
     RelDataType bigIntType = typeFactory.createSqlType(SqlTypeName.BIGINT);
@@ -478,29 +485,33 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
 
       RexBuilder rexBuilder = lab.getRexBuilder();
       int argIdx = lab.projectBelowAgg(rexIf.left);
-      int countFilterIdx = lab.projectBelowAgg(rexIf.condition);
+      RexNode aggFilterExpr = lab.getAggFilterExpr(call);
+      int countFilterIdx =
+          aggFilterExpr == null ? -1 : lab.projectBelowAgg(aggFilterExpr);
       int sumFilterIdx =
           lab.projectCombinedFilter(call, rexIf.condition);
+      RelDataTypeFactory typeFactory = rexBuilder.getTypeFactory();
       AggregateCall sumAggCall =
           AggregateCall.create(call.getParserPosition(), call.getAggregation(),
           false, false, false, call.rexList,
           ImmutableList.of(argIdx), sumFilterIdx, null, RelCollations.EMPTY,
-          call.getType(), call.getName());
+          typeFactory.createTypeWithNullability(call.getType(), true), call.getName() + "_sum");
       AggregateCall countAggCall =
           AggregateCall.create(call.getParserPosition(),
               SqlStdOperatorTable.COUNT, false, false, false, call.rexList,
               ImmutableList.of(), countFilterIdx, null, RelCollations.EMPTY,
-              makeNullableBigIntType(rexBuilder), call.getName());
+              makeNotNullableBigIntType(rexBuilder), call.getName() + "_count");
 
       RexNode sumAgg = lab.addAggregation(sumAggCall);
       RexNode countAgg = lab.addAggregation(countAggCall);
 
       return rexBuilder.makeCall(SqlStdOperatorTable.CASE,
-          rexBuilder.makeCall(SqlStdOperatorTable.EQUALS,
-              countAgg,
+          rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, countAgg,
               rexBuilder.makeBigintLiteral(BigDecimal.ZERO)),
           rexBuilder.makeNullLiteral(sumAgg.getType()),
-          sumAgg);
+          rexBuilder.makeCall(SqlStdOperatorTable.COALESCE, sumAgg,
+              rexBuilder.makeCast(sumAgg.getType(),
+                  rexBuilder.makeBigintLiteral(BigDecimal.ZERO))));
 
     }
 
