@@ -77,6 +77,7 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
   public static final AggregateCallTransform FILTERED_COUNT = new FilteredCountTransform();
   public static final AggregateCallTransform FILTERED_AGGREGATION =
       new FilteredAggregationTransform();
+  public static final AggregateCallTransform FILTERED_SUM = new FilteredSumTransform();
 
   public static final List<AggregateCallTransform> DEFAULT_TRANSFORMS =
       ImmutableList.of(FILTERED_DISTINCT, FILTERED_COUNT, FILTERED_AGGREGATION);
@@ -462,6 +463,52 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
         return false;
       }
       return isNullLiteral(rexIf.right)
+          && call.getAggregation().allowsFilter();
+    }
+  }
+
+  /**
+   * Recognizes conditionally filtered summation.
+   *
+   * <pre>
+   * SUM(CASE WHEN x = 'foo' THEN value ELSE 0 END) FILTER (F)
+   *  =>
+   * CASE WHEN COUNT() FILTER (F) = 0 THEN NULL ELSE SUM(value) FILTER (F AND x='foo') END
+   * </pre>
+   */
+  protected static class FilteredSumTransform
+      extends ThreeArgCaseBasedAggregateCallTransform {
+    @Override protected @Nullable AggregateCall transform(LocalAggBuilder localAggBuilder,
+        AggregateCall call, RexIf rexIf) {
+
+      RexBuilder rexBuilder = localAggBuilder.getRexBuilder();
+      int argIdx = localAggBuilder.projectBelowAgg(rexIf.left);
+      int countFilterIdx = localAggBuilder.projectBelowAgg(rexIf.condition);
+      int sumFilterIdx =
+          localAggBuilder.projectCombinedFilter(call, rexIf.condition);
+      AggregateCall sumAggCall = AggregateCall.create(call.getParserPosition(),
+          call.getAggregation(), false, false, false, call.rexList,
+          ImmutableList.of(argIdx), sumFilterIdx, null, RelCollations.EMPTY,
+          call.getType(), call.getName());
+      AggregateCall countAggCall = AggregateCall.create(call.getParserPosition(),
+          SqlStdOperatorTable.COUNT, false, false, false, call.rexList,
+          ImmutableList.of(), countFilterIdx, null, RelCollations.EMPTY,
+          makeNullableBigIntType(rexBuilder), call.getName());
+
+//      rexBuilder.makeCall(SqlStdOperatorTable.EQUALS, null)
+//
+//      return rexBuilder.
+          return null;
+
+
+    }
+
+    @Override protected boolean matches(AggregateCall call, RexIf rexIf) {
+      if (call.isDistinct()) {
+        return false;
+      }
+      return isIntLiteral(rexIf.right, BigDecimal.ZERO)
+          && call.getAggregation().getKind() == SqlKind.SUM
           && call.getAggregation().allowsFilter();
     }
   }
