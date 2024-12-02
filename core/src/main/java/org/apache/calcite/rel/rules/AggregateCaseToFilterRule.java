@@ -415,8 +415,8 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
       final SqlParserPos pos = call.getParserPosition();
       int filterIdx = lab.projectCombinedFilter(call, rexIf.condition);
       final RelDataType dataType = makeNullableBigIntType(lab.getRexBuilder());
-      AggregateCall agg =
-          AggregateCall.create(pos, SqlStdOperatorTable.COUNT, false, false, false, call.rexList, ImmutableList.of(), filterIdx,
+      AggregateCall agg = AggregateCall.create(pos, SqlStdOperatorTable.COUNT,
+          false, false, false, call.rexList, ImmutableList.of(), filterIdx,
           null, RelCollations.EMPTY, dataType, call.getName());
       return lab.addAggregation(agg);
     }
@@ -483,7 +483,8 @@ public class AggregateCaseToFilterRule extends RelRule<AggregateCaseToFilterRule
           lab.projectCombinedFilter(call, rexIf.condition);
       AggregateCall sumAggCall =
           AggregateCall.create(call.getParserPosition(), call.getAggregation(),
-          false, false, false, call.rexList, ImmutableList.of(argIdx), sumFilterIdx, null, RelCollations.EMPTY,
+          false, false, false, call.rexList,
+          ImmutableList.of(argIdx), sumFilterIdx, null, RelCollations.EMPTY,
           call.getType(), call.getName());
       AggregateCall countAggCall =
           AggregateCall.create(call.getParserPosition(),
