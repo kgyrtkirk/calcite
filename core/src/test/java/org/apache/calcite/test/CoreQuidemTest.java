@@ -20,7 +20,7 @@ import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.fun.SqlLibrary;
 import org.apache.calcite.sql.validate.SqlConformanceEnum;
-
+import com.google.common.collect.Lists;
 import net.hydromatic.quidem.Quidem;
 
 import java.sql.Connection;
@@ -50,7 +50,7 @@ class CoreQuidemTest extends QuidemTest {
     // Start with a test file we know exists, then find the directory and list
     // its files.
     final String first = "sql/agg.iq";
-    return data(first);
+    return Lists.newArrayList("/home/dev/calcite/core/src/test/resources/sql/agg.iq");
   }
 
   @Override protected Quidem.ConnectionFactory createConnectionFactory() {
