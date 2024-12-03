@@ -1710,9 +1710,9 @@ from (values 0, null, 0, 2) as t(x) where x*x=1;
 (1 row)
 
 !ok
-EnumerableCalc(expr#0..2=[{inputs}], expr#3=[CAST($t0):INTEGER NOT NULL], $f0=[$t3], $f1=[$t1], $f2=[$t2])
-  EnumerableAggregate(group=[{}], agg#0=[COUNT() FILTER $1], agg#1=[$SUM0($2) FILTER $3], agg#2=[$SUM0($0)])
-    EnumerableCalc(expr#0=[{inputs}], expr#1=[1], expr#2=[=($t0, $t1)], expr#3=[3], expr#4=[-1], expr#5=[CASE($t2, $t3, $t4)], expr#6=[IS TRUE($t2)], expr#7=[2], expr#8=[*($t0, $t0)], expr#9=[=($t8, $t1)], $f2=[$t5], $f3=[$t6], $f4=[$t7], $f5=[$t6], $condition=[$t9])
+EnumerableCalc(expr#0..3=[{inputs}], expr#4=[0:BIGINT], expr#5=[=($t1, $t4)], expr#6=[null:INTEGER], expr#7=[0], expr#8=[COALESCE($t0, $t7)], expr#9=[CASE($t5, $t6, $t8)], expr#10=[IS NOT NULL($t9)], expr#11=[CAST($t9):INTEGER NOT NULL], expr#12=[CASE($t10, $t11, $t7)], expr#13=[COALESCE($t2, $t7)], expr#14=[CASE($t5, $t6, $t13)], expr#15=[IS NOT NULL($t14)], expr#16=[CAST($t14):INTEGER NOT NULL], expr#17=[CASE($t15, $t16, $t7)], $f0=[$t12], $f1=[$t17], $f3=[$t3])
+  EnumerableAggregate(group=[{}], null_sum=[SUM($1) FILTER $2], null_count=[COUNT()], null_sum=[SUM($3) FILTER $4], agg#3=[$SUM0($0)])
+    EnumerableCalc(expr#0=[{inputs}], expr#1=[1], expr#2=[=($t0, $t1)], expr#3=[3], expr#4=[-1], expr#5=[CASE($t2, $t3, $t4)], expr#6=[IS TRUE($t2)], expr#7=[2], expr#8=[*($t0, $t0)], expr#9=[=($t8, $t1)], $f2=[$t5], $f3=[$t1], $f4=[$t6], $f5=[$t7], $f6=[$t6], $condition=[$t9])
       EnumerableValues(tuples=[[{ 0 }, { null }, { 0 }, { 2 }]])
 !plan
 
@@ -1729,9 +1729,10 @@ from (values 0, null, 0, 2) as t(x) where x*x=1;
 (1 row)
 
 !ok
-EnumerableAggregate(group=[{}], A=[SUM($0)], B=[SUM($1)], C=[SUM($2)])
-  EnumerableCalc(expr#0=[{inputs}], expr#1=[1], expr#2=[=($t0, $t1)], expr#3=[0], expr#4=[CASE($t2, $t1, $t3)], expr#5=[2], expr#6=[CASE($t2, $t5, $t3)], expr#7=[3], expr#8=[-1], expr#9=[CASE($t2, $t7, $t8)], expr#10=[*($t0, $t0)], expr#11=[=($t10, $t1)], $f0=[$t4], $f1=[$t6], $f2=[$t9], $condition=[$t11])
-    EnumerableValues(tuples=[[{ 0 }, { null }, { 0 }, { 2 }]])
+EnumerableCalc(expr#0..3=[{inputs}], expr#4=[0:BIGINT], expr#5=[=($t1, $t4)], expr#6=[null:INTEGER], expr#7=[0], expr#8=[COALESCE($t0, $t7)], expr#9=[CASE($t5, $t6, $t8)], expr#10=[COALESCE($t2, $t7)], expr#11=[CASE($t5, $t6, $t10)], $f0=[$t9], $f1=[$t11], C=[$t3])
+  EnumerableAggregate(group=[{}], A_sum=[SUM($1) FILTER $2], A_count=[COUNT()], B_sum=[SUM($3) FILTER $4], C=[SUM($0)])
+    EnumerableCalc(expr#0=[{inputs}], expr#1=[1], expr#2=[=($t0, $t1)], expr#3=[3], expr#4=[-1], expr#5=[CASE($t2, $t3, $t4)], expr#6=[IS TRUE($t2)], expr#7=[2], expr#8=[*($t0, $t0)], expr#9=[=($t8, $t1)], $f2=[$t5], $f3=[$t1], $f4=[$t6], $f5=[$t7], $f6=[$t6], $condition=[$t9])
+      EnumerableValues(tuples=[[{ 0 }, { null }, { 0 }, { 2 }]])
 !plan
 
 # Convert CASE to FILTER without matches
@@ -1747,9 +1748,10 @@ from (values 0, null, 0, 2) as t(x);
 (1 row)
 
 !ok
-EnumerableAggregate(group=[{}], A=[SUM($0)], B=[SUM($1)], C=[SUM($2)])
-  EnumerableCalc(expr#0=[{inputs}], expr#1=[1], expr#2=[=($t0, $t1)], expr#3=[0], expr#4=[CASE($t2, $t1, $t3)], expr#5=[2], expr#6=[CASE($t2, $t5, $t3)], expr#7=[3], expr#8=[-1], expr#9=[CASE($t2, $t7, $t8)], $f0=[$t4], $f1=[$t6], $f2=[$t9])
-    EnumerableValues(tuples=[[{ 0 }, { null }, { 0 }, { 2 }]])
+EnumerableCalc(expr#0..3=[{inputs}], expr#4=[0:BIGINT], expr#5=[=($t1, $t4)], expr#6=[null:INTEGER], expr#7=[0], expr#8=[COALESCE($t0, $t7)], expr#9=[CASE($t5, $t6, $t8)], expr#10=[COALESCE($t2, $t7)], expr#11=[CASE($t5, $t6, $t10)], $f0=[$t9], $f1=[$t11], C=[$t3])
+  EnumerableAggregate(group=[{}], A_sum=[SUM($1) FILTER $2], A_count=[COUNT()], B_sum=[SUM($3) FILTER $4], C=[SUM($0)])
+    EnumerableCalc(expr#0=[{inputs}], expr#1=[1], expr#2=[=($t0, $t1)], expr#3=[3], expr#4=[-1], expr#5=[CASE($t2, $t3, $t4)], expr#6=[IS TRUE($t2)], expr#7=[2], $f2=[$t5], $f3=[$t1], $f4=[$t6], $f5=[$t7], $f6=[$t6])
+      EnumerableValues(tuples=[[{ 0 }, { null }, { 0 }, { 2 }]])
 !plan
 
 # Same, expressed as FILTER
