@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -62,7 +61,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static java.lang.Integer.parseInt;
 
 /** Various automated checks on the code and git history. */
-@Disabled
 class LintTest {
   /** Pattern that matches "[CALCITE-12]" or "[CALCITE-1234]" followed by a
    * space. */
